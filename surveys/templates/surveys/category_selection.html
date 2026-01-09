@@ -1,0 +1,101 @@
+{% extends 'surveys/base.html' %}
+
+{% block title %}Choose Insurance Type - Policy Comparison Survey{% endblock %}
+
+{% block header %}Choose Your Insurance Type{% endblock %}
+
+{% block content %}
+<div class="category-selection">
+    <div class="category-intro">
+        <h2>What type of insurance are you looking for?</h2>
+        <p>Select the insurance category that best matches your needs. We'll guide you through a personalized survey to find the best policies for you.</p>
+    </div>
+    
+    <div class="category-grid" id="categoryGrid">
+        <!-- Categories will be loaded dynamically -->
+    </div>
+    
+    <div class="loading-spinner" id="loadingSpinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading insurance categories...</p>
+    </div>
+    
+    <div class="error-message" id="errorMessage" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Unable to load insurance categories. Please try again.</p>
+        <button class="btn btn-secondary" onclick="loadCategories()">Retry</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadCategories();
+});
+
+async function loadCategories() {
+    const grid = document.getElementById('categoryGrid');
+    const spinner = document.getElementById('loadingSpinner');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    // Show loading state
+    spinner.style.display = 'block';
+    errorMessage.style.display = 'none';
+    grid.innerHTML = '';
+    
+    try {
+        const response = await fetch('/api/surveys/categories/');
+        if (!response.ok) throw new Error('Failed to load categories');
+        
+        const categories = await response.json();
+        
+        // Hide loading spinner
+        spinner.style.display = 'none';
+        
+        // Render categories
+        categories.forEach(category => {
+            const categoryCard = createCategoryCard(category);
+            grid.appendChild(categoryCard);
+        });
+        
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        spinner.style.display = 'none';
+        errorMessage.style.display = 'block';
+    }
+}
+
+function createCategoryCard(category) {
+    const card = document.createElement('div');
+    card.className = 'category-card';
+    card.innerHTML = `
+        <div class="category-icon">
+            <i class="fas ${getCategoryIcon(category.slug)}"></i>
+        </div>
+        <h3>${category.name}</h3>
+        <p>${category.description}</p>
+        <button class="btn btn-primary" onclick="selectCategory('${category.slug}')">
+            Start Survey
+        </button>
+    `;
+    return card;
+}
+
+function getCategoryIcon(slug) {
+    const icons = {
+        'health': 'fa-heartbeat',
+        'funeral': 'fa-cross',
+        'life': 'fa-user-shield',
+        'auto': 'fa-car',
+        'home': 'fa-home'
+    };
+    return icons[slug] || 'fa-shield-alt';
+}
+
+function selectCategory(categorySlug) {
+    // Navigate to survey page for selected category
+    window.location.href = `/surveys/${categorySlug}/`;
+}
+</script>
+{% endblock %}

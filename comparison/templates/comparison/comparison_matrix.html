@@ -1,0 +1,538 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Policy Comparison Matrix - {{ category.name }} Insurance{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-table me-2"></i>
+                    Side-by-Side Comparison
+                </h2>
+                <a href="{% url 'comparison:enhanced_results' session_key=session_key %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Results
+                </a>
+            </div>
+            {% if is_survey_based %}
+            <p class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Comparison emphasizes criteria from your survey responses
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover comparison-matrix-table mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="criteria-column">Criteria</th>
+                                    {% for result in results %}
+                                    <th class="policy-column text-center">
+                                        <div class="policy-header">
+                                            <div class="rank-badge-small {% if result.rank == 1 %}rank-1{% elif result.rank == 2 %}rank-2{% elif result.rank == 3 %}rank-3{% endif %}">
+                                                #{{ result.rank }}
+                                            </div>
+                                            <h6 class="policy-name mb-1">{{ result.policy.name }}</h6>
+                                            <small class="text-muted">{{ result.policy.organization.name }}</small>
+                                            <div class="overall-score mt-2">
+                                                <span class="badge bg-success">{{ result.overall_score|floatformat:1 }}% Match</span>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Basic Information Section -->
+                                <tr class="section-header">
+                                    <td colspan="{{ results|length|add:1 }}" class="bg-light fw-bold">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Basic Information
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Monthly Premium</strong>
+                                        <small class="text-muted d-block">Cost per month</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        <span class="value-display">R{{ result.policy.base_premium|floatformat:0 }}</span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Coverage Amount</strong>
+                                        <small class="text-muted d-block">Maximum benefit</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        <span class="value-display">R{{ result.policy.coverage_amount|floatformat:0 }}</span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Waiting Period</strong>
+                                        <small class="text-muted d-block">Days before coverage starts</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        <span class="value-display">{{ result.policy.waiting_period_days }} days</span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Age Range</strong>
+                                        <small class="text-muted d-block">Eligible ages</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        <span class="value-display">{{ result.policy.minimum_age }} - {{ result.policy.maximum_age }} years</span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+
+                                <!-- Scoring Section -->
+                                <tr class="section-header">
+                                    <td colspan="{{ results|length|add:1 }}" class="bg-light fw-bold">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Performance Scores
+                                    </td>
+                                </tr>
+                                
+                                {% for row in matrix_data.comparison_rows %}
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>{{ row.criterion.display_name }}</strong>
+                                        {% if is_survey_based %}
+                                        <small class="text-muted d-block">
+                                            Weight: {{ row.criterion.weight }}%
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    {% for value in row.values %}
+                                    <td class="text-center policy-value">
+                                        <div class="score-container">
+                                            <div class="score-bar-container">
+                                                <div class="score-bar {% if value.is_best %}best-score{% endif %}" 
+                                                     style="width: {{ value.score }}%">
+                                                </div>
+                                            </div>
+                                            <span class="score-text">{{ value.score|floatformat:0 }}</span>
+                                            {% if value.is_best %}
+                                            <i class="fas fa-crown text-warning ms-1" title="Best in category"></i>
+                                            {% endif %}
+                                        </div>
+                                        {% if value.display_value != 'N/A' %}
+                                        <small class="text-muted d-block">{{ value.display_value }}</small>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+
+                                <!-- Features Section (Category Specific) -->
+                                {% if category.slug == 'health' %}
+                                <tr class="section-header">
+                                    <td colspan="{{ results|length|add:1 }}" class="bg-light fw-bold">
+                                        <i class="fas fa-heart me-2"></i>
+                                        Health Coverage Features
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Chronic Medication</strong>
+                                        <small class="text-muted d-block">Ongoing medication coverage</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        {% if result.policy.chronic_medication_covered %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        <span class="text-success">Covered</span>
+                                        {% else %}
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <span class="text-danger">Not Covered</span>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Dental Coverage</strong>
+                                        <small class="text-muted d-block">Dental treatment benefits</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        {% if result.policy.includes_dental_cover %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        <span class="text-success">Included</span>
+                                        {% else %}
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <span class="text-danger">Not Included</span>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Optical Coverage</strong>
+                                        <small class="text-muted d-block">Eye care benefits</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        {% if result.policy.includes_optical_cover %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        <span class="text-success">Included</span>
+                                        {% else %}
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <span class="text-danger">Not Included</span>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endif %}
+
+                                {% if category.slug == 'funeral' %}
+                                <tr class="section-header">
+                                    <td colspan="{{ results|length|add:1 }}" class="bg-light fw-bold">
+                                        <i class="fas fa-heart me-2"></i>
+                                        Funeral Coverage Features
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Repatriation</strong>
+                                        <small class="text-muted d-block">Body repatriation services</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        {% if result.policy.repatriation_covered %}
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        <span class="text-success">Covered</span>
+                                        {% else %}
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <span class="text-danger">Not Covered</span>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <tr>
+                                    <td class="criteria-name">
+                                        <strong>Claim Payout Time</strong>
+                                        <small class="text-muted d-block">Days to process claims</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        <span class="value-display">{{ result.policy.claim_payout_days|default:"Not specified" }} days</span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endif %}
+
+                                <!-- Summary Section -->
+                                <tr class="section-header">
+                                    <td colspan="{{ results|length|add:1 }}" class="bg-primary text-white fw-bold">
+                                        <i class="fas fa-trophy me-2"></i>
+                                        Summary
+                                    </td>
+                                </tr>
+                                
+                                <tr class="summary-row">
+                                    <td class="criteria-name">
+                                        <strong>Overall Recommendation</strong>
+                                        <small class="text-muted d-block">Based on your criteria</small>
+                                    </td>
+                                    {% for result in results %}
+                                    <td class="text-center policy-value">
+                                        <div class="recommendation-summary">
+                                            <div class="rank-display mb-2">
+                                                <span class="badge {% if result.rank == 1 %}bg-success{% elif result.rank == 2 %}bg-warning text-dark{% elif result.rank == 3 %}bg-info{% else %}bg-secondary{% endif %}">
+                                                    Rank #{{ result.rank }}
+                                                </span>
+                                            </div>
+                                            <div class="match-display">
+                                                <strong>{{ result.overall_score|floatformat:1 }}%</strong>
+                                                <small class="text-muted d-block">Match</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <div class="btn-group" role="group">
+                <a href="{% url 'comparison:enhanced_results' session_key=session_key %}" class="btn btn-primary">
+                    <i class="fas fa-list me-1"></i>
+                    View Detailed Results
+                </a>
+                {% if is_survey_based %}
+                <a href="{% url 'surveys:survey_form' category_slug=category.slug %}?session={{ session_key }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-edit me-1"></i>
+                    Modify Survey
+                </a>
+                {% endif %}
+                <button class="btn btn-outline-info" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i>
+                    Print Comparison
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.comparison-matrix-table {
+    font-size: 0.9rem;
+}
+
+.criteria-column {
+    width: 200px;
+    min-width: 200px;
+}
+
+.policy-column {
+    width: 180px;
+    min-width: 180px;
+}
+
+.policy-header {
+    padding: 0.5rem;
+}
+
+.policy-name {
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.rank-badge-small {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    line-height: 30px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    background-color: #6c757d;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.rank-badge-small.rank-1 {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+}
+
+.rank-badge-small.rank-2 {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+    color: #333;
+}
+
+.rank-badge-small.rank-3 {
+    background: linear-gradient(135deg, #cd7f32, #daa520);
+    color: white;
+}
+
+.section-header td {
+    font-size: 1rem;
+    padding: 0.75rem;
+}
+
+.criteria-name {
+    padding: 1rem;
+    border-right: 2px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.policy-value {
+    padding: 1rem 0.5rem;
+    vertical-align: middle;
+}
+
+.value-display {
+    font-weight: bold;
+    color: #333;
+}
+
+.score-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.score-bar-container {
+    width: 80px;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.25rem;
+}
+
+.score-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+    transition: width 0.3s ease;
+}
+
+.score-bar.best-score {
+    background: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+}
+
+.score-text {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.recommendation-summary {
+    padding: 0.5rem;
+}
+
+.rank-display .badge {
+    font-size: 0.8rem;
+}
+
+.match-display strong {
+    font-size: 1.1rem;
+    color: #28a745;
+}
+
+.summary-row {
+    background-color: #f8f9fa;
+}
+
+.summary-row td {
+    padding: 1.5rem 1rem;
+}
+
+/* Print styles */
+@media print {
+    .btn-group {
+        display: none;
+    }
+    
+    .comparison-matrix-table {
+        font-size: 0.8rem;
+    }
+    
+    .policy-column {
+        width: 150px;
+        min-width: 150px;
+    }
+    
+    .criteria-column {
+        width: 180px;
+        min-width: 180px;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .policy-column {
+        width: 140px;
+        min-width: 140px;
+    }
+    
+    .criteria-column {
+        width: 160px;
+        min-width: 160px;
+    }
+    
+    .policy-header {
+        padding: 0.25rem;
+    }
+    
+    .policy-name {
+        font-size: 0.8rem;
+    }
+    
+    .score-bar-container {
+        width: 60px;
+    }
+}
+</style>
+
+<script>
+// Add smooth scrolling for better UX on mobile
+document.addEventListener('DOMContentLoaded', function() {
+    // Highlight best scores with animation
+    document.querySelectorAll('.score-bar.best-score').forEach(function(bar) {
+        setTimeout(function() {
+            bar.style.transform = 'scaleY(1.2)';
+            setTimeout(function() {
+                bar.style.transform = 'scaleY(1)';
+            }, 200);
+        }, Math.random() * 1000);
+    });
+});
+
+// Add tooltips for better explanation
+document.querySelectorAll('[title]').forEach(function(element) {
+    // Simple tooltip implementation
+    element.addEventListener('mouseenter', function() {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip-custom';
+        tooltip.textContent = this.getAttribute('title');
+        tooltip.style.cssText = `
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            pointer-events: none;
+        `;
+        document.body.appendChild(tooltip);
+        
+        const rect = this.getBoundingClientRect();
+        tooltip.style.left = rect.left + 'px';
+        tooltip.style.top = (rect.top - tooltip.offsetHeight - 5) + 'px';
+        
+        this._tooltip = tooltip;
+    });
+    
+    element.addEventListener('mouseleave', function() {
+        if (this._tooltip) {
+            document.body.removeChild(this._tooltip);
+            this._tooltip = null;
+        }
+    });
+});
+</script>
+{% endblock %}

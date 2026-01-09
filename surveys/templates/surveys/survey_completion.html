@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Survey Complete - {{ category.name }} Insurance{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Survey Completed Successfully!
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="completion-icon mb-3">
+                            <i class="fas fa-trophy text-success" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5>Thank you for completing the {{ category.name }} insurance survey!</h5>
+                        <p class="text-muted">
+                            We've processed your responses and generated personalized policy recommendations just for you.
+                        </p>
+                    </div>
+
+                    {% if completion_result %}
+                    <div class="completion-summary mb-4">
+                        <h6>Survey Summary:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Category:</strong> {{ category.name }} Insurance</li>
+                            <li><strong>Session ID:</strong> {{ session_key }}</li>
+                            <li><strong>Completion Time:</strong> {{ completion_result.completion_time|default:"Just now" }}</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>What happens next?</h6>
+                        <p class="mb-2">
+                            Your survey responses have been processed and converted into personalized comparison criteria. 
+                            We've analyzed your priorities, preferences, and requirements to find the best policy matches for you.
+                        </p>
+                        <ul class="mb-0">
+                            <li>Policies are ranked based on your specific needs</li>
+                            <li>Recommendations include detailed explanations</li>
+                            <li>You can see how each policy matches your survey responses</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'comparison:enhanced_results' session_key=session_key %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            View Your Personalized Results
+                        </a>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <a href="{% url 'surveys:survey_restart' category_slug=category_slug %}?session={{ session_key }}&preserve=true" 
+                                   class="btn btn-outline-secondary w-100">
+                                    <i class="fas fa-edit me-2"></i>
+                                    Modify Responses
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{% url 'surveys:category_selection' %}" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Start New Survey
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Need Help?</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-question-circle me-2"></i>Understanding Your Results</h6>
+                            <p class="small text-muted">
+                                Your results are personalized based on your survey responses. 
+                                Each policy is scored against your specific criteria and preferences.
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-redo me-2"></i>Want to Change Something?</h6>
+                            <p class="small text-muted">
+                                You can modify your responses at any time to see how it affects your recommendations. 
+                                Your session will be saved for 24 hours.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.completion-icon {
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+</style>
+{% endblock %}

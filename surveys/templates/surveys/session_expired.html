@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Session Expired - Survey{% endblock %}
+
+{% block extra_css %}
+<style>
+    .expired-container {
+        max-width: 600px;
+        margin: 3rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .expired-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 1rem;
+    }
+    
+    .recovery-info {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 6px;
+        margin: 1.5rem 0;
+        text-align: left;
+    }
+    
+    .action-buttons {
+        margin-top: 2rem;
+    }
+    
+    .btn-action {
+        margin: 0.5rem;
+        min-width: 150px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="expired-container">
+    <div class="expired-icon">⏰</div>
+    <h2>Session Expired</h2>
+    <p class="lead">Your survey session has expired for security reasons.</p>
+    
+    {% if can_recover and recovery_data %}
+    <div class="recovery-info">
+        <h5>Good News!</h5>
+        <p>We found {{ recovery_data.response_count }} saved responses from your previous session 
+           ({{ recovery_data.completion_percentage|floatformat:0 }}% complete).</p>
+        <p>You can recover your progress and continue where you left off.</p>
+    </div>
+    
+    <div class="action-buttons">
+        <form method="post" action="{% url 'surveys:handle_session_expiry_form' %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="recover">
+            <input type="hidden" name="expired_session_key" value="{{ session_key }}">
+            <input type="hidden" name="category_slug" value="{{ category_slug }}">
+            <button type="submit" class="btn btn-primary btn-action">
+                Recover My Progress
+            </button>
+        </form>
+        
+        <form method="post" action="{% url 'surveys:handle_session_expiry_form' %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="new_session">
+            <input type="hidden" name="category_slug" value="{{ category_slug }}">
+            <button type="submit" class="btn btn-secondary btn-action">
+                Start New Survey
+            </button>
+        </form>
+    </div>
+    
+    {% else %}
+    <div class="alert alert-info">
+        <p>Unfortunately, we couldn't find any recoverable data from your previous session.</p>
+        <p>You'll need to start a new survey to get personalized recommendations.</p>
+    </div>
+    
+    <div class="action-buttons">
+        {% if category_slug %}
+        <a href="{% url 'surveys:survey_form' category_slug=category_slug %}" class="btn btn-primary btn-action">
+            Start New Survey
+        </a>
+        {% endif %}
+        
+        <a href="{% url 'surveys:category_selection' %}" class="btn btn-secondary btn-action">
+            Choose Category
+        </a>
+    </div>
+    {% endif %}
+    
+    <hr class="my-4">
+    
+    <h6>Why did this happen?</h6>
+    <p class="text-muted small">
+        Survey sessions expire after a period of inactivity to protect your privacy and ensure data security. 
+        We recommend completing surveys in one session when possible, or creating an account to automatically 
+        save your progress.
+    </p>
+    
+    {% if not user.is_authenticated %}
+    <div class="mt-3">
+        <a href="{% url 'account_signup' %}" class="btn btn-outline-primary btn-sm">
+            Create Account to Save Progress
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

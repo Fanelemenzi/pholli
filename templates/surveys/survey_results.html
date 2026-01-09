@@ -1,0 +1,67 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Survey Results - {{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Your {{ category.name }} Insurance Recommendations</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Survey Summary</h5>
+                        <p>Based on your responses, we've found policies that match your needs and budget.</p>
+                        {% if survey_summary %}
+                            <ul>
+                                <li>Completion: {{ survey_summary.completion_percentage|floatformat:0 }}%</li>
+                                <li>Responses: {{ survey_summary.total_responses }}</li>
+                                <li>Session: {{ session_key }}</li>
+                            </ul>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Recommended Policies</h4>
+                            <div class="alert alert-warning">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Coming Soon:</strong> Policy recommendations are being processed. 
+                                This feature will show personalized insurance policy recommendations based on your survey responses.
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>What we're analyzing:</h5>
+                                    <ul>
+                                        <li>Your coverage needs</li>
+                                        <li>Budget preferences</li>
+                                        <li>Family situation</li>
+                                        <li>Risk factors</li>
+                                        <li>Policy preferences</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'funerals' %}" class="btn btn-primary">
+                            Get Funeral Quotes
+                        </a>
+                        <a href="{% url 'health' %}" class="btn btn-success">
+                            Get Health Quotes
+                        </a>
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                            Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

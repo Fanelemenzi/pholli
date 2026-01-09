@@ -1,0 +1,394 @@
+<!-- Explanation Panel Component -->
+<div class="explanation-panel">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-lightbulb me-2"></i>
+                Understanding Your Results
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- How Scoring Works -->
+            <div class="explanation-section mb-4">
+                <h6 class="text-primary">
+                    <i class="fas fa-calculator me-1"></i>
+                    How We Calculate Your Match Scores
+                </h6>
+                <p class="text-muted mb-3">
+                    Each policy is scored across multiple dimensions to find your best match:
+                </p>
+                
+                <div class="scoring-breakdown">
+                    <div class="score-component">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="component-name">
+                                <i class="fas fa-bullseye text-primary me-1"></i>
+                                Criteria Match
+                            </span>
+                            <span class="component-weight badge bg-primary">60%</span>
+                        </div>
+                        <p class="component-description">
+                            How well the policy meets your specific requirements and preferences
+                            {% if is_survey_based %}from your survey responses{% endif %}.
+                        </p>
+                    </div>
+                    
+                    <div class="score-component">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="component-name">
+                                <i class="fas fa-dollar-sign text-success me-1"></i>
+                                Value for Money
+                            </span>
+                            <span class="component-weight badge bg-success">25%</span>
+                        </div>
+                        <p class="component-description">
+                            Coverage amount compared to premium cost, considering waiting periods and restrictions.
+                        </p>
+                    </div>
+                    
+                    <div class="score-component">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="component-name">
+                                <i class="fas fa-star text-info me-1"></i>
+                                Customer Reviews
+                            </span>
+                            <span class="component-weight badge bg-info">10%</span>
+                        </div>
+                        <p class="component-description">
+                            Average customer satisfaction ratings, weighted by number of reviews.
+                        </p>
+                    </div>
+                    
+                    <div class="score-component">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="component-name">
+                                <i class="fas fa-shield-alt text-warning me-1"></i>
+                                Provider Reputation
+                            </span>
+                            <span class="component-weight badge bg-warning text-dark">5%</span>
+                        </div>
+                        <p class="component-description">
+                            Organization verification status, licensing, and industry standing.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {% if is_survey_based %}
+            <!-- Survey-Specific Explanations -->
+            <div class="explanation-section mb-4">
+                <h6 class="text-success">
+                    <i class="fas fa-user-check me-1"></i>
+                    Your Personalized Scoring
+                </h6>
+                <p class="text-muted mb-3">
+                    Because you completed our survey, we've personalized these results:
+                </p>
+                
+                <div class="personalization-features">
+                    <div class="feature-item">
+                        <i class="fas fa-weight-hanging text-primary me-2"></i>
+                        <strong>Weighted Criteria:</strong> Your priorities determine how much each factor matters
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-brain text-success me-2"></i>
+                        <strong>Confidence Levels:</strong> Your certainty in responses affects scoring weight
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-filter text-info me-2"></i>
+                        <strong>Smart Filtering:</strong> Policies that don't meet your requirements are filtered out
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-comments text-warning me-2"></i>
+                        <strong>Personal Explanations:</strong> Recommendations reference your specific needs
+                    </div>
+                </div>
+                
+                {% if survey_context.user_profile.priorities %}
+                <div class="mt-3">
+                    <h6 class="mb-2">Your Top Priorities:</h6>
+                    <div class="priority-tags">
+                        {% for priority, value in survey_context.user_profile.priorities.items %}
+                        {% if value >= 4 %}
+                        <span class="badge bg-primary me-1 mb-1">{{ priority|title|replace:"_":" " }}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Reading the Results -->
+            <div class="explanation-section mb-4">
+                <h6 class="text-dark">
+                    <i class="fas fa-book-open me-1"></i>
+                    How to Read Your Results
+                </h6>
+                
+                <div class="reading-guide">
+                    <div class="guide-item">
+                        <div class="guide-icon">
+                            <i class="fas fa-trophy text-warning"></i>
+                        </div>
+                        <div class="guide-content">
+                            <strong>Match Percentage:</strong> Higher percentages mean better alignment with your needs. 
+                            Scores above 80% are excellent matches, 60-80% are good options.
+                        </div>
+                    </div>
+                    
+                    <div class="guide-item">
+                        <div class="guide-icon">
+                            <i class="fas fa-chart-bar text-primary"></i>
+                        </div>
+                        <div class="guide-content">
+                            <strong>Score Breakdown:</strong> See how each policy performs in different areas. 
+                            Focus on policies that score well in your priority areas.
+                        </div>
+                    </div>
+                    
+                    <div class="guide-item">
+                        <div class="guide-icon">
+                            <i class="fas fa-balance-scale text-success"></i>
+                        </div>
+                        <div class="guide-content">
+                            <strong>Pros & Cons:</strong> Review advantages and considerations for each policy. 
+                            {% if is_survey_based %}These are personalized based on your survey responses.{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="guide-item">
+                        <div class="guide-icon">
+                            <i class="fas fa-medal text-info"></i>
+                        </div>
+                        <div class="guide-content">
+                            <strong>Recommendations:</strong> We categorize top policies as Best Match, Best Value, 
+                            and Most Popular to help you choose based on what matters most.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="explanation-section">
+                <h6 class="text-secondary">
+                    <i class="fas fa-route me-1"></i>
+                    Next Steps
+                </h6>
+                
+                <div class="next-steps">
+                    <div class="step-item">
+                        <span class="step-number">1</span>
+                        <div class="step-content">
+                            <strong>Review Top Matches:</strong> Focus on the top 3-5 policies that scored highest for your needs.
+                        </div>
+                    </div>
+                    
+                    <div class="step-item">
+                        <span class="step-number">2</span>
+                        <div class="step-content">
+                            <strong>Compare Details:</strong> Use the side-by-side comparison to evaluate specific features.
+                        </div>
+                    </div>
+                    
+                    <div class="step-item">
+                        <span class="step-number">3</span>
+                        <div class="step-content">
+                            <strong>Contact Providers:</strong> Reach out to your preferred insurers for quotes and additional information.
+                        </div>
+                    </div>
+                    
+                    {% if is_survey_based %}
+                    <div class="step-item">
+                        <span class="step-number">4</span>
+                        <div class="step-content">
+                            <strong>Adjust if Needed:</strong> You can modify your survey responses to see how it affects recommendations.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-footer bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Results updated in real-time based on your preferences
+                </small>
+                {% if is_survey_based %}
+                <a href="{% url 'surveys:survey_form' category_slug=category.slug %}?session={{ session_key }}" 
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-edit me-1"></i>
+                    Modify Survey
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.explanation-panel {
+    margin-bottom: 2rem;
+}
+
+.explanation-section {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 1rem;
+}
+
+.explanation-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.score-component {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #dee2e6;
+}
+
+.component-name {
+    font-weight: 500;
+}
+
+.component-weight {
+    font-size: 0.8rem;
+}
+
+.component-description {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+    color: #6c757d;
+}
+
+.personalization-features .feature-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.priority-tags {
+    margin-top: 0.5rem;
+}
+
+.reading-guide .guide-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.guide-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.guide-content {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.next-steps .step-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.step-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.step-content {
+    flex: 1;
+    font-size: 0.9rem;
+    padding-top: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .explanation-panel {
+        font-size: 0.9rem;
+    }
+    
+    .guide-item,
+    .step-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .guide-icon,
+    .step-number {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .personalization-features .feature-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Animation for collapsible sections */
+.explanation-section {
+    transition: all 0.3s ease;
+}
+
+.explanation-section.collapsed {
+    max-height: 60px;
+    overflow: hidden;
+}
+
+.explanation-section.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(transparent, white);
+}
+</style>
+
+<script>
+// Add collapsible functionality for mobile
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for section headers on mobile
+    if (window.innerWidth <= 768) {
+        document.querySelectorAll('.explanation-section h6').forEach(function(header) {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                const section = this.parentElement;
+                section.classList.toggle('collapsed');
+            });
+        });
+    }
+});
+</script>

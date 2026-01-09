@@ -1,0 +1,414 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>{{ category_display }} Survey - Compare & Save</title>
+    <meta name="description" content="Complete our {{ category_display|lower }} survey to get personalized quotes from top providers.">
+
+    <!-- Favicons -->
+    <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
+    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap"
+        rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
+    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
+
+    <!-- Main CSS File -->
+    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
+
+    <style>
+        .survey-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .survey-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .survey-progress {
+            margin-bottom: 30px;
+        }
+        
+        .question-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .question-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            font-size: 1rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        
+        .form-check {
+            margin-bottom: 10px;
+        }
+        
+        .form-check-input {
+            margin-top: 0.25rem;
+        }
+        
+        .form-check-label {
+            margin-left: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+        }
+        
+        .alert {
+            border-radius: 8px;
+        }
+        
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .form-text {
+            margin-top: 8px;
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <header id="header" class="header fixed-top">
+        <div class="container-fluid container-xl position-relative">
+            <div class="top-row d-flex align-items-center justify-content-between">
+                <a href="{% url 'simple_surveys:home' %}" class="logo d-flex align-items-center">
+                    <img src="{% static 'assets/img/logo.webp' %}" alt="Compare & Save Logo">
+                    <h1 class="sitename ms-2">Compare & Save</h1>
+                </a>
+                <div class="d-flex align-items-center">
+                    <div class="contact-info me-3">
+                        <span class="phone"><i class="bi bi-telephone"></i> 0800-COMPARE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main" style="margin-top: 100px;">
+        <div class="survey-container">
+            <div class="survey-header">
+                <h1>{{ category_display }} Survey</h1>
+                <p class="lead">Help us find the perfect {{ category_display|lower }} plan for you by answering a few quick questions.</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="survey-progress">
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {{ completion_status.completion_percentage|default:0 }}%" 
+                         aria-valuenow="{{ completion_status.completion_percentage|default:0 }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {{ completion_status.answered_required|default:0 }}/{{ completion_status.required_questions|default:0 }} Complete
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Messages -->
+            {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>{{ error_message }}
+            </div>
+            {% endif %}
+
+            <!-- Survey Form -->
+            <form id="surveyForm" method="post">
+                {% csrf_token %}
+                
+                {% for question in questions %}
+                <div class="question-card" data-question-id="{{ question.id }}">
+                    <div class="question-title">
+                        {{ question.question_text }}
+                        {% if question.is_required %}<span class="text-danger">*</span>{% endif %}
+                    </div>
+                    
+                    {% if question.input_type == 'text' %}
+                        <input type="text" 
+                               class="form-control" 
+                               name="{{ question.field_name }}" 
+                               id="{{ question.field_name }}"
+                               value="{{ existing_responses|get_item:question.field_name|default:'' }}"
+                               {% if question.is_required %}required{% endif %}>
+                    
+                    {% elif question.input_type == 'email' %}
+                        <input type="email" 
+                               class="form-control" 
+                               name="{{ question.field_name }}" 
+                               id="{{ question.field_name }}"
+                               value="{{ existing_responses|get_item:question.field_name|default:'' }}"
+                               {% if question.is_required %}required{% endif %}>
+                    
+                    {% elif question.input_type == 'number' %}
+                        <input type="number" 
+                               class="form-control" 
+                               name="{{ question.field_name }}" 
+                               id="{{ question.field_name }}"
+                               value="{{ existing_responses|get_item:question.field_name|default:'' }}"
+                               {% if question.validation_rules.min %}min="{{ question.validation_rules.min }}"{% endif %}
+                               {% if question.validation_rules.max %}max="{{ question.validation_rules.max }}"{% endif %}
+                               {% if question.is_required %}required{% endif %}>
+                    
+                    {% elif question.input_type == 'select' %}
+                        <select class="form-select" 
+                                name="{{ question.field_name }}" 
+                                id="{{ question.field_name }}"
+                                {% if question.is_required %}required{% endif %}>
+                            <option value="">Select an option...</option>
+                            {% for choice in question.choices %}
+                                <option value="{{ choice.0 }}" 
+                                        {% if existing_responses|get_item:question.field_name == choice.0 %}selected{% endif %}>
+                                    {{ choice.1 }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    
+                    {% elif question.input_type == 'radio' %}
+                        <div class="radio-group">
+                            {% for choice in question.choices %}
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="radio" 
+                                           name="{{ question.field_name }}" 
+                                           id="{{ question.field_name }}_{{ choice.0 }}"
+                                           value="{{ choice.0 }}"
+                                           {% if existing_responses|get_item:question.field_name == choice.0 %}checked{% endif %}
+                                           {% if question.is_required %}required{% endif %}>
+                                    <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
+                                        {{ choice.1 }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    
+                    {% elif question.input_type == 'checkbox' %}
+                        <div class="checkbox-group">
+                            {% for choice in question.choices %}
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           name="{{ question.field_name }}" 
+                                           id="{{ question.field_name }}_{{ choice.0 }}"
+                                           value="{{ choice.0 }}"
+                                           {% if choice.0 in existing_responses|get_item:question.field_name|default_if_none:'' %}checked{% endif %}>
+                                    <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
+                                        {{ choice.1 }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if question.validation_rules %}
+                        {% if question.validation_rules.min or question.validation_rules.max %}
+                            <div class="form-text">
+                                {% if question.input_type == 'number' %}
+                                    {% if question.validation_rules.min and question.validation_rules.max %}
+                                        Enter a number between {{ question.validation_rules.min }} and {{ question.validation_rules.max }}
+                                    {% elif question.validation_rules.min %}
+                                        Minimum value: {{ question.validation_rules.min }}
+                                    {% elif question.validation_rules.max %}
+                                        Maximum value: {{ question.validation_rules.max }}
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <!-- Submit Button -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                        <i class="bi bi-search me-2"></i>Get My Quotes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer id="footer" class="footer dark-background">
+        <div class="container copyright text-center mt-4">
+            <p>&copy; <span>Copyright</span> <strong class="px-1 sitename">Compare & Save</strong> <span>All Rights Reserved</span></p>
+        </div>
+    </footer>
+
+    <!-- Vendor JS Files -->
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('surveyForm');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // Auto-save responses as user types/selects
+            form.addEventListener('change', function(e) {
+                if (e.target.matches('input, select')) {
+                    saveResponse(e.target);
+                }
+            });
+            
+            // Handle checkbox groups specially
+            form.addEventListener('change', function(e) {
+                if (e.target.type === 'checkbox') {
+                    saveCheckboxResponse(e.target);
+                }
+            });
+            
+            // Handle form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                processSurvey();
+            });
+            
+            function saveResponse(element) {
+                const questionCard = element.closest('.question-card');
+                const questionId = questionCard.dataset.questionId;
+                const responseValue = element.value;
+                
+                fetch('{% url "simple_surveys:save_response" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        question_id: parseInt(questionId),
+                        response_value: responseValue,
+                        category: '{{ category }}'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.completion_status) {
+                        updateProgress(data.completion_status);
+                    } else if (!data.success) {
+                        console.error('Error saving response:', data.errors);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving response:', error);
+                });
+            }
+            
+            function saveCheckboxResponse(element) {
+                const questionCard = element.closest('.question-card');
+                const questionId = questionCard.dataset.questionId;
+                
+                // Get all checked checkboxes for this question
+                const checkboxes = questionCard.querySelectorAll('input[type="checkbox"]:checked');
+                const responseValue = Array.from(checkboxes).map(cb => cb.value);
+                
+                fetch('{% url "simple_surveys:save_response" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        question_id: parseInt(questionId),
+                        response_value: responseValue,
+                        category: '{{ category }}'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.completion_status) {
+                        updateProgress(data.completion_status);
+                    } else if (!data.success) {
+                        console.error('Error saving checkbox response:', data.errors);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving checkbox response:', error);
+                });
+            }
+            
+            function updateProgress(status) {
+                const progressBar = document.querySelector('.progress-bar');
+                const percentage = status.completion_percentage || 0;
+                const completed = status.answered_required || 0;
+                const total = status.required_questions || 0;
+                
+                progressBar.style.width = percentage + '%';
+                progressBar.textContent = completed + '/' + total + ' Complete';
+                progressBar.setAttribute('aria-valuenow', percentage);
+            }
+            
+            function processSurvey() {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
+                
+                fetch('{% url "simple_surveys:process" category=category %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        alert('Error: ' + data.error);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>Get My Quotes';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error processing survey:', error);
+                    alert('An error occurred. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>Get My Quotes';
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

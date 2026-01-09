@@ -1,0 +1,256 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Survey Analytics Dashboard{% endblock %}
+
+{% block extrahead %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .analytics-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .metric-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #2196F3;
+    }
+    .metric-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    .category-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+    .question-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .question-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .completion-rate {
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+    }
+    .rate-high { background-color: #4CAF50; }
+    .rate-medium { background-color: #FF9800; }
+    .rate-low { background-color: #F44336; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Survey Analytics Dashboard</h1>
+
+<!-- Summary Statistics -->
+<div class="analytics-card">
+    <h2>Overview</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+        <div>
+            <div class="metric-value">{{ total_sessions|floatformat:0 }}</div>
+            <div class="metric-label">Total Sessions</div>
+        </div>
+        <div>
+            <div class="metric-value">{{ completed_sessions|floatformat:0 }}</div>
+            <div class="metric-label">Completed Sessions</div>
+        </div>
+        <div>
+            <div class="metric-value">{{ overall_completion_rate|floatformat:1 }}%</div>
+            <div class="metric-label">Overall Completion Rate</div>
+        </div>
+        <div>
+            <div class="metric-value">{{ total_questions|floatformat:0 }}</div>
+            <div class="metric-label">Active Questions</div>
+        </div>
+        <div>
+            <div class="metric-value">{{ total_responses|floatformat:0 }}</div>
+            <div class="metric-label">Total Responses</div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Performance -->
+<div class="analytics-card">
+    <h2>Category Performance</h2>
+    <div class="category-stats">
+        {% for stat in category_stats %}
+        <div class="analytics-card" style="margin: 0;">
+            <h3>{{ stat.category.name }}</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <div class="metric-value" style="font-size: 1.5em;">{{ stat.total_sessions }}</div>
+                    <div class="metric-label">Sessions</div>
+                </div>
+                <div>
+                    <div class="metric-value" style="font-size: 1.5em;">{{ stat.completion_rate|floatformat:1 }}%</div>
+                    <div class="metric-label">Completion Rate</div>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <a href="{% url 'admin:surveys:category_analytics' stat.category.slug %}" class="button">View Details</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Recent Performance Trend -->
+<div class="analytics-card">
+    <h2>Recent Performance (Last 7 Days)</h2>
+    <div class="chart-container">
+        <canvas id="performanceChart"></canvas>
+    </div>
+</div>
+
+<!-- Top Performing Questions -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="analytics-card">
+        <h2>Top Performing Questions</h2>
+        <div class="question-list">
+            {% for analytics in top_questions %}
+            <div class="question-item">
+                <div>
+                    <strong>{{ analytics.question.question_text|truncatechars:50 }}</strong>
+                    <br>
+                    <small>{{ analytics.question.section }} - {{ analytics.question.category.name }}</small>
+                </div>
+                <div>
+                    <span class="completion-rate rate-high">{{ analytics.completion_rate|floatformat:1 }}%</span>
+                </div>
+            </div>
+            {% empty %}
+            <p>No analytics data available.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="analytics-card">
+        <h2>Questions Needing Attention</h2>
+        <div class="question-list">
+            {% for analytics in problematic_questions %}
+            <div class="question-item">
+                <div>
+                    <strong>{{ analytics.question.question_text|truncatechars:50 }}</strong>
+                    <br>
+                    <small>{{ analytics.question.section }} - {{ analytics.question.category.name }}</small>
+                </div>
+                <div>
+                    <span class="completion-rate {% if analytics.completion_rate < 50 %}rate-low{% elif analytics.completion_rate < 75 %}rate-medium{% else %}rate-high{% endif %}">
+                        {{ analytics.completion_rate|floatformat:1 }}%
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <p>No analytics data available.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="analytics-card">
+    <h2>Actions</h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button onclick="refreshAnalytics()" class="button">Refresh Analytics</button>
+        <a href="{% url 'admin:surveys:export_analytics' %}?format=json" class="button">Export JSON</a>
+        <a href="{% url 'admin:surveys:export_analytics' %}?format=csv" class="button">Export CSV</a>
+        <a href="{% url 'admin:surveys:question_management' %}" class="button">Manage Questions</a>
+        <a href="{% url 'admin:surveys:performance_trends' %}" class="button">View Trends</a>
+    </div>
+</div>
+
+<script>
+// Performance Chart
+const ctx = document.getElementById('performanceChart').getContext('2d');
+const performanceData = {{ recent_performance.daily_stats|safe }};
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: performanceData.map(d => d.date),
+        datasets: [{
+            label: 'Total Sessions',
+            data: performanceData.map(d => d.total_sessions),
+            borderColor: '#2196F3',
+            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+            tension: 0.1
+        }, {
+            label: 'Completed Sessions',
+            data: performanceData.map(d => d.completed_sessions),
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Refresh Analytics Function
+function refreshAnalytics() {
+    const button = event.target;
+    button.disabled = true;
+    button.textContent = 'Refreshing...';
+    
+    fetch('{% url "admin:surveys:refresh_analytics" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Analytics refreshed! Updated ${data.updated} questions.`);
+            location.reload();
+        } else {
+            alert('Error refreshing analytics.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error refreshing analytics.');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.textContent = 'Refresh Analytics';
+    });
+}
+
+// Auto-refresh every 5 minutes
+setInterval(() => {
+    fetch('{% url "admin:surveys:analytics_api" %}?action=summary')
+        .then(response => response.json())
+        .then(data => {
+            // Update summary statistics without full page reload
+            document.querySelector('.metric-value').textContent = data.total_sessions;
+        })
+        .catch(error => console.error('Auto-refresh error:', error));
+}, 300000);
+</script>
+{% endblock %}

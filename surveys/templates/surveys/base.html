@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Policy Comparison Survey{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'surveys/css/survey.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="survey-container">
+        <header class="survey-header">
+            <h1>{% block header %}Policy Comparison Survey{% endblock %}</h1>
+        </header>
+        
+        <main class="survey-main">
+            {% block content %}{% endblock %}
+        </main>
+        
+        <footer class="survey-footer">
+            <p>&copy; 2024 Policy Comparison Platform</p>
+        </footer>
+    </div>
+    
+    <script src="{% static 'surveys/js/survey.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

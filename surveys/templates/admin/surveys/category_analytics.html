@@ -1,0 +1,314 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ category.name }} Analytics{% endblock %}
+
+{% block extrahead %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .analytics-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+    .metric-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #2196F3;
+    }
+    .metric-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+    .question-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    .question-table th,
+    .question-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .question-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+    .completion-rate {
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+    }
+    .rate-high { background-color: #4CAF50; }
+    .rate-medium { background-color: #FF9800; }
+    .rate-low { background-color: #F44336; }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    .drop-off-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>{{ category.name }} Analytics</h1>
+    <a href="{% url 'admin:surveys:analytics_dashboard' %}" class="button">← Back to Dashboard</a>
+</div>
+
+<!-- Category Summary -->
+<div class="analytics-card">
+    <h2>Category Summary</h2>
+    <div class="metric-grid">
+        <div>
+            <div class="metric-value">{{ report.summary.total_sessions|floatformat:0 }}</div>
+            <div class="metric-label">Total Sessions</div>
+        </div>
+        <div>
+            <div class="metric-value">{{ report.summary.completed_sessions|floatformat:0 }}</div>
+            <div class="metric-label">Completed Sessions</div>
+        </div>
+        <div>
+            <div class="metric-value">{{ report.summary.overall_completion_rate|floatformat:1 }}%</div>
+            <div class="metric-label">Completion Rate</div>
+        </div>
+        <div>
+            <div class="metric-value">{{ report.summary.total_questions|floatformat:0 }}</div>
+            <div class="metric-label">Total Questions</div>
+        </div>
+        <div>
+            <div class="metric-value">{{ report.summary.avg_question_completion_rate|floatformat:1 }}%</div>
+            <div class="metric-label">Avg Question Completion</div>
+        </div>
+    </div>
+</div>
+
+<!-- Drop-off Analysis -->
+{% if report.templates %}
+    {% for template in report.templates %}
+        {% if template.drop_off_points %}
+        <div class="analytics-card">
+            <h2>Drop-off Analysis - {{ template.template_name }}</h2>
+            <div class="chart-container">
+                <canvas id="dropOffChart{{ forloop.counter }}"></canvas>
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+                {% for point in template.drop_off_points %}
+                <div class="drop-off-item">
+                    <div>
+                        <strong>{{ point.question_text }}</strong>
+                        <br>
+                        <small>{{ point.sessions_reached }} reached, {{ point.sessions_continued }} continued</small>
+                    </div>
+                    <div>
+                        <span class="completion-rate {% if point.drop_off_rate > 20 %}rate-low{% elif point.drop_off_rate > 10 %}rate-medium{% else %}rate-high{% endif %}">
+                            {{ point.drop_off_rate|floatformat:1 }}% drop-off
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+<!-- Question Performance -->
+<div class="analytics-card">
+    <h2>Question Performance</h2>
+    <table class="question-table">
+        <thead>
+            <tr>
+                <th>Question</th>
+                <th>Section</th>
+                <th>Total Responses</th>
+                <th>Completion Rate</th>
+                <th>Skip Rate</th>
+                <th>Most Common Response</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for question in questions %}
+            <tr>
+                <td>
+                    <strong>{{ question.question_text|truncatechars:60 }}</strong>
+                    <br>
+                    <small>{{ question.question_type }}</small>
+                </td>
+                <td>{{ question.section }}</td>
+                <td>
+                    {% if question.analytics %}
+                        {{ question.analytics.total_responses }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+                <td>
+                    {% if question.analytics %}
+                        <span class="completion-rate {% if question.analytics.completion_rate < 50 %}rate-low{% elif question.analytics.completion_rate < 75 %}rate-medium{% else %}rate-high{% endif %}">
+                            {{ question.analytics.completion_rate|floatformat:1 }}%
+                        </span>
+                    {% else %}
+                        <span class="completion-rate rate-low">0%</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if question.analytics %}
+                        {{ question.analytics.skip_rate|floatformat:1 }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </td>
+                <td>
+                    {% if question.analytics and question.analytics.most_common_response %}
+                        {{ question.analytics.most_common_response|truncatechars:30 }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'admin:surveys:question_analytics' question.id %}" class="button">Details</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7">No questions found for this category.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="margin-top: 20px; text-align: center;">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Actions -->
+<div class="analytics-card">
+    <h2>Actions</h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button onclick="refreshCategoryAnalytics()" class="button">Refresh Analytics</button>
+        <a href="{% url 'admin:surveys:export_analytics' %}?format=json&category={{ category.slug }}" class="button">Export JSON</a>
+        <a href="{% url 'admin:surveys:export_analytics' %}?format=csv&category={{ category.slug }}" class="button">Export CSV</a>
+        <a href="{% url 'admin:surveys:performance_trends' %}?category={{ category.slug }}" class="button">View Trends</a>
+    </div>
+</div>
+
+<script>
+// Drop-off Charts
+{% for template in report.templates %}
+    {% if template.drop_off_points %}
+    const dropOffCtx{{ forloop.counter }} = document.getElementById('dropOffChart{{ forloop.counter }}').getContext('2d');
+    const dropOffData{{ forloop.counter }} = {{ template.drop_off_points|safe }};
+
+    new Chart(dropOffCtx{{ forloop.counter }}, {
+        type: 'bar',
+        data: {
+            labels: dropOffData{{ forloop.counter }}.map(d => d.question_text.substring(0, 30) + '...'),
+            datasets: [{
+                label: 'Sessions Reached',
+                data: dropOffData{{ forloop.counter }}.map(d => d.sessions_reached),
+                backgroundColor: 'rgba(33, 150, 243, 0.6)',
+                borderColor: '#2196F3',
+                borderWidth: 1
+            }, {
+                label: 'Sessions Continued',
+                data: dropOffData{{ forloop.counter }}.map(d => d.sessions_continued),
+                backgroundColor: 'rgba(76, 175, 80, 0.6)',
+                borderColor: '#4CAF50',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 45
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+{% endfor %}
+
+function refreshCategoryAnalytics() {
+    const button = event.target;
+    button.disabled = true;
+    button.textContent = 'Refreshing...';
+    
+    // Get question IDs for this category
+    const questionIds = [
+        {% for question in questions %}
+            {{ question.id }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    questionIds.forEach(id => formData.append('question_ids', id));
+    
+    fetch('{% url "admin:surveys:refresh_analytics" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Analytics refreshed! Updated ${data.updated} questions.`);
+            location.reload();
+        } else {
+            alert('Error refreshing analytics.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error refreshing analytics.');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.textContent = 'Refresh Analytics';
+    });
+}
+</script>
+{% endblock %}

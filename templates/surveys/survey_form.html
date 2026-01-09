@@ -1,0 +1,111 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}{{ category.name }} Survey{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ category.name }} Insurance Survey</h3>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ completion_percentage }}%">
+                            {{ completion_percentage|floatformat:0 }}%
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if current_question and form %}
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <h4>{{ current_question.question_text }}</h4>
+                            {% if current_question.help_text %}
+                            <small class="text-muted">{{ current_question.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            {% for field in form %}
+                            {% if field.name == 'response_value' %}
+                            <div class="mb-3">
+                                {{ field }}
+                                {% if field.errors %}
+                                <div class="text-danger">
+                                    {% for error in field.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if field.help_text %}
+                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                            </div>
+                            {% elif field.name == 'confidence_level' %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">Not confident</small>
+                                    <small class="text-muted">Very confident</small>
+                                </div>
+                                {% if field.errors %}
+                                <div class="text-danger">
+                                    {% for error in field.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" onclick="history.back()">
+                                Previous
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Next Question
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="text-center">
+                        <h4>Survey Complete!</h4>
+                        <p>Thank you for completing the survey. We're processing your responses to find the best
+                            policies for you.</p>
+                        <a href="{% url 'surveys:survey_completion' category_slug=category_slug %}?session={{ session_key }}"
+                            class="btn btn-success">View Results</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Survey Progress</h5>
+                </div>
+                <div class="card-body">
+                    {% if sections %}
+                    {% for section in sections %}
+                    <div class="mb-2">
+                        <small class="text-muted">{{ section.name }}</small>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar" style="width: {{ section.progress }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

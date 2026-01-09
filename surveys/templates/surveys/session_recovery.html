@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Session Recovery - Survey{% endblock %}
+
+{% block extra_css %}
+<style>
+    .recovery-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .recovery-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .recovery-icon {
+        font-size: 3rem;
+        color: #f39c12;
+        margin-bottom: 1rem;
+    }
+    
+    .recovery-stats {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 6px;
+        margin: 1.5rem 0;
+    }
+    
+    .recovery-option {
+        border: 2px solid #e9ecef;
+        border-radius: 6px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .recovery-option:hover {
+        border-color: #007bff;
+        background: #f8f9ff;
+    }
+    
+    .recovery-option.recommended {
+        border-color: #28a745;
+        background: #f8fff9;
+    }
+    
+    .recovery-option.recommended::before {
+        content: "✓ Recommended";
+        background: #28a745;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        float: right;
+    }
+    
+    .recovery-buttons {
+        text-align: center;
+        margin-top: 2rem;
+    }
+    
+    .btn-recovery {
+        margin: 0.5rem;
+        min-width: 150px;
+    }
+    
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        margin: 1rem 0;
+    }
+    
+    .progress-bar {
+        background: #e9ecef;
+        border-radius: 10px;
+        height: 8px;
+        margin: 0.5rem 0;
+    }
+    
+    .progress-fill {
+        background: #007bff;
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="recovery-container">
+    <div class="recovery-header">
+        <div class="recovery-icon">⏰</div>
+        <h2>Session Expired</h2>
+        <p class="text-muted">Your survey session has expired, but we can help you recover your progress.</p>
+    </div>
+    
+    {% if recovery_data.can_recover %}
+    <div class="recovery-stats">
+        <h5>Your Progress</h5>
+        <div class="row">
+            <div class="col-md-4">
+                <strong>{{ recovery_data.response_count }}</strong><br>
+                <small class="text-muted">Responses Saved</small>
+            </div>
+            <div class="col-md-4">
+                <strong>{{ recovery_data.completion_percentage|floatformat:0 }}%</strong><br>
+                <small class="text-muted">Completed</small>
+            </div>
+            <div class="col-md-4">
+                <strong>{{ recovery_data.time_since_expiry_hours|floatformat:1 }}h</strong><br>
+                <small class="text-muted">Since Expiry</small>
+            </div>
+        </div>
+        
+        {% if recovery_data.completion_percentage > 0 %}
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ recovery_data.completion_percentage }}%"></div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <h5>Recovery Options</h5>
+    
+    {% for option in recovery_options %}
+    <div class="recovery-option {% if option == recovery_data.recommendation %}recommended{% endif %}" 
+         data-option="{{ option }}">
+        {% if option == 'recover_and_continue' %}
+            <h6>Continue Where You Left Off</h6>
+            <p>Restore all your responses and continue with the survey from where you stopped.</p>
+            <small class="text-muted">Best option if you want to complete the personalized survey.</small>
+        {% elif option == 'recover_responses' %}
+            <h6>Recover Your Responses</h6>
+            <p>Restore your previous responses and start a new session.</p>
+            <small class="text-muted">Good option if you want to review or modify your answers.</small>
+        {% elif option == 'create_new' %}
+            <h6>Start Fresh</h6>
+            <p>Begin a completely new survey without recovering previous responses.</p>
+            <small class="text-muted">Choose this if you want to start over completely.</small>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        <h5>No Recovery Available</h5>
+        <p>Unfortunately, we couldn't find any responses to recover from your previous session.</p>
+        <p>You can start a new survey to get personalized recommendations.</p>
+    </div>
+    {% endif %}
+    
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Processing...</span>
+        </div>
+        <p>Processing your recovery request...</p>
+    </div>
+    
+    <div class="recovery-buttons">
+        {% if recovery_data.can_recover %}
+        <button type="button" class="btn btn-primary btn-recovery" id="recover-btn" disabled>
+            Select an Option Above
+        </button>
+        {% endif %}
+        
+        <button type="button" class="btn btn-secondary btn-recovery" id="new-session-btn">
+            Start New Survey
+        </button>
+        
+        <a href="{% url 'surveys:category_selection' %}" class="btn btn-outline-secondary btn-recovery">
+            Choose Different Category
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const recoveryOptions = document.querySelectorAll('.recovery-option');
+    const recoverBtn = document.getElementById('recover-btn');
+    const newSessionBtn = document.getElementById('new-session-btn');
+    const loadingSpinner = document.querySelector('.loading-spinner');
+    let selectedOption = null;
+    
+    // Handle option selection
+    recoveryOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove selection from all options
+            recoveryOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            // Add selection to clicked option
+            this.classList.add('selected');
+            selectedOption = this.dataset.option;
+            
+            // Enable recover button
+            if (recoverBtn) {
+                recoverBtn.disabled = false;
+                recoverBtn.textContent = getButtonText(selectedOption);
+            }
+        });
+    });
+    
+    // Handle recovery button click
+    if (recoverBtn) {
+        recoverBtn.addEventListener('click', function() {
+            if (!selectedOption) return;
+            
+            performRecovery(selectedOption);
+        });
+    }
+    
+    // Handle new session button click
+    newSessionBtn.addEventListener('click', function() {
+        performRecovery('create_new');
+    });
+    
+    function getButtonText(option) {
+        const texts = {
+            'recover_and_continue': 'Continue Survey',
+            'recover_responses': 'Recover & Start New',
+            'create_new': 'Start Fresh'
+        };
+        return texts[option] || 'Proceed';
+    }
+    
+    function performRecovery(recoveryType) {
+        // Show loading spinner
+        loadingSpinner.style.display = 'block';
+        
+        // Disable buttons
+        if (recoverBtn) recoverBtn.disabled = true;
+        newSessionBtn.disabled = true;
+        
+        // Prepare request data
+        const requestData = {
+            expired_session_key: '{{ expired_session_key }}',
+            category_slug: '{{ category_slug }}',
+            recovery_type: recoveryType
+        };
+        
+        // Make AJAX request
+        fetch('{% url "surveys:recover_session_ajax" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showMessage('success', data.message);
+                
+                // Redirect to survey
+                setTimeout(() => {
+                    if (data.new_session_key) {
+                        window.location.href = `{% url 'surveys:survey_form' category_slug=category_slug %}?session=${data.new_session_key}`;
+                    } else {
+                        window.location.href = '{% url "surveys:survey_form" category_slug=category_slug %}';
+                    }
+                }, 1500);
+            } else {
+                // Show error message
+                showMessage('error', data.error || 'Recovery failed');
+                
+                // Re-enable buttons
+                if (recoverBtn) recoverBtn.disabled = false;
+                newSessionBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Recovery error:', error);
+            showMessage('error', 'An error occurred during recovery');
+            
+            // Re-enable buttons
+            if (recoverBtn) recoverBtn.disabled = false;
+            newSessionBtn.disabled = false;
+            loadingSpinner.style.display = 'none';
+        });
+    }
+    
+    function showMessage(type, message) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        `;
+        
+        const container = document.querySelector('.recovery-container');
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+
+<style>
+.recovery-option.selected {
+    border-color: #007bff !important;
+    background: #e3f2fd !important;
+}
+
+.alert {
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}

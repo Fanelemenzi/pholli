@@ -1,0 +1,67 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Survey Complete - {{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h3>Survey Complete!</h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <h4>Thank you for completing the {{ category.name }} survey!</h4>
+                    <p class="lead">We're now processing your responses to find the best insurance policies that match your needs.</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5>What's Next?</h5>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi-check text-success"></i> Analyzing your responses</li>
+                                        <li><i class="bi bi-check text-success"></i> Comparing policies</li>
+                                        <li><i class="bi bi-check text-success"></i> Generating recommendations</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5>Your Session</h5>
+                                    <p><small>Session ID: {{ session_key }}</small></p>
+                                    <p><small>Category: {{ category.name }}</small></p>
+                                    <p><small>Completed: {{ completion_result.completion_time|default:"Just now" }}</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        {% if completion_result.results_url %}
+                            <a href="{{ completion_result.results_url }}" class="btn btn-primary btn-lg">
+                                View Your Policy Recommendations
+                            </a>
+                        {% else %}
+                            <a href="{% url 'surveys:survey_results' %}?session={{ session_key }}" class="btn btn-primary btn-lg">
+                                View Your Results
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg ms-2">
+                            Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

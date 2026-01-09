@@ -1,0 +1,765 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Compare & Save - Insurance Comparison Made Easy</title>
+  <meta name="description"
+    content="Compare insurance policies from top providers. Find the best deals on health, funeral, life, vehicle and business insurance. Save money with our free comparison service.">
+  <meta name="keywords"
+    content="insurance comparison, health insurance, funeral cover, life insurance, vehicle insurance, business insurance, compare policies, save money">
+
+  <!-- Favicons -->
+  <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
+  <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap"
+    rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header fixed-top">
+    <div class="container-fluid container-xl position-relative">
+
+      <div class="top-row d-flex align-items-center justify-content-between">
+        <a href="{% url 'home' %}" class="logo d-flex align-items-center">
+          <img src="{% static 'assets/img/logo.webp' %}" alt="Compare & Save Logo">
+          <h1 class="sitename ms-2">Compare & Save</h1>
+        </a>
+
+        <div class="d-flex align-items-center">
+          <div class="contact-info me-3">
+            <span class="phone"><i class="bi bi-telephone"></i> 0800-COMPARE</span>
+          </div>
+          <div class="social-links">
+            <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="twitter"><i class="bi bi-twitter"></i></a>
+            <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="nav-wrap">
+      <div class="container d-flex justify-content-center position-relative">
+        <nav id="navmenu" class="navmenu">
+          <ul>
+            <li><a href="{% url 'home' %}" class="active">Home</a></li>
+            <li><a href="{% url 'health' %}">Health Insurance</a></li>
+            <li><a href="{% url 'funerals' %}">Funeral Cover</a></li>
+            <li><a href="#life-insurance">Life Insurance</a></li>
+            <li><a href="#vehicle-insurance">Vehicle Insurance</a></li>
+            <li><a href="#business-insurance">Business Insurance</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+      </div>
+    </div>
+
+  </header>
+
+  <main class="main">
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero section dark-background">
+
+      <div class="video-background">
+        <video autoplay="" muted="" loop="" playsinline="">
+          <source src="{% static 'assets/img/video/video-2.mp4' %}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <div class="video-overlay"></div>
+      </div>
+
+      <div class="hero-content">
+        <div class="container position-relative">
+          <div class="row justify-content-center text-center">
+            <div class="col-lg-10">
+              <h1 data-aos="fade-up" data-aos-delay="100">Find the Perfect Insurance Policy in Minutes</h1>
+              <p data-aos="fade-up" data-aos-delay="200">Compare quotes from South Africa's leading insurance providers.
+                Save up to 40% on health, funeral, life, vehicle and business insurance with our free comparison
+                service.</p>
+              <div class="hero-buttons" data-aos="fade-up" data-aos-delay="300">
+                <a href="#quote-form" class="btn btn-primary btn-lg">Get Free Quotes Now</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /Hero Section -->
+
+    <!-- Quote Form Section -->
+    <section id="quote-form" class="quote-form section">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-8">
+            <div class="quote-card" data-aos="fade-up">
+              <h2 class="text-center mb-4">Get Your Free Insurance Quotes</h2>
+              <form class="quote-form-inner">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="insurance-type" class="form-label">Insurance Type</label>
+                    <select class="form-select" id="insurance-type" required>
+                      <option value="">Select Insurance Type</option>
+                      <option value="health">Health Insurance</option>
+                      <option value="funeral">Funeral Cover</option>
+                      <option value="life">Life Insurance</option>
+                      <option value="vehicle">Vehicle Insurance</option>
+                      <option value="business">Business Insurance</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="coverage-amount" class="form-label">Coverage Amount</label>
+                    <select class="form-select" id="coverage-amount" required>
+                      <option value="">Select Coverage</option>
+                      <option value="basic">Basic (R50,000 - R100,000)</option>
+                      <option value="standard">Standard (R100,000 - R500,000)</option>
+                      <option value="premium">Premium (R500,000+)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="full-name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="full-name" required>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="age" class="form-label">Age</label>
+                    <select class="form-select" id="age" required>
+                      <option value="">Select Age Range</option>
+                      <option value="18-25">18-25</option>
+                      <option value="26-35">26-35</option>
+                      <option value="36-45">36-45</option>
+                      <option value="46-55">46-55</option>
+                      <option value="56-65">56-65</option>
+                      <option value="65+">65+</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" required>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="phone" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone" required>
+                  </div>
+                </div>
+                <div class="text-center">
+                  <button type="submit" class="btn btn-primary btn-lg">Compare Quotes Now</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- /Quote Form Section -->
+
+    <!-- Insurance Types Section -->
+    <section id="insurance-types" class="insurance-types section">
+      <div class="container section-title" data-aos="fade-up">
+        <span class="subtitle">Our Services</span>
+        <h2>Insurance Types We Compare</h2>
+        <p>Find the best deals across all major insurance categories with our comprehensive comparison service</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row g-4">
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="150">
+            <div class="insurance-card">
+              <div class="insurance-icon">
+                <i class="bi bi-heart-pulse"></i>
+              </div>
+              <h3>Health Insurance</h3>
+              <p>Comprehensive medical aid and health insurance plans from leading providers. Compare benefits,
+                premiums, and coverage options.</p>
+              <ul class="insurance-features">
+                <li><i class="bi bi-check-circle"></i> Hospital cover</li>
+                <li><i class="bi bi-check-circle"></i> Day-to-day benefits</li>
+                <li><i class="bi bi-check-circle"></i> Chronic medication</li>
+                <li><i class="bi bi-check-circle"></i> Specialist consultations</li>
+              </ul>
+              <a href="{% url 'health' %}" class="btn btn-outline-primary">Compare Health Plans</a>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="insurance-card featured">
+              <div class="insurance-icon">
+                <i class="bi bi-flower1"></i>
+              </div>
+              <h3>Funeral Cover</h3>
+              <p>Affordable funeral insurance to protect your family during difficult times. Compare policies and find
+                the right coverage for your needs.</p>
+              <ul class="insurance-features">
+                <li><i class="bi bi-check-circle"></i> Burial costs covered</li>
+                <li><i class="bi bi-check-circle"></i> Family protection</li>
+                <li><i class="bi bi-check-circle"></i> Immediate cover</li>
+                <li><i class="bi bi-check-circle"></i> Affordable premiums</li>
+              </ul>
+              <a href="{% url 'funerals' %}" class="btn btn-primary">Compare Funeral Cover</a>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="250">
+            <div class="insurance-card">
+              <div class="insurance-icon">
+                <i class="bi bi-shield-check"></i>
+              </div>
+              <h3>Life Insurance</h3>
+              <p>Secure your family's financial future with comprehensive life insurance. Compare term life, whole life,
+                and investment policies.</p>
+              <ul class="insurance-features">
+                <li><i class="bi bi-check-circle"></i> Financial protection</li>
+                <li><i class="bi bi-check-circle"></i> Flexible terms</li>
+                <li><i class="bi bi-check-circle"></i> Investment options</li>
+                <li><i class="bi bi-check-circle"></i> Tax benefits</li>
+              </ul>
+              <a href="#life-insurance" class="btn btn-outline-primary">Compare Life Insurance</a>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+            <div class="insurance-card">
+              <div class="insurance-icon">
+                <i class="bi bi-car-front"></i>
+              </div>
+              <h3>Vehicle Insurance</h3>
+              <p>Protect your vehicle with comprehensive car insurance. Compare quotes for comprehensive, third-party,
+                and commercial vehicle cover.</p>
+              <ul class="insurance-features">
+                <li><i class="bi bi-check-circle"></i> Comprehensive cover</li>
+                <li><i class="bi bi-check-circle"></i> Third-party options</li>
+                <li><i class="bi bi-check-circle"></i> Roadside assistance</li>
+                <li><i class="bi bi-check-circle"></i> Accident benefits</li>
+              </ul>
+              <a href="#vehicle-insurance" class="btn btn-outline-primary">Compare Vehicle Insurance</a>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="350">
+            <div class="insurance-card">
+              <div class="insurance-icon">
+                <i class="bi bi-building"></i>
+              </div>
+              <h3>Business Insurance</h3>
+              <p>Protect your business with comprehensive commercial insurance. Compare policies for liability,
+                property, and professional indemnity.</p>
+              <ul class="insurance-features">
+                <li><i class="bi bi-check-circle"></i> Public liability</li>
+                <li><i class="bi bi-check-circle"></i> Property protection</li>
+                <li><i class="bi bi-check-circle"></i> Professional indemnity</li>
+                <li><i class="bi bi-check-circle"></i> Business interruption</li>
+              </ul>
+              <a href="#business-insurance" class="btn btn-outline-primary">Compare Business Insurance</a>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+            <div class="insurance-card">
+              <div class="insurance-icon">
+                <i class="bi bi-house"></i>
+              </div>
+              <h3>Home Insurance</h3>
+              <p>Protect your home and belongings with comprehensive home insurance. Compare building and contents
+                insurance from top providers.</p>
+              <ul class="insurance-features">
+                <li><i class="bi bi-check-circle"></i> Building cover</li>
+                <li><i class="bi bi-check-circle"></i> Contents protection</li>
+                <li><i class="bi bi-check-circle"></i> Natural disaster cover</li>
+                <li><i class="bi bi-check-circle"></i> Theft protection</li>
+              </ul>
+              <a href="#home-insurance" class="btn btn-outline-primary">Compare Home Insurance</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section><!-- /Insurance Types Section -->
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works section light-background">
+      <div class="container section-title" data-aos="fade-up">
+        <span class="subtitle">Simple Process</span>
+        <h2>How It Works</h2>
+        <p>Get the best insurance deals in just 3 simple steps</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row g-4">
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="150">
+            <div class="step-card text-center">
+              <div class="step-number">1</div>
+              <div class="step-icon">
+                <i class="bi bi-clipboard-data"></i>
+              </div>
+              <h3>Tell Us Your Needs</h3>
+              <p>Fill out our simple form with your insurance requirements. It takes less than 2 minutes to complete.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="step-card text-center">
+              <div class="step-number">2</div>
+              <div class="step-icon">
+                <i class="bi bi-search"></i>
+              </div>
+              <h3>We Compare Quotes</h3>
+              <p>Our system instantly compares quotes from 25+ leading insurance providers to find you the best deals.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="250">
+            <div class="step-card text-center">
+              <div class="step-number">3</div>
+              <div class="step-icon">
+                <i class="bi bi-check-circle"></i>
+              </div>
+              <h3>Choose & Save</h3>
+              <p>Review your personalized quotes, choose the best option, and start saving money on your insurance
+                today.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section><!-- /How It Works Section -->
+
+    <!-- Insurance Partners Section -->
+    <section id="partners" class="partners section">
+      <div class="container section-title" data-aos="fade-up">
+        <span class="subtitle">Trusted Partners</span>
+        <h2>Leading Insurance Providers</h2>
+        <p>We work with South Africa's most trusted insurance companies to bring you the best deals</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row gy-4">
+          <div class="col-xl-2 col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="100">
+            <div class="partner-item">
+              <img src="{% static 'assets/img/partners/discovery.webp' %}" class="img-fluid" alt="Discovery">
+            </div>
+          </div>
+
+          <div class="col-xl-2 col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="150">
+            <div class="partner-item">
+              <img src="{% static 'assets/img/partners/momentum.webp' %}" class="img-fluid" alt="Momentum">
+            </div>
+          </div>
+
+          <div class="col-xl-2 col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="200">
+            <div class="partner-item">
+              <img src="{% static 'assets/img/partners/santam.webp' %}" class="img-fluid" alt="Santam">
+            </div>
+          </div>
+
+          <div class="col-xl-2 col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="250">
+            <div class="partner-item">
+              <img src="{% static 'assets/img/partners/outsurance.webp' %}" class="img-fluid" alt="OUTsurance">
+            </div>
+          </div>
+
+          <div class="col-xl-2 col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="300">
+            <div class="partner-item">
+              <img src="{% static 'assets/img/partners/old-mutual.webp' %}" class="img-fluid" alt="Old Mutual">
+            </div>
+          </div>
+
+          <div class="col-xl-2 col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="350">
+            <div class="partner-item">
+              <img src="{% static 'assets/img/partners/sanlam.webp' %}" class="img-fluid" alt="Sanlam">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- /Insurance Partners Section -->
+
+    <!-- Why Choose Us Section -->
+    <section id="why-choose-us" class="why-choose-us section light-background">
+      <div class="container">
+        <div class="row align-items-center">
+
+          <div class="col-lg-6" data-aos="fade-right" data-aos-delay="200">
+            <div class="content">
+              <h2>Why Choose Compare & Save?</h2>
+              <p class="lead">We're South Africa's most trusted insurance comparison platform, helping thousands of
+                customers save money every month.</p>
+
+              <div class="features-list">
+                <div class="feature-item">
+                  <i class="bi bi-shield-check"></i>
+                  <div>
+                    <h4>100% Free Service</h4>
+                    <p>Our comparison service is completely free. No hidden fees, no obligations.</p>
+                  </div>
+                </div>
+
+                <div class="feature-item">
+                  <i class="bi bi-clock"></i>
+                  <div>
+                    <h4>Save Time & Money</h4>
+                    <p>Compare 25+ providers in minutes instead of hours. Save up to 40% on premiums.</p>
+                  </div>
+                </div>
+
+                <div class="feature-item">
+                  <i class="bi bi-people"></i>
+                  <div>
+                    <h4>Expert Support</h4>
+                    <p>Our insurance experts are here to help you understand your options and make the right choice.</p>
+                  </div>
+                </div>
+
+                <div class="feature-item">
+                  <i class="bi bi-lock"></i>
+                  <div>
+                    <h4>Secure & Private</h4>
+                    <p>Your personal information is protected with bank-level security and never shared without
+                      permission.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="cta-wrapper mt-4">
+                <a href="#quote-form" class="btn btn-primary btn-lg">Start Comparing Now</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6" data-aos="fade-left" data-aos-delay="300">
+            <div class="image-wrapper">
+              <img src="{% static 'assets/img/why-choose-us.webp' %}" alt="Why Choose Us" class="img-fluid">
+              <div class="floating-stats">
+                <div class="stat-card">
+                  <h3>R2.5M+</h3>
+                  <p>Saved by customers</p>
+                </div>
+                <div class="stat-card">
+                  <h3>50,000+</h3>
+                  <p>Happy customers</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section><!-- /Why Choose Us Section -->
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials section">
+      <div class="container section-title" data-aos="fade-up">
+        <span class="subtitle">Customer Reviews</span>
+        <h2>What Our Customers Say</h2>
+        <p>Don't just take our word for it - hear from thousands of satisfied customers</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="swiper testimonials-swiper">
+          <div class="swiper-wrapper">
+
+            <div class="swiper-slide">
+              <div class="testimonial-card">
+                <div class="stars">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                </div>
+                <p>"I saved over R800 per month on my health insurance by using Compare & Save. The process was so easy
+                  and the customer service was excellent!"</p>
+                <div class="customer-info">
+                  <img src="{% static 'assets/img/testimonials/testimonial-1.jpg' %}" alt="Sarah M.">
+                  <div>
+                    <h4>Sarah M.</h4>
+                    <span>Cape Town</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="swiper-slide">
+              <div class="testimonial-card">
+                <div class="stars">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                </div>
+                <p>"Finding the right funeral cover for my family was stressful until I found this site. They made it
+                  simple and I got great coverage at an affordable price."</p>
+                <div class="customer-info">
+                  <img src="{% static 'assets/img/testimonials/testimonial-2.jpg' %}" alt="John D.">
+                  <div>
+                    <h4>John D.</h4>
+                    <span>Johannesburg</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="swiper-slide">
+              <div class="testimonial-card">
+                <div class="stars">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                </div>
+                <p>"As a small business owner, finding affordable business insurance was crucial. Compare & Save helped
+                  me find comprehensive cover that fits my budget perfectly."</p>
+                <div class="customer-info">
+                  <img src="{% static 'assets/img/testimonials/testimonial-3.jpg' %}" alt="Maria L.">
+                  <div>
+                    <h4>Maria L.</h4>
+                    <span>Durban</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+      </div>
+    </section><!-- /Testimonials Section -->
+
+    <!-- FAQ Section -->
+    <section id="faq" class="faq section light-background">
+      <div class="container section-title" data-aos="fade-up">
+        <span class="subtitle">FAQ</span>
+        <h2>Frequently Asked Questions</h2>
+        <p>Get answers to common questions about our insurance comparison service</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row justify-content-center">
+          <div class="col-lg-8">
+            <div class="accordion" id="faqAccordion">
+
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="faq1">
+                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                    Is your comparison service really free?
+                  </button>
+                </h2>
+                <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                  <div class="accordion-body">
+                    Yes, our comparison service is 100% free for consumers. We're paid a commission by insurance
+                    providers when you choose their policy, but this doesn't affect the price you pay.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="faq2">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapse2">
+                    How do you compare so many insurance providers?
+                  </button>
+                </h2>
+                <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                  <div class="accordion-body">
+                    We have partnerships with over 25 leading insurance providers in South Africa. Our advanced
+                    comparison technology instantly analyzes their policies and pricing to show you the best options for
+                    your needs.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="faq3">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapse3">
+                    Will I get spam calls after submitting my details?
+                  </button>
+                </h2>
+                <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                  <div class="accordion-body">
+                    No, we respect your privacy. We only share your details with insurance providers you're interested
+                    in, and you can opt out of communications at any time. We never sell your information to third
+                    parties.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="faq4">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapse4">
+                    How long does it take to get quotes?
+                  </button>
+                </h2>
+                <div id="collapse4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                  <div class="accordion-body">
+                    Most quotes are generated instantly. For more complex policies like business insurance, it may take
+                    up to 24 hours to receive comprehensive quotes from all providers.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="faq5">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapse5">
+                    Can I get help choosing the right policy?
+                  </button>
+                </h2>
+                <div id="collapse5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                  <div class="accordion-body">
+                    Absolutely! Our qualified insurance advisors are available to help you understand your options and
+                    choose the policy that best fits your needs and budget. Contact us at 0800-COMPARE.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- /FAQ Section -->
+
+    <!-- Call To Action Section -->
+    <section id="final-cta" class="call-to-action section">
+      <div class="container" data-aos="zoom-out">
+        <div class="row justify-content-center text-center">
+          <div class="col-lg-8">
+            <h3>Ready to Save Money on Insurance?</h3>
+            <p>Join thousands of South Africans who have already saved money by comparing insurance quotes with us. Get
+              started today and see how much you could save.</p>
+            <a href="#quote-form" class="btn btn-primary btn-lg">Get Free Quotes Now</a>
+            <div class="trust-indicators mt-4">
+              <div class="row">
+                <div class="col-md-4">
+                  <i class="bi bi-shield-check"></i>
+                  <span>Secure & Private</span>
+                </div>
+                <div class="col-md-4">
+                  <i class="bi bi-clock"></i>
+                  <span>2 Minute Process</span>
+                </div>
+                <div class="col-md-4">
+                  <i class="bi bi-currency-dollar"></i>
+                  <span>100% Free Service</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- /Call To Action Section -->
+
+  </main>
+
+  <footer id="footer" class="footer dark-background">
+    <div class="container">
+      <div class="row gy-4">
+
+        <div class="col-lg-4 col-md-6">
+          <div class="footer-about">
+            <a href="{% url 'home' %}" class="logo d-flex align-items-center">
+              <span class="sitename">Compare & Save</span>
+            </a>
+            <p>South Africa's leading insurance comparison platform. We help you find the best insurance deals and save
+              money on your premiums.</p>
+            <div class="social-links d-flex mt-4">
+              <a href="#"><i class="bi bi-facebook"></i></a>
+              <a href="#"><i class="bi bi-twitter"></i></a>
+              <a href="#"><i class="bi bi-instagram"></i></a>
+              <a href="#"><i class="bi bi-linkedin"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Insurance Types</h4>
+          <ul>
+            <li><a href="{% url 'health' %}">Health Insurance</a></li>
+            <li><a href="{% url 'funerals' %}">Funeral Cover</a></li>
+            <li><a href="#life-insurance">Life Insurance</a></li>
+            <li><a href="#vehicle-insurance">Vehicle Insurance</a></li>
+            <li><a href="#business-insurance">Business Insurance</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#partners">Our Partners</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+            <li><a href="#careers">Careers</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-contact text-center text-md-start">
+          <h4>Contact Us</h4>
+          <p><strong>Phone:</strong> 0800-COMPARE (0800-266-7273)</p>
+          <p><strong>Email:</strong> info@compareandsave.co.za</p>
+          <p><strong>Address:</strong> 123 Insurance Street, Cape Town, 8001</p>
+          <p><strong>Hours:</strong> Mon-Fri 8AM-6PM, Sat 9AM-1PM</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>&copy; <span>Copyright</span> <strong class="px-1 sitename">Compare & Save</strong> <span>All Rights
+          Reserved</span></p>
+      <div class="credits">
+        <a href="#privacy">Privacy Policy</a> |
+        <a href="#terms">Terms of Service</a> |
+        <a href="#disclaimer">Disclaimer</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
+      class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Vendor JS Files -->
+  <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/php-email-form/validate.js' %}"></script>
+  <script src="{% static 'assets/vendor/aos/aos.js' %}"></script>
+  <script src="{% static 'assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/purecounter/purecounter_vanilla.js' %}"></script>
+  <script src="{% static 'assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+
+  <!-- Main JS File -->
+  <script src="{% static 'assets/js/main.js' %}"></script>
+
+</body>
+
+</html>

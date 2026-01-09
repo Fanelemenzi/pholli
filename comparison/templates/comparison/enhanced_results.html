@@ -1,0 +1,808 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Comparison Results - {{ category.name }} Insurance{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>
+                        <i class="fas fa-chart-line me-2"></i>
+                        Your {{ category.name }} Insurance Results
+                    </h2>
+                    {% if is_survey_based %}
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-user-check me-1"></i>
+                        Personalized based on your survey responses
+                        <span class="badge bg-success ms-2">{{ survey_context.completion_percentage }}% Complete</span>
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-outline-primary me-2" onclick="showComparisonMatrix()">
+                        <i class="fas fa-table me-1"></i>
+                        Compare Side-by-Side
+                    </button>
+                    {% if is_survey_based %}
+                    <a href="{% url 'surveys:survey_form' category_slug=category.slug %}?session={{ session_key }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-edit me-1"></i>
+                        Modify Survey
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insights Section -->
+    {% if insights %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Key Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for insight in insights %}
+                        <div class="col-md-6 mb-3">
+                            <div class="alert alert-{{ insight.type }} mb-0">
+                                <h6 class="alert-heading">{{ insight.title }}</h6>
+                                <p class="mb-0">{{ insight.message }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommendation Categories -->
+    {% if recommendations %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star me-2"></i>
+                        Top Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for category_key, rec in recommendations.items %}
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="recommendation-card h-100">
+                                <div class="card h-100 border-2 {% if category_key == 'best_match' %}border-success{% elif category_key == 'best_value' %}border-warning{% elif category_key == 'most_popular' %}border-info{% else %}border-primary{% endif %}">
+                                    <div class="card-header text-center {% if category_key == 'best_match' %}bg-success text-white{% elif category_key == 'best_value' %}bg-warning text-dark{% elif category_key == 'most_popular' %}bg-info text-white{% else %}bg-primary text-white{% endif %}">
+                                        <h6 class="mb-0">
+                                            {% if category_key == 'best_match' %}
+                                                <i class="fas fa-trophy me-1"></i>Best Match
+                                            {% elif category_key == 'best_value' %}
+                                                <i class="fas fa-dollar-sign me-1"></i>Best Value
+                                            {% elif category_key == 'most_popular' %}
+                                                <i class="fas fa-thumbs-up me-1"></i>Most Popular
+                                            {% elif category_key == 'priority_match' %}
+                                                <i class="fas fa-bullseye me-1"></i>Priority Match
+                                            {% endif %}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">{{ rec.policy.policy.name }}</h6>
+                                        <p class="card-text small text-muted">{{ rec.policy.policy.organization.name }}</p>
+                                        <div class="highlight-badge mb-2">
+                                            <span class="badge bg-light text-dark">{{ rec.highlight }}</span>
+                                        </div>
+                                        <p class="card-text small">{{ rec.reason }}</p>
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="showPolicyDetail({{ rec.policy.policy.id }})">
+                                            View Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Results List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-ol me-2"></i>
+                        All Results ({{ total_policies }} policies)
+                    </h5>
+                    {% if is_survey_based %}
+                    <button class="btn btn-sm btn-outline-secondary" onclick="showCriteriaAdjustment()">
+                        <i class="fas fa-sliders-h me-1"></i>
+                        Adjust Criteria
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% for result in results %}
+                    <div class="policy-result-card {% if forloop.first %}border-top-0{% endif %}" data-policy-id="{{ result.policy.id }}">
+                        <div class="row g-0 align-items-center">
+                            <!-- Rank Badge -->
+                            <div class="col-auto p-3">
+                                <div class="rank-badge {% if result.rank == 1 %}rank-1{% elif result.rank == 2 %}rank-2{% elif result.rank == 3 %}rank-3{% endif %}">
+                                    {{ result.rank }}
+                                </div>
+                            </div>
+
+                            <!-- Policy Info -->
+                            <div class="col-md-4 p-3">
+                                <h5 class="mb-1">{{ result.policy.name }}</h5>
+                                <p class="text-muted mb-1">{{ result.policy.organization.name }}</p>
+                                <div class="d-flex align-items-center">
+                                    <span class="match-percentage me-2">{{ result.overall_score|floatformat:1 }}% Match</span>
+                                    {% if result.policy.is_featured %}
+                                    <span class="badge bg-warning text-dark">Featured</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Key Details -->
+                            <div class="col-md-3 p-3">
+                                <div class="key-details">
+                                    <div class="detail-item">
+                                        <span class="label">Premium:</span>
+                                        <span class="value">R{{ result.policy.base_premium|floatformat:0 }}/month</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="label">Coverage:</span>
+                                        <span class="value">R{{ result.policy.coverage_amount|floatformat:0 }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="label">Waiting Period:</span>
+                                        <span class="value">{{ result.policy.waiting_period_days }} days</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Score Breakdown -->
+                            <div class="col-md-3 p-3">
+                                <div class="score-breakdown">
+                                    <div class="overall-score mb-2">
+                                        <div class="score-circle" data-score="{{ result.overall_score }}">
+                                            <span class="score-text">{{ result.overall_score|floatformat:0 }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="score-bars">
+                                        <div class="score-bar">
+                                            <span class="bar-label">Criteria</span>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary" style="width: {{ result.criteria_scores.criteria_score }}%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="score-bar">
+                                            <span class="bar-label">Value</span>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" style="width: {{ result.criteria_scores.value_score }}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="col-auto p-3">
+                                <div class="d-flex flex-column gap-2">
+                                    <button class="btn btn-primary btn-sm" onclick="showPolicyDetail({{ result.policy.id }})">
+                                        <i class="fas fa-eye me-1"></i>
+                                        View Details
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleProsCons({{ result.policy.id }})">
+                                        <i class="fas fa-balance-scale me-1"></i>
+                                        Pros & Cons
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expandable Pros/Cons Section -->
+                        <div class="pros-cons-section" id="pros-cons-{{ result.policy.id }}" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="pros-section">
+                                        <h6 class="text-success">
+                                            <i class="fas fa-thumbs-up me-1"></i>
+                                            Advantages
+                                        </h6>
+                                        <ul class="list-unstyled">
+                                            {% for pro in result.pros %}
+                                            <li class="mb-1">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                {{ pro }}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="cons-section">
+                                        <h6 class="text-warning">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Considerations
+                                        </h6>
+                                        <ul class="list-unstyled">
+                                            {% for con in result.cons %}
+                                            <li class="mb-1">
+                                                <i class="fas fa-minus text-warning me-2"></i>
+                                                {{ con }}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if is_survey_based and result.recommendation_reason %}
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="alert alert-info mb-0">
+                                        <h6 class="alert-heading">
+                                            <i class="fas fa-user-check me-1"></i>
+                                            Personalized Insight
+                                        </h6>
+                                        <p class="mb-0">{{ result.recommendation_reason }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Policy Detail Modal -->
+<div class="modal fade" id="policyDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Policy Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="policyDetailContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Matrix Modal -->
+<div class="modal fade" id="comparisonMatrixModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-table me-2"></i>
+                    Side-by-Side Comparison
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="comparisonMatrixContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Criteria Adjustment Modal -->
+{% if is_survey_based %}
+<div class="modal fade" id="criteriaAdjustmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-sliders-h me-2"></i>
+                    Adjust Comparison Criteria
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-4">
+                    Adjust the importance of different criteria to see how it affects your results.
+                </p>
+                <form id="criteriaAdjustmentForm">
+                    <div id="criteriaSliders">
+                        <!-- Criteria sliders will be populated by JavaScript -->
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sync me-1"></i>
+                            Update Results
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.policy-result-card {
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.2s ease;
+}
+
+.policy-result-card:hover {
+    background-color: #f8f9fa;
+}
+
+.rank-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    background-color: #6c757d;
+    color: white;
+}
+
+.rank-badge.rank-1 {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+}
+
+.rank-badge.rank-2 {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+    color: #333;
+}
+
+.rank-badge.rank-3 {
+    background: linear-gradient(135deg, #cd7f32, #daa520);
+    color: white;
+}
+
+.match-percentage {
+    font-weight: bold;
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.key-details .detail-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.key-details .label {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.key-details .value {
+    font-weight: bold;
+}
+
+.score-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: conic-gradient(#28a745 0deg, #28a745 calc(var(--score) * 3.6deg), #e9ecef calc(var(--score) * 3.6deg), #e9ecef 360deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 0 auto;
+}
+
+.score-circle::before {
+    content: '';
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+}
+
+.score-text {
+    position: relative;
+    z-index: 1;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.score-bars .score-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.score-bars .bar-label {
+    width: 60px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.score-bars .progress {
+    height: 8px;
+    flex: 1;
+    margin-left: 0.5rem;
+}
+
+.pros-cons-section {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+.recommendation-card .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recommendation-card .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.highlight-badge {
+    margin: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .policy-result-card .row {
+        flex-direction: column;
+    }
+    
+    .score-breakdown {
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .key-details {
+        margin-top: 1rem;
+    }
+}
+</style>
+
+<script>
+// Initialize score circles
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.score-circle').forEach(function(circle) {
+        const score = circle.getAttribute('data-score');
+        circle.style.setProperty('--score', score);
+    });
+});
+
+function showPolicyDetail(policyId) {
+    const modal = new bootstrap.Modal(document.getElementById('policyDetailModal'));
+    const content = document.getElementById('policyDetailContent');
+    
+    // Show loading
+    content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch policy details
+    fetch(`/comparison/{{ session_key }}/policy/${policyId}/detail/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderPolicyDetail(data.policy);
+            } else {
+                content.innerHTML = '<div class="alert alert-danger">Failed to load policy details.</div>';
+            }
+        })
+        .catch(error => {
+            content.innerHTML = '<div class="alert alert-danger">An error occurred while loading policy details.</div>';
+        });
+}
+
+function renderPolicyDetail(policy) {
+    const content = document.getElementById('policyDetailContent');
+    
+    let html = `
+        <div class="policy-detail">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h4>${policy.name}</h4>
+                    <p class="text-muted">${policy.organization}</p>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-success me-2">#${policy.rank} Best Match</span>
+                        <span class="text-success fw-bold">${policy.match_percentage}% Match</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="score-display">
+                        <div class="h2 text-primary">${policy.overall_score.toFixed(1)}</div>
+                        <div class="text-muted">Overall Score</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Basic Information</h5>
+                    <table class="table table-sm">
+    `;
+    
+    for (const [key, value] of Object.entries(policy.policy_details.basic_info)) {
+        html += `
+            <tr>
+                <td class="fw-bold">${key}:</td>
+                <td>${value}</td>
+            </tr>
+        `;
+    }
+    
+    html += `
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Score Breakdown</h5>
+                    <div class="score-breakdown-detail">
+    `;
+    
+    const scoreTypes = [
+        { key: 'criteria_score', label: 'Criteria Match', color: 'primary' },
+        { key: 'value_score', label: 'Value for Money', color: 'success' },
+        { key: 'review_score', label: 'Customer Reviews', color: 'info' },
+        { key: 'organization_score', label: 'Provider Reputation', color: 'warning' }
+    ];
+    
+    scoreTypes.forEach(scoreType => {
+        const score = policy[scoreType.key] || 0;
+        html += `
+            <div class="mb-2">
+                <div class="d-flex justify-content-between">
+                    <span>${scoreType.label}</span>
+                    <span class="fw-bold">${score.toFixed(1)}</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-${scoreType.color}" style="width: ${score}%"></div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+                    </div>
+                </div>
+            </div>
+    `;
+    
+    // Add features if available
+    if (policy.policy_details.features && policy.policy_details.features.length > 0) {
+        html += `
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h5>Key Features</h5>
+                    <ul class="list-unstyled">
+        `;
+        
+        policy.policy_details.features.forEach(feature => {
+            html += `<li class="mb-1"><i class="fas fa-check text-success me-2"></i>${feature}</li>`;
+        });
+        
+        html += `
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add pros and cons
+    html += `
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="text-success">Advantages</h5>
+                <ul class="list-unstyled">
+    `;
+    
+    policy.pros.forEach(pro => {
+        html += `<li class="mb-1"><i class="fas fa-thumbs-up text-success me-2"></i>${pro}</li>`;
+    });
+    
+    html += `
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5 class="text-warning">Considerations</h5>
+                <ul class="list-unstyled">
+    `;
+    
+    policy.cons.forEach(con => {
+        html += `<li class="mb-1"><i class="fas fa-exclamation-triangle text-warning me-2"></i>${con}</li>`;
+    });
+    
+    html += `
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    // Add personalized explanation if available
+    if (policy.survey_context && policy.survey_context.personalization_factors) {
+        html += `
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-user-check me-1"></i>
+                            Why This Policy Matches You
+                        </h6>
+                        <ul class="mb-0">
+        `;
+        
+        policy.survey_context.personalization_factors.forEach(factor => {
+            html += `<li>${factor}</li>`;
+        });
+        
+        html += `
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    
+    content.innerHTML = html;
+}
+
+function toggleProsCons(policyId) {
+    const section = document.getElementById(`pros-cons-${policyId}`);
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+function showComparisonMatrix() {
+    const modal = new bootstrap.Modal(document.getElementById('comparisonMatrixModal'));
+    const content = document.getElementById('comparisonMatrixContent');
+    
+    // Show loading
+    content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Load comparison matrix
+    fetch(`/comparison/{{ session_key }}/matrix/`)
+        .then(response => response.text())
+        .then(html => {
+            content.innerHTML = html;
+        })
+        .catch(error => {
+            content.innerHTML = '<div class="alert alert-danger">Failed to load comparison matrix.</div>';
+        });
+}
+
+{% if is_survey_based %}
+function showCriteriaAdjustment() {
+    const modal = new bootstrap.Modal(document.getElementById('criteriaAdjustmentModal'));
+    
+    // Populate criteria sliders
+    const slidersContainer = document.getElementById('criteriaSliders');
+    
+    // This would be populated with actual criteria from the session
+    // For now, showing example criteria
+    const criteria = [
+        { name: 'Premium Cost', field: 'base_premium', current: 80 },
+        { name: 'Coverage Amount', field: 'coverage_amount', current: 70 },
+        { name: 'Waiting Period', field: 'waiting_period_days', current: 60 },
+        { name: 'Provider Reputation', field: 'organization_score', current: 50 }
+    ];
+    
+    let html = '';
+    criteria.forEach(criterion => {
+        html += `
+            <div class="mb-4">
+                <label class="form-label fw-bold">${criterion.name}</label>
+                <input type="range" class="form-range" min="0" max="100" value="${criterion.current}" 
+                       id="criteria_${criterion.field}" name="${criterion.field}">
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Not Important</span>
+                    <span id="value_${criterion.field}">${criterion.current}%</span>
+                    <span>Very Important</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    slidersContainer.innerHTML = html;
+    
+    // Add event listeners to update values
+    criteria.forEach(criterion => {
+        const slider = document.getElementById(`criteria_${criterion.field}`);
+        const valueDisplay = document.getElementById(`value_${criterion.field}`);
+        
+        slider.addEventListener('input', function() {
+            valueDisplay.textContent = this.value + '%';
+        });
+    });
+    
+    modal.show();
+}
+
+document.getElementById('criteriaAdjustmentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Collect new weights
+    const formData = new FormData(this);
+    const weights = {};
+    
+    for (const [key, value] of formData.entries()) {
+        weights[key] = parseInt(value);
+    }
+    
+    // Submit to server
+    fetch(`/comparison/{{ session_key }}/update-criteria/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ weights: weights })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect_url;
+        } else {
+            alert('Failed to update criteria: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('An error occurred while updating criteria.');
+    });
+});
+{% endif %}
+</script>
+{% endblock %}

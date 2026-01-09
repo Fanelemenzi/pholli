@@ -1,0 +1,790 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Health Insurance Comparison - Find Your Perfect Coverage</title>
+    <meta name="description"
+        content="Compare health insurance plans and find the perfect coverage for you and your family. Get personalized quotes in minutes.">
+    <meta name="keywords" content="health insurance, medical aid, health cover, insurance comparison, medical scheme">
+
+    <!-- Favicons -->
+    <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
+    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap"
+        rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
+    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+
+    <!-- Main CSS File -->
+    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
+
+    <style>
+        .benefits.section {
+            padding: 80px 0;
+        }
+
+        .benefit-item {
+            padding: 30px 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+
+        .benefit-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .benefit-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .benefit-icon i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .benefit-item h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .benefit-item p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .stats-container {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            border-radius: 15px;
+            padding: 40px 20px;
+            color: white;
+        }
+
+        .stat-item h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .stat-item p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .light-background {
+            background-color: #f8f9fa;
+        }
+    </style>
+
+    <!-- =======================================================
+  * Template Name: LeadPage
+  * Template URL: https://bootstrapmade.com/leadpage-bootstrap-landing-page-template/
+  * Updated: Aug 12 2025 with Bootstrap v5.3.7
+  * Author: BootstrapMade.com
+  * License: https://bootstrapmade.com/license/
+  ======================================================== -->
+</head>
+
+<body class="index-page">
+
+    <header id="header" class="header fixed-top">
+        <div class="container-fluid container-xl position-relative">
+
+            <div class="top-row d-flex align-items-center justify-content-between">
+                <a href="index.html" class="logo d-flex align-items-center">
+                    <!-- Uncomment the line below if you also wish to use an image logo -->
+                    <!-- <img src="assets/img/logo.webp" alt=""> -->
+                    <h1 class="sitename">LeadPage</h1>
+                </a>
+
+                <div class="d-flex align-items-center">
+                    <div class="social-links">
+                        <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="twitter"><i class="bi bi-twitter"></i></a>
+                        <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="nav-wrap">
+            <div class="container d-flex justify-content-center position-relative">
+                <nav id="navmenu" class="navmenu">
+                    <ul>
+                        <li><a href="{% url 'home'%}" class="active">Home</a></li>
+                        <li><a href="{% url 'funerals'%}">Funeral Cover</a></li>
+                        <li><a href="{% url 'health'%}">Health Cover</a></li>
+                        <li><a href="#team">Life Insurance</a></li>
+                        <li><a href="#about">Vehicle</a></li>
+                        <li><a href="#features">Business</a></li>
+                        <li><a href="#services">About</a></li>
+                        <!--
+            <li class="dropdown"><a href="#"><span>Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+              <ul>
+                <li><a href="#">Dropdown 1</a></li>
+                <li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+                  <ul>
+                    <li><a href="#">Deep Dropdown 1</a></li>
+                    <li><a href="#">Deep Dropdown 2</a></li>
+                    <li><a href="#">Deep Dropdown 3</a></li>
+                    <li><a href="#">Deep Dropdown 4</a></li>
+                    <li><a href="#">Deep Dropdown 5</a></li>
+                  </ul>
+                </li>
+                <li><a href="#">Dropdown 2</a></li>
+                <li><a href="#">Dropdown 3</a></li>
+                <li><a href="#">Dropdown 4</a></li>
+              </ul>
+            </li>
+            -->
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                    <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+                </nav>
+            </div>
+        </div>
+
+    </header>
+
+    <main class="main">
+
+        <!-- Page Title -->
+        <div class="page-title dark-background" data-aos="fade"
+            style="background-image: url({% static 'assets/img/bg/bg-2.webp' %});"></div>
+        <div class="container position-relative">
+            <h1>Health Insurance Comparison</h1>
+            <p>Find the perfect health insurance plan for you and your family. Compare comprehensive coverage options,
+                benefits, and premiums from top South African medical schemes in just a few minutes.</p>
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li class="current">Health Insurance</li>
+                </ol>
+            </nav>
+        </div>
+        </div><!-- End Page Title -->
+
+        <section id="features" class="features section">
+
+            <!-- Section Title -->
+            <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+                <div class="tabs-wrapper">
+                    <div class="tabs-header" data-aos="fade-up" data-aos-delay="200">
+                        <ul class="nav nav-tabs">
+                            <li class="nav-item">
+                                <a class="nav-link active show" data-bs-toggle="tab" data-bs-target="#features-tab-1">
+                                    <div class="tab-content-preview">
+                                        <span class="tab-number">01</span>
+                                        <div class="tab-text">
+                                            <h6>Hospital Cover</h6>
+                                            <small>Comprehensive protection</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#features-tab-2">
+                                    <div class="tab-content-preview">
+                                        <span class="tab-number">02</span>
+                                        <div class="tab-text">
+                                            <h6>Day-to-Day Benefits</h6>
+                                            <small>Medical expenses</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#features-tab-3">
+                                    <div class="tab-content-preview">
+                                        <span class="tab-number">03</span>
+                                        <div class="tab-text">
+                                            <h6>Chronic Conditions</h6>
+                                            <small>Specialized care</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#features-tab-4">
+                                    <div class="tab-content-preview">
+                                        <span class="tab-number">04</span>
+                                        <div class="tab-text">
+                                            <h6>Family Coverage
+                                        </div>h6>
+                                        <small>Protect your loved ones</small>
+                                    </div>
+                    </div>
+                    </a>
+                    </li>
+                    </ul>
+                </div>
+
+                <div class="tab-content" data-aos="fade-up" data-aos-delay="300">
+
+                    <div class="tab-pane fade active show" id="features-tab-1">
+                        <div class="row align-items-center">
+                            <div class="col-lg-6">
+                                <div class="content-area">
+                                    <div class="content-badge">
+                                        <i class="bi bi-hospital"></i>
+                                        <span>Hospital Coverage</span>
+                                    </div>
+                                    <h3>Comprehensive Hospital Protection</h3>
+                                    <p>Get peace of mind with comprehensive hospital coverage that protects you from
+                                        unexpected medical expenses. Our comparison tool helps you find plans with
+                                        the best hospital networks and coverage limits for your needs.</p>
+
+                                    <div class="highlight-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-value">R2M+</span>
+                                            <span class="stat-label">Annual Hospital Limit</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value">500+</span>
+                                            <span class="stat-label">Network Hospitals</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="feature-points">
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Private hospital room coverage</span>
+                                        </div>
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Specialist consultations included</span>
+                                        </div>
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Emergency medical procedures</span>
+                                        </div>
+                                    </div>
+
+                                    <a href="{% url 'simple_surveys:direct_survey' category_slug='health' %}"
+                                        class="explore-link">
+                                        Compare Hospital Plans <i class="bi bi-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="visual-content">
+                                    <img src="{% static 'assets/img/features/features-2.webp' %}"
+                                        alt="Hospital Coverage" class="img-fluid">
+                                    <div class="floating-element">
+                                        <div class="floating-card">
+                                            <i class="bi bi-shield-check"></i>
+                                            <div class="card-info">
+                                                <span>Protection</span>
+                                                <strong>100% Covered</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="features-tab-2">
+                        <div class="row align-items-center">
+                            <div class="col-lg-6">
+                                <div class="content-area">
+                                    <div class="content-badge">
+                                        <i class="bi bi-heart-pulse"></i>
+                                        <span>Day-to-Day Benefits</span>
+                                    </div>
+                                    <h3>Everyday Medical Expenses Covered</h3>
+                                    <p>Don't let routine medical expenses add up. Our comparison helps you find plans
+                                        with generous day-to-day benefits for doctor visits, medication, dental care,
+                                        and optical services that fit your lifestyle and budget.</p>
+
+                                    <div class="highlight-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-value">R15K+</span>
+                                            <span class="stat-label">Annual Day-to-Day Limit</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value">90%</span>
+                                            <span class="stat-label">GP Visit Coverage</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="feature-points">
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>GP and specialist consultations</span>
+                                        </div>
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Prescription medication coverage</span>
+                                        </div>
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Dental and optical benefits</span>
+                                        </div>
+                                    </div>
+
+                                    <a href="{% url 'simple_surveys:direct_survey' category_slug='health' %}"
+                                        class="explore-link">
+                                        Find Day-to-Day Plans <i class="bi bi-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="visual-content">
+                                    <img src="{% static 'assets/img/features/features-4.webp' %}"
+                                        alt="Day-to-Day Benefits" class="img-fluid">
+                                    <div class="floating-element">
+                                        <div class="floating-card">
+                                            <i class="bi bi-currency-dollar"></i>
+                                            <div class="card-info">
+                                                <span>Savings</span>
+                                                <strong>Up to 80%</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="features-tab-3">
+                        <div class="row align-items-center">
+                            <div class="col-lg-6">
+                                <div class="content-area">
+                                    <div class="content-badge">
+                                        <i class="bi bi-heart"></i>
+                                        <span>Chronic Conditions</span>
+                                    </div>
+                                    <h3>Specialized Chronic Care Coverage</h3>
+                                    <p>Living with a chronic condition requires specialized care and medication.
+                                        Our comparison tool identifies plans with comprehensive chronic disease
+                                        lists and ensures you get the ongoing treatment you need without financial
+                                        stress.</p>
+
+                                    <div class="highlight-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-value">270+</span>
+                                            <span class="stat-label">Chronic Conditions Covered</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value">100%</span>
+                                            <span class="stat-label">Medication Coverage</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="feature-points">
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Diabetes, hypertension, and heart conditions</span>
+                                        </div>
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Cancer treatment and oncology care</span>
+                                        </div>
+                                        <div class="point-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Mental health and psychiatric services</span>
+                                        </div>
+                                    </div>
+
+                                    <a href="{% url 'simple_surveys:direct_survey' category_slug='health' %}"
+                                        class="explore-link">
+                                        Compare Chronic Care Plans <i class="bi bi-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="visual-content">
+                                    <img src="{% static 'assets/img/features/features-1.webp' %}" alt="Chronic Care"
+                                        class="img-fluid">
+                                    <div class="floating-element">
+                                        <div class="floating-card">
+                                            <i class="bi bi-capsule"></i>
+                                            <div class="card-info">
+                                                <span>Medication</span>
+                                                <strong>Fully Covered
+                                            </div>strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="features-tab-4">
+                    <div class="row align-items-center">
+                        <div class="col-lg-6">
+                            <div class="content-area">
+                                <div class="content-badge">
+                                    <i class="bi bi-people"></i>
+                                    <span>Family Coverage</span>
+                                </div>
+                                <h3>Comprehensive Family Protection</h3>
+                                <p>Protect your entire family with comprehensive health coverage that grows with your
+                                    needs.
+                                    From maternity benefits to pediatric care, find plans that cover every member of
+                                    your
+                                    family at affordable rates with flexible options.</p>
+
+                                <div class="highlight-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-value">6</span>
+                                        <span class="stat-label">Family Members Covered</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value">R50K</span>
+                                        <span class="stat-label">Maternity Benefits</span>
+                                    </div>
+                                </div>
+
+                                <div class="feature-points">
+                                    <div class="point-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Maternity and newborn care coverage</span>
+                                    </div>
+                                    <div class="point-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Pediatric and child healthcare</span>
+                                    </div>
+                                    <div class="point-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Family wellness and preventive care</span>
+                                    </div>
+                                </div>
+
+                                <a href="{% url 'simple_surveys:direct_survey' category_slug='health' %}" class="explore-link">
+                                    Find Family Plans <i class="bi bi-arrow-up-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="visual-content">
+                                <img src="{% static 'assets/img/features/features-5.webp' %}" alt="Family Coverage"
+                                    class="img-fluid">
+                                <div class="floating-element">
+                                    <div class="floating-card">
+                                        <i class="bi bi-house-heart"></i>
+                                        <div class="card-info">
+                                            <span>Family</span>
+                                            <strong>Protected</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            </div>
+
+            </div>
+
+        </section><!-- /Features Section -->
+
+        <!-- Benefits Section -->
+        <section id="benefits" class="benefits section light-background">
+            <div class="container" data-aos="fade-up">
+                <div class="row gy-4">
+                    <div class="col-lg-12 text-center">
+                        <h2>Why Use Our Health Insurance Comparison Tool?</h2>
+                        <p class="lead">Save time, money, and make informed decisions about your health coverage</p>
+                    </div>
+                </div>
+
+                <div class="row gy-4 mt-4">
+                    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                        <div class="benefit-item text-center">
+                            <div class="benefit-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <h4>Save Time</h4>
+                            <p>Compare multiple health insurance plans in minutes instead of spending hours researching
+                                individual schemes.</p>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                        <div class="benefit-item text-center">
+                            <div class="benefit-icon">
+                                <i class="bi bi-piggy-bank"></i>
+                            </div>
+                            <h4>Save Money</h4>
+                            <p>Find the most cost-effective plan that meets your needs. Our tool identifies plans with
+                                the best value for your budget.</p>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                        <div class="benefit-item text-center">
+                            <div class="benefit-icon">
+                                <i class="bi bi-person-check"></i>
+                            </div>
+                            <h4>Personalized Results</h4>
+                            <p>Get recommendations tailored to your specific health needs, family size, and coverage
+                                preferences.</p>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                        <div class="benefit-item text-center">
+                            <div class="benefit-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h4>Expert Guidance</h4>
+                            <p>Our intelligent system considers all important factors to ensure you don't miss crucial
+                                coverage details.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-5">
+                    <div class="col-lg-12 text-center">
+                        <div class="stats-container">
+                            <div class="row">
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="stat-item">
+                                        <h3>10,000+</h3>
+                                        <p>Happy Customers</p>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="stat-item">
+                                        <h3>50+</h3>
+                                        <p>Insurance Plans</p>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="stat-item">
+                                        <h3>R2,500</h3>
+                                        <p>Average Annual Savings</p>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="stat-item">
+                                        <h3>5 Min</h3>
+                                        <p>Average Comparison Time</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section><!-- /Benefits Section -->
+
+        <!-- Call To Action Section -->
+        <section id="call-to-action" class="call-to-action section">
+
+            <div class="container" data-aos="zoom-out">
+
+                <div class="row g-5">
+
+                    <div
+                        class="col-lg-8 col-md-6 content d-flex flex-column justify-content-center order-last order-md-first">
+                        <h3>Ready to Find Your <em>Perfect</em> Health Insurance Plan?</h3>
+                        <p>Don't spend hours researching different medical schemes. Our intelligent comparison tool
+                            asks you a few simple questions about your health needs, budget, and preferences, then
+                            matches you with the best health insurance options available. Get personalized quotes
+                            from top South African medical schemes in just minutes.</p>
+                        <a class="cta-btn align-self-start"
+                            href="{% url 'simple_surveys:direct_survey' category_slug='health' %}">Get Your Personalized Quotes
+                            Now >>></a>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 order-first order-md-last d-flex align-items-center">
+                        <div class="img">
+                            <img src="{% static 'assets/img/misc/misc-portrait-8.webp' %}" alt="" class="img-fluid">
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section><!-- /Call To Action Section -->
+
+
+    </main>
+
+    <footer id="footer" class="footer dark-background">
+
+        <div class="container">
+            <div class="row gy-5">
+
+                <div class="col-lg-4">
+                    <div class="footer-content">
+                        <a href="index.html" class="logo d-flex align-items-center mb-4">
+                            <span class="sitename">MyWebsite</span>
+                        </a>
+                        <p class="mb-4">Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia
+                            curae. Donec velit neque auctor sit amet aliquam vel ullamcorper sit amet ligula.</p>
+
+                        <div class="newsletter-form">
+                            <h5>Stay Updated</h5>
+                            <form action="forms/newsletter.php" method="post" class="php-email-form">
+                                <div class="input-group">
+                                    <input type="email" name="email" class="form-control" placeholder="Enter your email"
+                                        required="">
+                                    <button type="submit" class="btn-subscribe">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </div>
+                                <div class="loading">Loading</div>
+                                <div class="error-message"></div>
+                                <div class="sent-message">Thank you for subscribing!</div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-6">
+                    <div class="footer-links">
+                        <h4>Company</h4>
+                        <ul>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> About</a></li>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> Careers</a></li>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> Press</a></li>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> Blog</a></li>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-6">
+                    <div class="footer-links">
+                        <h4>Solutions</h4>
+                        <ul>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> Digital Strategy</a></li>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> Cloud Computing</a></li>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> Data Analytics</a></li>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> AI Solutions</a></li>
+                            <li><a href="#"><i class="bi bi-chevron-right"></i> Cybersecurity</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="footer-contact">
+                        <h4>Get in Touch</h4>
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="bi bi-geo-alt"></i>
+                            </div>
+                            <div class="contact-info">
+                                <p>2847 Maple Avenue<br>Los Angeles, CA 90210<br>United States</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="bi bi-telephone"></i>
+                            </div>
+                            <div class="contact-info">
+                                <p>+1 (555) 987-6543</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="bi bi-envelope"></i>
+                            </div>
+                            <div class="contact-info">
+                                <p>contact@example.com</p>
+                            </div>
+                        </div>
+
+                        <div class="social-links">
+                            <a href="#"><i class="bi bi-facebook"></i></a>
+                            <a href="#"><i class="bi bi-twitter-x"></i></a>
+                            <a href="#"><i class="bi bi-linkedin"></i></a>
+                            <a href="#"><i class="bi bi-youtube"></i></a>
+                            <a href="#"><i class="bi bi-github"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-6">
+                        <div class="copyright">
+                            <p>© <span>Copyright</span> <strong class="px-1 sitename">MyWebsite</strong> <span>All
+                                    Rights Reserved</span></p>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="footer-bottom-links">
+                            <a href="#">Privacy Policy</a>
+                            <a href="#">Terms of Service</a>
+                            <a href="#">Cookie Policy</a>
+                        </div>
+                        <div class="credits">
+                            <!-- All the links in the footer should remain intact. -->
+                            <!-- You can delete the links only if you've purchased the pro version. -->
+                            <!-- Licensing information: https://bootstrapmade.com/license/ -->
+                            <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
+                            Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </footer>
+
+    <!-- Scroll Top -->
+    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
+            class="bi bi-arrow-up-short"></i></a>
+
+    <!-- Preloader -->
+    <div id="preloader"></div>
+
+    <!-- Vendor JS Files -->
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/php-email-form/validate.js' %}"></script>
+    <script src="{% static 'assets/vendor/aos/aos.js' %}"></script>
+    <script src="{% static 'assets/vendor/purecounter/purecounter_vanilla.js' %}"></script>
+    <script src="{% static 'assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/imagesloaded/imagesloaded.pkgd.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/isotope-layout/isotope.pkgd.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+
+    <!-- Main JS File -->
+    <script src="{% static 'assets/js/main.js' %}"></script>
+
+</body>
+
+</html>

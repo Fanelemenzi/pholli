@@ -1,0 +1,153 @@
+[
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 1,
+    "fields": {
+      "category": "health",
+      "question_text": "What is your age?",
+      "field_name": "age",
+      "input_type": "number",
+      "choices": [],
+      "is_required": true,
+      "display_order": 1,
+      "validation_rules": {
+        "min": 18,
+        "max": 80
+      }
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 2,
+    "fields": {
+      "category": "health",
+      "question_text": "Which province are you located in?",
+      "field_name": "location",
+      "input_type": "select",
+      "choices": [
+        ["gauteng", "Gauteng"],
+        ["western_cape", "Western Cape"],
+        ["kwazulu_natal", "KwaZulu-Natal"],
+        ["eastern_cape", "Eastern Cape"],
+        ["free_state", "Free State"],
+        ["limpopo", "Limpopo"],
+        ["mpumalanga", "Mpumalanga"],
+        ["north_west", "North West"],
+        ["northern_cape", "Northern Cape"]
+      ],
+      "is_required": true,
+      "display_order": 2,
+      "validation_rules": {}
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 3,
+    "fields": {
+      "category": "health",
+      "question_text": "How many family members need coverage (including yourself)?",
+      "field_name": "family_size",
+      "input_type": "number",
+      "choices": [],
+      "is_required": true,
+      "display_order": 3,
+      "validation_rules": {
+        "min": 1,
+        "max": 10
+      }
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 4,
+    "fields": {
+      "category": "health",
+      "question_text": "How would you describe your current health status?",
+      "field_name": "health_status",
+      "input_type": "radio",
+      "choices": [
+        ["excellent", "Excellent"],
+        ["good", "Good"],
+        ["fair", "Fair"],
+        ["poor", "Poor"]
+      ],
+      "is_required": true,
+      "display_order": 4,
+      "validation_rules": {}
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 5,
+    "fields": {
+      "category": "health",
+      "question_text": "Do you have any of the following chronic conditions? (Select all that apply)",
+      "field_name": "chronic_conditions",
+      "input_type": "checkbox",
+      "choices": [
+        ["diabetes", "Diabetes"],
+        ["hypertension", "High Blood Pressure"],
+        ["heart_disease", "Heart Disease"],
+        ["asthma", "Asthma"],
+        ["none", "None of the above"]
+      ],
+      "is_required": true,
+      "display_order": 5,
+      "validation_rules": {}
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 6,
+    "fields": {
+      "category": "health",
+      "question_text": "What type of coverage is most important to you?",
+      "field_name": "coverage_priority",
+      "input_type": "radio",
+      "choices": [
+        ["hospital", "Hospital Cover"],
+        ["day_to_day", "Day-to-day Medical Expenses"],
+        ["comprehensive", "Comprehensive Coverage"]
+      ],
+      "is_required": true,
+      "display_order": 6,
+      "validation_rules": {}
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 7,
+    "fields": {
+      "category": "health",
+      "question_text": "What is your monthly budget for health insurance?",
+      "field_name": "monthly_budget",
+      "input_type": "number",
+      "choices": [],
+      "is_required": true,
+      "display_order": 7,
+      "validation_rules": {
+        "min": 200,
+        "max": 5000
+      }
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 8,
+    "fields": {
+      "category": "health",
+      "question_text": "What deductible amount would you prefer?",
+      "field_name": "preferred_deductible",
+      "input_type": "radio",
+      "choices": [
+        ["none", "No Deductible"],
+        ["1000", "R1,000"],
+        ["2500", "R2,500"],
+        ["5000", "R5,000"]
+      ],
+      "is_required": true,
+      "display_order": 8,
+      "validation_rules": {}
+    }
+  }
+]

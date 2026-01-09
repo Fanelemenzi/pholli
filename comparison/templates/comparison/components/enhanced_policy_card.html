@@ -1,0 +1,376 @@
+<!-- Enhanced Policy Card Component -->
+<div class="policy-card enhanced-card" data-policy-id="{{ result.policy.id }}">
+    <div class="card h-100 border-0 shadow-sm">
+        <!-- Card Header with Rank and Match -->
+        <div class="card-header d-flex justify-content-between align-items-center {% if result.rank == 1 %}bg-success text-white{% elif result.rank == 2 %}bg-warning text-dark{% elif result.rank == 3 %}bg-info text-white{% else %}bg-light{% endif %}">
+            <div class="rank-info">
+                <span class="rank-badge">{{ result.rank }}</span>
+                <span class="rank-label">{% if result.rank == 1 %}Best Match{% elif result.rank == 2 %}Runner Up{% elif result.rank == 3 %}Third Best{% else %}Option {{ result.rank }}{% endif %}</span>
+            </div>
+            <div class="match-score">
+                <span class="match-percentage">{{ result.overall_score|floatformat:1 }}%</span>
+                <small class="match-label">Match</small>
+            </div>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body">
+            <!-- Policy Basic Info -->
+            <div class="policy-info mb-3">
+                <h5 class="policy-name mb-1">{{ result.policy.name }}</h5>
+                <p class="organization-name text-muted mb-2">{{ result.policy.organization.name }}</p>
+                
+                <!-- Key Metrics -->
+                <div class="key-metrics row text-center mb-3">
+                    <div class="col-4">
+                        <div class="metric">
+                            <div class="metric-value">R{{ result.policy.base_premium|floatformat:0 }}</div>
+                            <div class="metric-label">Monthly</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="metric">
+                            <div class="metric-value">R{{ result.policy.coverage_amount|floatformat:0 }}</div>
+                            <div class="metric-label">Coverage</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="metric">
+                            <div class="metric-value">{{ result.policy.waiting_period_days }}</div>
+                            <div class="metric-label">Days Wait</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Survey-Specific Highlights -->
+            {% if is_survey_based and result.criteria_scores.survey_enhancements %}
+            <div class="survey-highlights mb-3">
+                <h6 class="text-primary">
+                    <i class="fas fa-user-check me-1"></i>
+                    Personalized for You
+                </h6>
+                {% for factor in result.criteria_scores.survey_enhancements.personalization_factors|slice:":3" %}
+                <div class="highlight-item">
+                    <i class="fas fa-check-circle text-success me-1"></i>
+                    <small>{{ factor }}</small>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Score Breakdown -->
+            <div class="score-breakdown mb-3">
+                <h6 class="mb-2">Performance Breakdown</h6>
+                <div class="score-bars">
+                    <div class="score-bar-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="bar-label">Criteria Match</span>
+                            <span class="bar-value">{{ result.criteria_scores.criteria_score|floatformat:0 }}%</span>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-primary" style="width: {{ result.criteria_scores.criteria_score }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="score-bar-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="bar-label">Value for Money</span>
+                            <span class="bar-value">{{ result.criteria_scores.value_score|floatformat:0 }}%</span>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-success" style="width: {{ result.criteria_scores.value_score }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="score-bar-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="bar-label">Customer Reviews</span>
+                            <span class="bar-value">{{ result.criteria_scores.review_score|floatformat:0 }}%</span>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-info" style="width: {{ result.criteria_scores.review_score }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Pros -->
+            <div class="top-pros mb-3">
+                <h6 class="text-success mb-2">
+                    <i class="fas fa-thumbs-up me-1"></i>
+                    Key Advantages
+                </h6>
+                <ul class="list-unstyled mb-0">
+                    {% for pro in result.pros|slice:":3" %}
+                    <li class="mb-1">
+                        <i class="fas fa-check text-success me-1"></i>
+                        <small>{{ pro }}</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Category-Specific Features -->
+            {% if category.slug == 'health' %}
+            <div class="feature-highlights mb-3">
+                <h6 class="mb-2">Health Features</h6>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <i class="fas fa-pills {% if result.policy.chronic_medication_covered %}text-success{% else %}text-muted{% endif %}"></i>
+                        <span class="feature-label">Chronic Meds</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-tooth {% if result.policy.includes_dental_cover %}text-success{% else %}text-muted{% endif %}"></i>
+                        <span class="feature-label">Dental</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-eye {% if result.policy.includes_optical_cover %}text-success{% else %}text-muted{% endif %}"></i>
+                        <span class="feature-label">Optical</span>
+                    </div>
+                </div>
+            </div>
+            {% elif category.slug == 'funeral' %}
+            <div class="feature-highlights mb-3">
+                <h6 class="mb-2">Funeral Features</h6>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <i class="fas fa-plane {% if result.policy.repatriation_covered %}text-success{% else %}text-muted{% endif %}"></i>
+                        <span class="feature-label">Repatriation</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-clock text-info"></i>
+                        <span class="feature-label">{{ result.policy.claim_payout_days|default:"N/A" }} days payout</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Card Footer -->
+        <div class="card-footer bg-transparent">
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary btn-sm" onclick="showPolicyDetail({{ result.policy.id }})">
+                    <i class="fas fa-info-circle me-1"></i>
+                    View Full Details
+                </button>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleProsCons({{ result.policy.id }})">
+                        <i class="fas fa-balance-scale me-1"></i>
+                        Pros & Cons
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="addToComparison({{ result.policy.id }})">
+                        <i class="fas fa-plus me-1"></i>
+                        Compare
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expandable Pros/Cons Section -->
+    <div class="pros-cons-expandable mt-2" id="pros-cons-{{ result.policy.id }}" style="display: none;">
+        <div class="card border-top-0">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success">
+                            <i class="fas fa-thumbs-up me-1"></i>
+                            Advantages
+                        </h6>
+                        <ul class="list-unstyled">
+                            {% for pro in result.pros %}
+                            <li class="mb-1">
+                                <i class="fas fa-check text-success me-1"></i>
+                                <small>{{ pro }}</small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Considerations
+                        </h6>
+                        <ul class="list-unstyled">
+                            {% for con in result.cons %}
+                            <li class="mb-1">
+                                <i class="fas fa-minus text-warning me-1"></i>
+                                <small>{{ con }}</small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                {% if is_survey_based and result.recommendation_reason %}
+                <div class="mt-3">
+                    <div class="alert alert-info mb-0">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Why This Matches You
+                        </h6>
+                        <p class="mb-0 small">{{ result.recommendation_reason }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.enhanced-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.enhanced-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.rank-badge {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    line-height: 30px;
+    text-align: center;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.rank-label {
+    font-weight: 500;
+}
+
+.match-score {
+    text-align: right;
+}
+
+.match-percentage {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.match-label {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.policy-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.organization-name {
+    font-size: 0.9rem;
+}
+
+.key-metrics .metric {
+    padding: 0.5rem 0;
+}
+
+.metric-value {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.metric-label {
+    font-size: 0.7rem;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+.survey-highlights {
+    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+    border-radius: 8px;
+    padding: 0.75rem;
+    border-left: 4px solid #2196f3;
+}
+
+.highlight-item {
+    margin-bottom: 0.25rem;
+}
+
+.score-bars .score-bar-item {
+    margin-bottom: 0.5rem;
+}
+
+.bar-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.bar-value {
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.progress-sm {
+    height: 6px;
+}
+
+.top-pros ul li {
+    font-size: 0.85rem;
+}
+
+.feature-grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.feature-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    min-width: 60px;
+}
+
+.feature-item i {
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}
+
+.feature-label {
+    font-size: 0.7rem;
+    color: #6c757d;
+}
+
+.pros-cons-expandable {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .key-metrics {
+        font-size: 0.8rem;
+    }
+    
+    .feature-grid {
+        justify-content: center;
+    }
+    
+    .feature-item {
+        min-width: 50px;
+    }
+}
+</style>
