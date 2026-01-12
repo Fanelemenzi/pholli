@@ -1,32 +1,253 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Survey System{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Pholli - Insurance Comparison Made Easy</title>
+  <meta name="description"
+    content="Compare insurance policies from top providers. Find the best deals on health, funeral, life, vehicle and business insurance. Save money with our free comparison service.">
+  <meta name="keywords"
+    content="insurance comparison, health insurance, funeral cover, life insurance, vehicle insurance, business insurance, compare policies, save money">
+
+  <!-- Favicons -->
+  <link href="{% static 'assets/img/logo3.png' %}" rel="icon">
+  <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap"
+    rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
+  
+  <!-- Custom Color Overrides -->
+  <style>
+    /* Global color overrides */
+    /* Change text color to #f1d925 (excluding black and white text) */
+    .header .sitename,
+    .header .phone,
+    .footer h4,
+    .footer p,
+    .footer .footer-links ul li a,
+    .footer .credits,
+    .footer .credits a {
+        color: #f1d925 !important;
+    }
+
+    /* Keep black and white text unchanged */
+    .dark-background,
+    .dark-background h1,
+    .dark-background p,
+    .dark-background .footer-about p,
+    .dark-background .footer-contact p {
+        color: #ffffff !important;
+    }
+
+    /* Button backgrounds and links to #269523 */
+    .header .social-links a:hover,
+    .footer .social-links a:hover {
+        background-color: #269523 !important;
+        color: #ffffff !important;
+    }
+
+    /* Navigation hover states */
+    .navmenu a:hover,
+    .navmenu .active {
+        color: #269523 !important;
+    }
+
+    /* Footer link hover states */
+    .footer .footer-links ul a:hover {
+        color: #269523 !important;
+    }
+
+    /* Scroll top button */
+    .scroll-top {
+        background-color: #269523 !important;
+    }
+
+    .scroll-top:hover {
+        background-color: #1e7a1c !important;
+    }
+
+    /* Social links accent color */
+    .header .social-links a:hover,
+    .footer .social-links a:hover {
+        color: #ffffff !important;
+        background-color: #269523 !important;
+    }
+
+    /* Logo and sitename styling */
+    .logo .sitename {
+        color: #f1d925 !important;
+    }
+
+    /* Contact info styling */
+    .contact-info .phone {
+        color: #f1d925 !important;
+    }
+
+    /* Footer accent elements */
+    .footer h4:after {
+        background-color: #269523 !important;
+    }
+
+    .footer .footer-links ul a i {
+        color: #269523 !important;
+    }
+
+    .footer .footer-contact .contact-item .contact-icon {
+        background-color: rgba(38, 149, 35, 0.1) !important;
+    }
+
+    .footer .footer-contact .contact-item .contact-icon i {
+        color: #269523 !important;
+    }
+  </style>
 </head>
-<body>
-    <div class="container-fluid">
-        {% if messages %}
-        <div class="row">
-            <div class="col-12">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
-            </div>
+
+<body class="index-page">
+
+  <header id="header" class="header fixed-top">
+    <div class="container-fluid container-xl position-relative">
+
+      <div class="top-row d-flex align-items-center justify-content-between">
+        <a href="{% url 'home' %}" class="logo d-flex align-items-center">
+          <img src="{% static 'assets/img/logo3.png' %}" alt="Compare & Save Logo">
+          <h1 class="sitename ms-2">Pholli</h1>
+        </a>
+
+        <div class="d-flex align-items-center">
+          <div class="contact-info me-3">
+            <span class="phone"><i class="bi bi-telephone"></i> 0800-COMPARE</span>
+          </div>
+          <div class="social-links">
+            <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="twitter"><i class="bi bi-twitter"></i></a>
+            <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
+          </div>
         </div>
-        {% endif %}
-        
-        {% block content %}
-        {% endblock %}
+      </div>
+
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    {% block extra_js %}{% endblock %}
+
+    <div class="nav-wrap">
+      <div class="container d-flex justify-content-center position-relative">
+        <nav id="navmenu" class="navmenu">
+          <ul>
+            <li><a href="{% url 'home' %}" class="active">Home</a></li>
+            <li><a href="{% url 'health' %}">Health Insurance</a></li>
+            <li><a href="{% url 'funerals' %}">Funeral Cover</a></li>
+            <li><a href="#life-insurance">Life Insurance</a></li>
+            <li><a href="#vehicle-insurance">Vehicle Insurance</a></li>
+            <li><a href="#business-insurance">Business Insurance</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+   
+  {% block content %}
+        
+  {% endblock%}
+
+
+  <footer id="footer" class="footer dark-background">
+    <div class="container">
+      <div class="row gy-4">
+
+        <div class="col-lg-4 col-md-6">
+          <div class="footer-about">
+            <a href="{% url 'home' %}" class="logo d-flex align-items-center">
+              <span class="sitename">Pholli</span>
+            </a>
+            <p>Eswatini's first insurance comparison platform. We help you find the best insurance deals and save
+              money on your premiums.</p>
+            <div class="social-links d-flex mt-4">
+              <a href="#"><i class="bi bi-facebook"></i></a>
+              <a href="#"><i class="bi bi-twitter"></i></a>
+              <a href="#"><i class="bi bi-instagram"></i></a>
+              <a href="#"><i class="bi bi-linkedin"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Insurance Types</h4>
+          <ul>
+            <li><a href="{% url 'health' %}">Health Insurance</a></li>
+            <li><a href="{% url 'funerals' %}">Funeral Cover</a></li>
+            <li><a href="#life-insurance">Life Insurance</a></li>
+            <li><a href="#vehicle-insurance">Vehicle Insurance</a></li>
+            <li><a href="#business-insurance">Business Insurance</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#partners">Our Partners</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+            <li><a href="#careers">Careers</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-contact text-center text-md-start">
+          <h4>Contact Us</h4>
+          <p><strong>Phone:</strong> 0800-COMPARE (0800-266-7273)</p>
+          <p><strong>Email:</strong> info@pholli.co.sz</p>
+          <p><strong>Address:</strong> 123 Insurance Street, Cape Town, 8001</p>
+          <p><strong>Hours:</strong> Mon-Fri 8AM-6PM, Sat 9AM-1PM</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>&copy; <span>Copyright</span> <strong class="px-1 sitename">Pholli</strong> <span>All Rights
+          Reserved</span></p>
+      <div class="credits">
+        <a href="#privacy">Privacy Policy</a> |
+        <a href="#terms">Terms of Service</a> |
+        <a href="#disclaimer">Disclaimer</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
+      class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Vendor JS Files -->
+  <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/php-email-form/validate.js' %}"></script>
+  <script src="{% static 'assets/vendor/aos/aos.js' %}"></script>
+  <script src="{% static 'assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/purecounter/purecounter_vanilla.js' %}"></script>
+  <script src="{% static 'assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+
+  <!-- Main JS File -->
+  <script src="{% static 'assets/js/main.js' %}"></script>
+
 </body>
+
 </html>

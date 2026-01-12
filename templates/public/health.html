@@ -1,38 +1,78 @@
+{% extends 'base/base.html'%}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-
+{% block content %}
 <head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Health Insurance Comparison - Find Your Perfect Coverage</title>
-    <meta name="description"
-        content="Compare health insurance plans and find the perfect coverage for you and your family. Get personalized quotes in minutes.">
-    <meta name="keywords" content="health insurance, medical aid, health cover, insurance comparison, medical scheme">
-
-    <!-- Favicons -->
-    <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
-    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
-
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap"
-        rel="stylesheet">
-
-    <!-- Vendor CSS Files -->
-    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
-
-    <!-- Main CSS File -->
-    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
-
     <style>
+        /* Custom color overrides */
+        /* Change text color to #f1d925 (excluding black and white text) */
+        .features .tab-content .content-area h3,
+        .features .tab-content .content-area p,
+        .features .tab-content .content-area .feature-points .point-item span,
+        .call-to-action .content h3,
+        .call-to-action .content p,
+        .page-title h1,
+        .page-title p,
+        .breadcrumbs ol li a,
+        .benefits h2,
+        .benefits p.lead,
+        .benefit-item h4,
+        .benefit-item p {
+            color: #f1d925 !important;
+        }
+
+        /* Keep black and white text unchanged */
+        .dark-background,
+        .dark-background h1,
+        .dark-background p,
+        .dark-background .breadcrumbs ol li a {
+            color: #ffffff !important;
+        }
+
+        /* Button backgrounds to #269523 */
+        .call-to-action .content .cta-btn,
+        .features .tab-content .content-area .explore-link {
+            background-color: #269523 !important;
+            color: #ffffff !important;
+        }
+
+        .call-to-action .content .cta-btn:hover {
+            background-color: #1e7a1c !important;
+        }
+
+        .features .tab-content .content-area .explore-link:hover {
+            background-color: #1e7a1c !important;
+            color: #ffffff !important;
+        }
+
+        /* Underlined text to #269523 */
+        .call-to-action .content h3 em:after {
+            background: #269523 !important;
+        }
+
+        /* Tab navigation active state */
+        .features .tabs-header .nav-tabs .nav-link.active {
+            background: #269523 !important;
+        }
+
+        /* Accent color elements */
+        .features .tab-content .content-area .content-badge {
+            background: rgba(38, 149, 35, 0.1) !important;
+            color: #269523 !important;
+        }
+
+        .features .tab-content .content-area .highlight-stats .stat-item .stat-value {
+            color: #269523 !important;
+        }
+
+        .features .tab-content .content-area .feature-points .point-item i {
+            color: #269523 !important;
+        }
+
+        .features .tab-content .visual-content .floating-element .floating-card i {
+            color: #269523 !important;
+        }
+
         .benefits.section {
             padding: 80px 0;
         }
@@ -53,7 +93,7 @@
         .benefit-icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(45deg, #007bff, #0056b3);
+            background: linear-gradient(45deg, #269523, #1e7a1c);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -78,7 +118,7 @@
         }
 
         .stats-container {
-            background: linear-gradient(135deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #269523, #1e7a1c);
             border-radius: 15px;
             padding: 40px 20px;
             color: white;
@@ -113,82 +153,22 @@
 
 <body class="index-page">
 
-    <header id="header" class="header fixed-top">
-        <div class="container-fluid container-xl position-relative">
-
-            <div class="top-row d-flex align-items-center justify-content-between">
-                <a href="index.html" class="logo d-flex align-items-center">
-                    <!-- Uncomment the line below if you also wish to use an image logo -->
-                    <!-- <img src="assets/img/logo.webp" alt=""> -->
-                    <h1 class="sitename">LeadPage</h1>
-                </a>
-
-                <div class="d-flex align-items-center">
-                    <div class="social-links">
-                        <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
-                        <a href="#" class="twitter"><i class="bi bi-twitter"></i></a>
-                        <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <div class="nav-wrap">
-            <div class="container d-flex justify-content-center position-relative">
-                <nav id="navmenu" class="navmenu">
-                    <ul>
-                        <li><a href="{% url 'home'%}" class="active">Home</a></li>
-                        <li><a href="{% url 'funerals'%}">Funeral Cover</a></li>
-                        <li><a href="{% url 'health'%}">Health Cover</a></li>
-                        <li><a href="#team">Life Insurance</a></li>
-                        <li><a href="#about">Vehicle</a></li>
-                        <li><a href="#features">Business</a></li>
-                        <li><a href="#services">About</a></li>
-                        <!--
-            <li class="dropdown"><a href="#"><span>Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
-              <ul>
-                <li><a href="#">Dropdown 1</a></li>
-                <li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
-                  <ul>
-                    <li><a href="#">Deep Dropdown 1</a></li>
-                    <li><a href="#">Deep Dropdown 2</a></li>
-                    <li><a href="#">Deep Dropdown 3</a></li>
-                    <li><a href="#">Deep Dropdown 4</a></li>
-                    <li><a href="#">Deep Dropdown 5</a></li>
-                  </ul>
-                </li>
-                <li><a href="#">Dropdown 2</a></li>
-                <li><a href="#">Dropdown 3</a></li>
-                <li><a href="#">Dropdown 4</a></li>
-              </ul>
-            </li>
-            -->
-                        <li><a href="#contact">Contact</a></li>
-                    </ul>
-                    <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-                </nav>
-            </div>
-        </div>
-
-    </header>
-
     <main class="main">
 
         <!-- Page Title -->
         <div class="page-title dark-background" data-aos="fade"
-            style="background-image: url({% static 'assets/img/bg/bg-2.webp' %});"></div>
-        <div class="container position-relative">
-            <h1>Health Insurance Comparison</h1>
-            <p>Find the perfect health insurance plan for you and your family. Compare comprehensive coverage options,
-                benefits, and premiums from top South African medical schemes in just a few minutes.</p>
-            <nav class="breadcrumbs">
-                <ol>
-                    <li><a href="{% url 'home' %}">Home</a></li>
-                    <li class="current">Health Insurance</li>
-                </ol>
-            </nav>
-        </div>
+            style="background-image: url('{% static 'assets/img/bg/bg-2.webp' %}');">
+            <div class="container position-relative">
+                <h1>Health Insurance Comparison</h1>
+                <p>Find the perfect health insurance plan for you and your family. Compare comprehensive coverage options,
+                    benefits, and premiums from top South African medical schemes in just a few minutes.</p>
+                <nav class="breadcrumbs">
+                    <ol>
+                        <li><a href="{% url 'home' %}">Home</a></li>
+                        <li class="current">Health Insurance</li>
+                    </ol>
+                </nav>
+            </div>
         </div><!-- End Page Title -->
 
         <section id="features" class="features section">
@@ -237,10 +217,9 @@
                                     <div class="tab-content-preview">
                                         <span class="tab-number">04</span>
                                         <div class="tab-text">
-                                            <h6>Family Coverage
-                                        </div>h6>
-                                        <small>Protect your loved ones</small>
-                                    </div>
+                                            <h6>Family Coverage</h6>
+                                            <small>Protect your loved ones</small>
+                                        </div>
                     </div>
                     </a>
                     </li>
@@ -430,9 +409,8 @@
                                             <i class="bi bi-capsule"></i>
                                             <div class="card-info">
                                                 <span>Medication</span>
-                                                <strong>Fully Covered
-                                            </div>strong>
-                                        </div>
+                                                <strong>Fully Covered</strong>
+                                            </div>
                                     </div>
                                 </div>
                             </div>
@@ -635,156 +613,6 @@
 
 
     </main>
-
-    <footer id="footer" class="footer dark-background">
-
-        <div class="container">
-            <div class="row gy-5">
-
-                <div class="col-lg-4">
-                    <div class="footer-content">
-                        <a href="index.html" class="logo d-flex align-items-center mb-4">
-                            <span class="sitename">MyWebsite</span>
-                        </a>
-                        <p class="mb-4">Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia
-                            curae. Donec velit neque auctor sit amet aliquam vel ullamcorper sit amet ligula.</p>
-
-                        <div class="newsletter-form">
-                            <h5>Stay Updated</h5>
-                            <form action="forms/newsletter.php" method="post" class="php-email-form">
-                                <div class="input-group">
-                                    <input type="email" name="email" class="form-control" placeholder="Enter your email"
-                                        required="">
-                                    <button type="submit" class="btn-subscribe">
-                                        <i class="bi bi-send"></i>
-                                    </button>
-                                </div>
-                                <div class="loading">Loading</div>
-                                <div class="error-message"></div>
-                                <div class="sent-message">Thank you for subscribing!</div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-2 col-6">
-                    <div class="footer-links">
-                        <h4>Company</h4>
-                        <ul>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> About</a></li>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> Careers</a></li>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> Press</a></li>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> Blog</a></li>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> Contact</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="col-lg-2 col-6">
-                    <div class="footer-links">
-                        <h4>Solutions</h4>
-                        <ul>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> Digital Strategy</a></li>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> Cloud Computing</a></li>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> Data Analytics</a></li>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> AI Solutions</a></li>
-                            <li><a href="#"><i class="bi bi-chevron-right"></i> Cybersecurity</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="footer-contact">
-                        <h4>Get in Touch</h4>
-                        <div class="contact-item">
-                            <div class="contact-icon">
-                                <i class="bi bi-geo-alt"></i>
-                            </div>
-                            <div class="contact-info">
-                                <p>2847 Maple Avenue<br>Los Angeles, CA 90210<br>United States</p>
-                            </div>
-                        </div>
-
-                        <div class="contact-item">
-                            <div class="contact-icon">
-                                <i class="bi bi-telephone"></i>
-                            </div>
-                            <div class="contact-info">
-                                <p>+1 (555) 987-6543</p>
-                            </div>
-                        </div>
-
-                        <div class="contact-item">
-                            <div class="contact-icon">
-                                <i class="bi bi-envelope"></i>
-                            </div>
-                            <div class="contact-info">
-                                <p>contact@example.com</p>
-                            </div>
-                        </div>
-
-                        <div class="social-links">
-                            <a href="#"><i class="bi bi-facebook"></i></a>
-                            <a href="#"><i class="bi bi-twitter-x"></i></a>
-                            <a href="#"><i class="bi bi-linkedin"></i></a>
-                            <a href="#"><i class="bi bi-youtube"></i></a>
-                            <a href="#"><i class="bi bi-github"></i></a>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <div class="footer-bottom">
-            <div class="container">
-                <div class="row align-items-center">
-                    <div class="col-lg-6">
-                        <div class="copyright">
-                            <p>© <span>Copyright</span> <strong class="px-1 sitename">MyWebsite</strong> <span>All
-                                    Rights Reserved</span></p>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="footer-bottom-links">
-                            <a href="#">Privacy Policy</a>
-                            <a href="#">Terms of Service</a>
-                            <a href="#">Cookie Policy</a>
-                        </div>
-                        <div class="credits">
-                            <!-- All the links in the footer should remain intact. -->
-                            <!-- You can delete the links only if you've purchased the pro version. -->
-                            <!-- Licensing information: https://bootstrapmade.com/license/ -->
-                            <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
-                            Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </footer>
-
-    <!-- Scroll Top -->
-    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
-            class="bi bi-arrow-up-short"></i></a>
-
-    <!-- Preloader -->
-    <div id="preloader"></div>
-
-    <!-- Vendor JS Files -->
-    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    <script src="{% static 'assets/vendor/php-email-form/validate.js' %}"></script>
-    <script src="{% static 'assets/vendor/aos/aos.js' %}"></script>
-    <script src="{% static 'assets/vendor/purecounter/purecounter_vanilla.js' %}"></script>
-    <script src="{% static 'assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
-    <script src="{% static 'assets/vendor/imagesloaded/imagesloaded.pkgd.min.js' %}"></script>
-    <script src="{% static 'assets/vendor/isotope-layout/isotope.pkgd.min.js' %}"></script>
-    <script src="{% static 'assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
-
-    <!-- Main JS File -->
-    <script src="{% static 'assets/js/main.js' %}"></script>
-
 </body>
 
-</html>
+{% endblock %}
