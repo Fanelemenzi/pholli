@@ -1,35 +1,17 @@
+{% extends 'base/base.html'%}
 {% load static %}
 {% load survey_extras %}
 
-<!DOCTYPE html>
-<html lang="en">
 
+
+{% block content %}
 <head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>{{ category_display }} Survey - Compare & Save</title>
-    <meta name="description" content="Complete our {{ category_display|lower }} survey to get personalized quotes from top providers.">
-
-    <!-- Favicons -->
-    <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
-    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
-
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap"
-        rel="stylesheet">
-
-    <!-- Vendor CSS Files -->
-    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
-
-    <!-- Main CSS File -->
-    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
-
     <style>
+        body {
+            background: #ffffff;
+            min-height: 100vh;
+        }
+        
         .survey-container {
             max-width: 800px;
             margin: 0 auto;
@@ -39,99 +21,198 @@
         .survey-header {
             text-align: center;
             margin-bottom: 40px;
+            color: #000000;
+        }
+        
+        .survey-header h1 {
+            color: #000000;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        .survey-header .lead {
+            color: #333333;
+            font-size: 1.1rem;
         }
         
         .survey-progress {
             margin-bottom: 30px;
         }
         
-        .question-card {
-            background: #fff;
+        .progress {
+            height: 12px;
             border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .question-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 2px solid #269523;
+            transition: all 0.3s ease;
+        }
+        
+        .question-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(38, 149, 35, 0.2);
+            border-color: #f1d925;
         }
         
         .question-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: #333;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #000000;
+            background: linear-gradient(135deg, #269523, #f1d925);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .form-control, .form-select {
-            border-radius: 8px;
-            border: 2px solid #e9ecef;
-            padding: 12px 15px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            padding: 15px 18px;
             font-size: 1rem;
+            background: #ffffff;
+            transition: all 0.3s ease;
+            color: #000000;
         }
         
         .form-control:focus, .form-select:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+            border-color: #269523;
+            box-shadow: 0 0 0 0.2rem rgba(38, 149, 35, 0.25);
+            background: #ffffff;
+            transform: translateY(-1px);
         }
         
         .form-check {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .form-check:hover {
+            background: linear-gradient(145deg, #f9f9f9, #f1f1f1);
         }
         
         .form-check-input {
             margin-top: 0.25rem;
+            width: 1.2em;
+            height: 1.2em;
+        }
+        
+        .form-check-input:checked {
+            background-color: #269523;
+            border-color: #269523;
+        }
+        
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.2rem rgba(38, 149, 35, 0.25);
         }
         
         .form-check-label {
-            margin-left: 0.5rem;
+            margin-left: 0.7rem;
+            font-weight: 500;
+            color: #000000;
+            cursor: pointer;
         }
         
         .btn-primary {
-            background: linear-gradient(45deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
             border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-weight: 600;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #000000;
+            box-shadow: 0 8px 25px rgba(38, 149, 35, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(38, 149, 35, 0.5);
+            background: linear-gradient(135deg, #1e7a1e 0%, #d4c020 100%);
+            color: #000000;
         }
         
         .progress-bar {
-            background: linear-gradient(45deg, #007bff, #0056b3);
+            background: linear-gradient(90deg, #269523, #f1d925);
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #000000;
+            box-shadow: 0 2px 8px rgba(38, 149, 35, 0.3);
         }
         
         .alert {
-            border-radius: 8px;
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            color: #c53030;
         }
         
         .radio-group, .checkbox-group {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
         
         .form-text {
-            margin-top: 8px;
+            margin-top: 10px;
             font-size: 0.875rem;
-            color: #6c757d;
+            color: #666666;
+            font-style: italic;
+        }
+        
+        .text-danger {
+            color: #dc3545 !important;
+            font-weight: 700;
+        }
+        
+        /* Animated background elements */
+        .survey-container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="a" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(38,149,35,0.05)"/><stop offset="100%" stop-color="rgba(241,217,37,0.05)"/></radialGradient></defs><circle cx="20" cy="20" r="2" fill="url(%23a)"/><circle cx="80" cy="80" r="2" fill="url(%23a)"/><circle cx="40" cy="70" r="1" fill="url(%23a)"/><circle cx="90" cy="10" r="1" fill="url(%23a)"/><circle cx="10" cy="90" r="1" fill="url(%23a)"/><circle cx="70" cy="30" r="1" fill="url(%23a)"/></svg>') repeat;
+            pointer-events: none;
+            z-index: -1;
         }
     </style>
 </head>
 
 <body>
-    <header id="header" class="header fixed-top">
-        <div class="container-fluid container-xl position-relative">
-            <div class="top-row d-flex align-items-center justify-content-between">
-                <a href="{% url 'simple_surveys:home' %}" class="logo d-flex align-items-center">
-                    <img src="{% static 'assets/img/logo.webp' %}" alt="Compare & Save Logo">
-                    <h1 class="sitename ms-2">Compare & Save</h1>
-                </a>
-                <div class="d-flex align-items-center">
-                    <div class="contact-info me-3">
-                        <span class="phone"><i class="bi bi-telephone"></i> 0800-COMPARE</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
     <main class="main" style="margin-top: 100px;">
+
+        <!-- Page Title -->
+        <div class="page-title dark-background" data-aos="fade"
+            style="background-image: url('{% static 'assets/img/bg/bg-2.webp' %}');">
+            <div class="container position-relative">
+                <h1>Health Insurance Survey</h1>
+                <p>Find the perfect health insurance plan for you and your family. Compare comprehensive coverage options,
+                    benefits, and premiums from top Eswatini medical schemes in just a few minutes.</p>
+            </div>
+        </div><!-- End Page Title -->
+
+
+
         <div class="survey-container">
             <div class="survey-header">
                 <h1>{{ category_display }} Survey</h1>
@@ -273,12 +354,6 @@
         </div>
     </main>
 
-    <footer id="footer" class="footer dark-background">
-        <div class="container copyright text-center mt-4">
-            <p>&copy; <span>Copyright</span> <strong class="px-1 sitename">Compare & Save</strong> <span>All Rights Reserved</span></p>
-        </div>
-    </footer>
-
     <!-- Vendor JS Files -->
     <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
@@ -412,4 +487,4 @@
     </script>
 </body>
 
-</html>
+{% endblock %}

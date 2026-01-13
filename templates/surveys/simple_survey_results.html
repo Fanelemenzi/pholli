@@ -1,4 +1,6 @@
+{% extends 'base/base.html'%}
 {% load static %}
+{% load survey_extras %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +9,8 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>{{ category_display }} Quotes - Compare & Save</title>
-    <meta name="description" content="Your personalized {{ category_display|lower }} quotes from top South African providers.">
+    <meta name="description"
+        content="Your personalized {{ category_display|lower }} quotes from top South African providers.">
 
     <!-- Favicons -->
     <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
@@ -29,110 +32,287 @@
     <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
 
     <style>
+        body {
+            background: #ffffff;
+            min-height: 100vh;
+        }
+
         .results-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 40px 20px;
         }
-        
+
         .results-header {
             text-align: center;
             margin-bottom: 40px;
+            color: #000000;
         }
-        
+
+        .results-header h1 {
+            color: #000000;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            font-size: 2.5rem;
+        }
+
+        .results-header .lead {
+            color: #333333;
+            font-size: 1.2rem;
+        }
+
         .quote-card {
-            background: #fff;
-            border-radius: 15px;
+            background: #ffffff;
+            border-radius: 20px;
             padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .quote-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .quote-card.best-match {
-            border: 3px solid #28a745;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 2px solid #269523;
+            transition: all 0.3s ease;
             position: relative;
+            overflow: hidden;
         }
-        
+
+        .quote-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #269523, #f1d925);
+        }
+
+        .quote-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(38, 149, 35, 0.2);
+            border-color: #f1d925;
+        }
+
+        .quote-card.best-match {
+            border: 3px solid #f1d925;
+            background: #ffffff;
+            box-shadow: 0 15px 35px rgba(241, 217, 37, 0.2);
+        }
+
+        .quote-card.best-match::before {
+            background: linear-gradient(90deg, #f1d925, #269523);
+            height: 6px;
+        }
+
         .best-match-badge {
             position: absolute;
             top: -15px;
             left: 30px;
-            background: #28a745;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 600;
+            background: linear-gradient(135deg, #f1d925, #269523);
+            color: #000000;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 700;
             font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(241, 217, 37, 0.4);
         }
-        
+
         .provider-logo {
             height: 60px;
             object-fit: contain;
             margin-bottom: 15px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
-        
+
         .premium-price {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #007bff;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #269523, #f1d925);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
         }
-        
+
         .premium-period {
-            color: #666;
-            font-size: 0.9rem;
+            color: #666666;
+            font-size: 1rem;
+            font-weight: 500;
         }
-        
+
         .coverage-list {
             list-style: none;
             padding: 0;
+            margin: 20px 0;
         }
-        
+
         .coverage-list li {
-            padding: 5px 0;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            color: #000000;
         }
-        
+
         .coverage-list li:last-child {
             border-bottom: none;
         }
-        
+
+        .coverage-list li i {
+            color: #269523;
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
         .btn-get-quote {
-            background: linear-gradient(45deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
             border: none;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-weight: 600;
+            color: #000000;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
             width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 25px rgba(38, 149, 35, 0.3);
+            transition: all 0.3s ease;
         }
-        
+
+        .btn-get-quote:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(38, 149, 35, 0.4);
+            background: linear-gradient(135deg, #1e7a1e 0%, #d4c020 100%);
+            color: #000000;
+        }
+
         .summary-stats {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
+            background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
+            color: #000000;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 15px 35px rgba(38, 149, 35, 0.3);
+            position: relative;
+            overflow: hidden;
         }
-        
+
+        .summary-stats::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
         .stat-item {
             text-align: center;
+            position: relative;
+            z-index: 1;
         }
-        
+
         .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 2.5rem;
+            font-weight: 800;
             display: block;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: #000000;
         }
-        
+
         .stat-label {
-            font-size: 0.9rem;
+            font-size: 1rem;
             opacity: 0.9;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #000000;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #000000;
+            box-shadow: 0 8px 25px rgba(38, 149, 35, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(38, 149, 35, 0.4);
+            color: #000000;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid #269523;
+            color: #269523;
+            background: transparent;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background: #269523;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(38, 149, 35, 0.3);
+        }
+
+        .text-center h3 {
+            color: #000000;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .text-center p {
+            color: #333333;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        /* Match score styling */
+        .text-muted {
+            background: linear-gradient(135deg, #269523, #f1d925);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600 !important;
+        }
+
+        /* Header styling */
+        #header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Footer styling */
+        #footer {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+        }
+
+        /* Animated background elements */
+        .results-container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="a" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(38,149,35,0.05)"/><stop offset="100%" stop-color="rgba(241,217,37,0.05)"/></radialGradient></defs><circle cx="20" cy="20" r="2" fill="url(%23a)"/><circle cx="80" cy="80" r="2" fill="url(%23a)"/><circle cx="40" cy="70" r="1" fill="url(%23a)"/><circle cx="90" cy="10" r="1" fill="url(%23a)"/><circle cx="10" cy="90" r="1" fill="url(%23a)"/><circle cx="70" cy="30" r="1" fill="url(%23a)"/></svg>') repeat;
+            pointer-events: none;
+            z-index: -1;
         }
     </style>
 </head>
@@ -158,7 +338,8 @@
         <div class="results-container">
             <div class="results-header">
                 <h1>Your {{ category_display }} Quotes</h1>
-                <p class="lead">We found {{ total_quotations }} personalized quotes for you from top South African providers.</p>
+                <p class="lead">We found {{ total_quotations }} personalized quotes for you from top South African
+                    providers.</p>
             </div>
 
             <!-- Summary Statistics -->
@@ -179,7 +360,8 @@
                     </div>
                     <div class="col-md-3">
                         <div class="stat-item">
-                            <span class="stat-number">{% if quotations %}R{{ quotations.0.monthly_premium|floatformat:0 }}{% endif %}</span>
+                            <span class="stat-number">{% if quotations %}R{{ quotations.0.monthly_premium|floatformat:0
+                                }}{% endif %}</span>
                             <span class="stat-label">Best Price</span>
                         </div>
                     </div>
@@ -199,26 +381,26 @@
                 <div class="col-lg-6 col-xl-4 mb-4">
                     <div class="quote-card {% if forloop.first %}best-match{% endif %}">
                         {% if forloop.first %}
-                            <div class="best-match-badge">
-                                <i class="bi bi-star-fill me-1"></i>Best Match
-                            </div>
+                        <div class="best-match-badge">
+                            <i class="bi bi-star-fill me-1"></i>Best Match
+                        </div>
                         {% endif %}
-                        
+
                         <div class="text-center mb-3">
                             {% if quote.provider_logo %}
-                                <img src="{{ quote.provider_logo }}" alt="{{ quote.provider_name }}" class="provider-logo">
+                            <img src="{{ quote.provider_logo }}" alt="{{ quote.provider_name }}" class="provider-logo">
                             {% else %}
-                                <h5>{{ quote.provider_name }}</h5>
+                            <h5>{{ quote.provider_name }}</h5>
                             {% endif %}
                         </div>
-                        
+
                         <div class="text-center mb-3">
                             <div class="premium-price">R{{ quote.monthly_premium|floatformat:0 }}</div>
                             <div class="premium-period">per month</div>
                         </div>
-                        
+
                         <h6 class="mb-3">{{ quote.plan_name }}</h6>
-                        
+
                         {% if quote.key_benefits %}
                         <ul class="coverage-list mb-4">
                             {% for benefit in quote.key_benefits|slice:":5" %}
@@ -226,13 +408,14 @@
                             {% endfor %}
                         </ul>
                         {% endif %}
-                        
+
                         <div class="d-grid">
-                            <button class="btn btn-get-quote" onclick="getQuote('{{ quote.id }}', '{{ quote.provider_name }}')">
+                            <button class="btn btn-get-quote"
+                                onclick="getQuote('{{ quote.id }}', '{{ quote.provider_name }}')">
                                 <i class="bi bi-telephone me-2"></i>Get This Quote
                             </button>
                         </div>
-                        
+
                         {% if quote.match_score %}
                         <div class="text-center mt-2">
                             <small class="text-muted">{{ quote.match_score }}% match</small>
@@ -248,7 +431,8 @@
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
                         <h3>Need Help Choosing?</h3>
-                        <p>Our insurance experts are standing by to help you understand your options and choose the best policy for your needs.</p>
+                        <p>Our insurance experts are standing by to help you understand your options and choose the best
+                            policy for your needs.</p>
                         <a href="tel:0800266727" class="btn btn-primary btn-lg me-3">
                             <i class="bi bi-telephone me-2"></i>Call 0800-COMPARE
                         </a>
@@ -263,7 +447,8 @@
 
     <footer id="footer" class="footer dark-background">
         <div class="container copyright text-center mt-4">
-            <p>&copy; <span>Copyright</span> <strong class="px-1 sitename">Compare & Save</strong> <span>All Rights Reserved</span></p>
+            <p>&copy; <span>Copyright</span> <strong class="px-1 sitename">Compare & Save</strong> <span>All Rights
+                    Reserved</span></p>
         </div>
     </footer>
 
@@ -274,11 +459,11 @@
         function getQuote(quoteId, providerName) {
             // Track the quote request
             console.log('Quote requested for:', providerName, 'ID:', quoteId);
-            
+
             // You can implement quote request tracking here
             // For now, we'll show a simple alert
             alert('Thank you for your interest in ' + providerName + '. Our team will contact you shortly with more details about this quote.');
-            
+
             // In a real implementation, you might:
             // 1. Send the quote request to your backend
             // 2. Redirect to a contact form

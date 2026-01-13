@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-q_3*n6p5sb@k30r8ghcu5p%29y0v5rp3^mw461o6)l8ak7fpam
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['pholli.up.railway.app', '127.0.0.1']
 
 
 
