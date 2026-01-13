@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.urls import reverse
 from django.core.paginator import Paginator
@@ -154,6 +155,7 @@ def comparison_matrix_view(request, session_key):
 
 
 @require_http_methods(["POST"])
+@csrf_exempt
 def update_criteria_weights_ajax(request, session_key):
     """
     AJAX endpoint to update criteria weights and regenerate results.

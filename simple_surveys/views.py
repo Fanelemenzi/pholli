@@ -151,6 +151,7 @@ def save_response_ajax(request):
         }, status=500)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ProcessSurveyView(View):
     """
     View for processing completed surveys and generating quotations.
