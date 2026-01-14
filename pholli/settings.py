@@ -27,7 +27,9 @@ SECRET_KEY = "django-insecure-q_3*n6p5sb@k30r8ghcu5p%29y0v5rp3^mw461o6)l8ak7fpam
 DEBUG = True
 
 ALLOWED_HOSTS = ['pholli.up.railway.app', '127.0.0.1']
-
+CSRF_TRUSTED_ORIGINS = ['https://pholli.up.railway.app','https//*.railway.app']
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 
 # Application definition
