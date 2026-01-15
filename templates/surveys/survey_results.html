@@ -4,6 +4,211 @@
 {% block title %}Survey Results - {{ category.name }}{% endblock %}
 
 {% block content %}
+<style>
+/* Mobile-specific results optimizations */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+  }
+  
+  .mt-5 {
+    margin-top: 2rem !important;
+  }
+  
+  .card {
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  
+  .card-header {
+    padding: 20px 15px;
+    background: linear-gradient(135deg, #269523, #1e7a1c);
+    color: white;
+    border-radius: 15px 15px 0 0;
+  }
+  
+  .card-header h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0;
+    color: white !important;
+    line-height: 1.3;
+  }
+  
+  .card-body {
+    padding: 25px 15px;
+  }
+  
+  .alert {
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .alert h5 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #269523;
+  }
+  
+  .alert p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  
+  .alert ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+  }
+  
+  .alert li {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+  }
+  
+  .alert-info {
+    background-color: rgba(38, 149, 35, 0.1);
+    border: 1px solid rgba(38, 149, 35, 0.2);
+    color: #333;
+  }
+  
+  .alert-warning {
+    background-color: rgba(241, 217, 37, 0.1);
+    border: 1px solid rgba(241, 217, 37, 0.3);
+    color: #333;
+  }
+  
+  .alert-warning i {
+    color: #f1d925;
+    font-size: 1.2rem;
+    margin-right: 8px;
+  }
+  
+  .alert-warning strong {
+    color: #269523;
+  }
+  
+  h4 {
+    font-size: 1.2rem;
+    color: #269523;
+    margin-bottom: 15px;
+  }
+  
+  h5 {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .card .card-body ul {
+    padding-left: 20px;
+  }
+  
+  .card .card-body li {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    color: #555;
+  }
+  
+  .btn {
+    min-height: 44px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 5px;
+    font-size: 0.95rem;
+    padding: 12px 20px;
+  }
+  
+  .btn-primary {
+    background-color: #269523;
+    border-color: #269523;
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1e7a1c;
+    border-color: #1e7a1c;
+  }
+  
+  .btn-success {
+    background-color: #269523;
+    border-color: #269523;
+    color: white;
+  }
+  
+  .btn-success:hover {
+    background-color: #1e7a1c;
+    border-color: #1e7a1c;
+  }
+  
+  .btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+  }
+  
+  .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+  }
+  
+  .text-center {
+    margin-top: 25px;
+  }
+  
+  /* Stack buttons vertically on mobile */
+  .text-center .btn {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .card-header {
+    padding: 15px 12px;
+  }
+  
+  .card-header h3 {
+    font-size: 1.2rem;
+  }
+  
+  .card-body {
+    padding: 20px 12px;
+  }
+  
+  .alert {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+  
+  .alert h5 {
+    font-size: 1rem;
+  }
+  
+  h4 {
+    font-size: 1.1rem;
+  }
+  
+  .btn {
+    font-size: 0.9rem;
+    padding: 10px 15px;
+  }
+}
+
+/* Landscape orientation */
+@media (max-width: 768px) and (orientation: landscape) {
+  .text-center .btn {
+    display: inline-block;
+    width: auto;
+    margin: 5px 8px;
+  }
+}
+</style>
+
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-12">

@@ -12,29 +12,41 @@
 --------------------------------------------------------------*/
 /* Fonts */
 :root {
-  --default-font: "Roboto",  system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --heading-font: "Lato",  sans-serif;
-  --nav-font: "Montserrat",  sans-serif;
+  --default-font: "Roboto", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --heading-font: "Lato", sans-serif;
+  --nav-font: "Montserrat", sans-serif;
 }
 
 /* Global Colors - The following color variables are used throughout the website. Updating them here will change the color scheme of the entire website */
-:root { 
-  --background-color: #ffffff; /* Background color for the entire website, including individual sections */
-  --default-color: #1a1715; /* Default color used for the majority of the text content across the entire website */
-  --heading-color: #110a06; /* Color for headings, subheadings and title throughout the website */
-  --accent-color: #c85716; /* Accent color that represents your brand on the website. It's used for buttons, links, and other elements that need to stand out */
-  --surface-color: #ffffff; /* The surface color is used as a background of boxed elements within sections, such as cards, icon boxes, or other elements that require a visual separation from the global background. */
-  --contrast-color: #ffffff; /* Contrast color for text, ensuring readability against backgrounds of accent, heading, or default colors. */
+:root {
+  --background-color: #ffffff;
+  /* Background color for the entire website, including individual sections */
+  --default-color: #1a1715;
+  /* Default color used for the majority of the text content across the entire website */
+  --heading-color: #110a06;
+  /* Color for headings, subheadings and title throughout the website */
+  --accent-color: #c85716;
+  /* Accent color that represents your brand on the website. It's used for buttons, links, and other elements that need to stand out */
+  --surface-color: #ffffff;
+  /* The surface color is used as a background of boxed elements within sections, such as cards, icon boxes, or other elements that require a visual separation from the global background. */
+  --contrast-color: #ffffff;
+  /* Contrast color for text, ensuring readability against backgrounds of accent, heading, or default colors. */
 }
 
 /* Nav Menu Colors - The following color variables are used specifically for the navigation menu. They are separate from the global colors to allow for more customization options */
 :root {
-  --nav-color: rgba(255, 255, 255, 0.8);  /* The default color of the main navmenu links */
-  --nav-hover-color: #c85716; /* Applied to main navmenu links when they are hovered over or active */
-  --nav-mobile-background-color: #ffffff; /* Used as the background color for mobile navigation menu */
-  --nav-dropdown-background-color: #ffffff; /* Used as the background color for dropdown items that appear when hovering over primary navigation items */
-  --nav-dropdown-color: #1a1715; /* Used for navigation links of the dropdown items in the navigation menu. */
-  --nav-dropdown-hover-color: #c85716; /* Similar to --nav-hover-color, this color is applied to dropdown navigation links when they are hovered over. */
+  --nav-color: rgba(255, 255, 255, 0.8);
+  /* The default color of the main navmenu links */
+  --nav-hover-color: #c85716;
+  /* Applied to main navmenu links when they are hovered over or active */
+  --nav-mobile-background-color: #ffffff;
+  /* Used as the background color for mobile navigation menu */
+  --nav-dropdown-background-color: #ffffff;
+  /* Used as the background color for dropdown items that appear when hovering over primary navigation items */
+  --nav-dropdown-color: #1a1715;
+  /* Used for navigation links of the dropdown items in the navigation menu. */
+  --nav-dropdown-hover-color: #c85716;
+  /* Similar to --nav-hover-color, this color is applied to dropdown navigation links when they are hovered over. */
 }
 
 /* Color Presets - These classes override global colors when applied to any section or element, providing reuse of the sam color scheme. */
@@ -4438,5 +4450,626 @@ section,
     margin-left: 0;
     margin-right: 0;
     border-radius: 0;
+  }
+}
+
+/ *-------------------------------------------------------------- # Mobile Optimizations --------------------------------------------------------------*/
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+
+  /* Header optimizations */
+  .header .top-row {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 0;
+  }
+
+  .header .logo {
+    justify-content: center;
+  }
+
+  .header .logo img {
+    max-height: 40px;
+  }
+
+  .header .sitename {
+    font-size: 1.5rem !important;
+  }
+
+  .header .contact-info {
+    display: none;
+    /* Hide phone number on mobile to save space */
+  }
+
+  .header .social-links {
+    justify-content: center;
+  }
+
+  .header .social-links a {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+
+  /* Navigation optimizations */
+  .navmenu ul {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .navmenu a {
+    padding: 12px 20px;
+    font-size: 16px;
+    text-align: center;
+  }
+
+  /* Hero section optimizations */
+  .hero h1 {
+    font-size: 2rem !important;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .hero p {
+    font-size: 1rem !important;
+    margin-bottom: 30px;
+  }
+
+  .hero .btn {
+    font-size: 16px;
+    padding: 12px 24px;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  /* Video background adjustments */
+  .video-background video {
+    object-position: center center;
+  }
+
+  /* Form optimizations */
+  .quote-form .form-control,
+  .quote-form .form-select {
+    font-size: 16px;
+    /* Prevents zoom on iOS */
+    padding: 12px 15px;
+    margin-bottom: 15px;
+  }
+
+  .quote-form .btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    margin-top: 10px;
+  }
+
+  /* Card optimizations */
+  .insurance-card,
+  .step-card,
+  .testimonial-card {
+    margin-bottom: 20px;
+    padding: 20px 15px;
+  }
+
+  .insurance-card h3,
+  .step-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .insurance-card .btn {
+    width: 100%;
+    margin-top: 15px;
+  }
+
+  /* Section title optimizations */
+  .section-title h2 {
+    font-size: 1.8rem !important;
+    line-height: 1.3;
+  }
+
+  .section-title p {
+    font-size: 1rem;
+  }
+
+  /* Footer optimizations */
+  .footer .row {
+    text-align: center;
+  }
+
+  .footer .col-lg-4,
+  .footer .col-lg-2 {
+    margin-bottom: 30px;
+  }
+
+  .footer .footer-links ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  .footer .footer-links ul li {
+    margin: 0;
+  }
+
+  /* Tab navigation for mobile */
+  .tabs-header .nav-tabs {
+    flex-direction: column;
+  }
+
+  .tabs-header .nav-link {
+    text-align: left;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  .tab-content-preview {
+    align-items: center;
+  }
+
+  .tab-number {
+    font-size: 14px;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+  }
+
+  /* Feature points mobile layout */
+  .feature-points {
+    margin-top: 20px;
+  }
+
+  .feature-points .point-item {
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  /* Stats and highlights */
+  .highlight-stats {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .stat-item {
+    margin-bottom: 20px;
+  }
+
+  .stat-value {
+    font-size: 1.5rem !important;
+  }
+
+  /* Floating elements adjustments */
+  .floating-element {
+    position: relative !important;
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  .floating-card {
+    position: relative !important;
+    transform: none !important;
+    display: inline-block;
+  }
+
+  /* Image optimizations */
+  .visual-content img {
+    max-height: 300px;
+    object-fit: cover;
+  }
+
+  /* Partner logos */
+  .partner-item img {
+    max-height: 60px;
+    width: auto;
+  }
+
+  /* Testimonials slider */
+  .testimonial-card {
+    padding: 20px;
+    text-align: center;
+  }
+
+  .customer-info {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .customer-info img {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+  }
+
+  /* FAQ accordion */
+  .accordion-button {
+    font-size: 16px;
+    padding: 15px;
+  }
+
+  .accordion-body {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}
+
+/* Small mobile devices (phones in portrait) */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .hero h1 {
+    font-size: 1.8rem !important;
+  }
+
+  .section-title h2 {
+    font-size: 1.6rem !important;
+  }
+
+  .insurance-card,
+  .step-card {
+    padding: 15px 10px;
+  }
+
+  .btn {
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+
+  .quote-form .row .col-md-6 {
+    margin-bottom: 15px;
+  }
+
+  /* Stack form fields vertically on very small screens */
+  .quote-form .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .quote-form .col-md-6 {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Reduce padding on small screens */
+  .section {
+    padding: 40px 0;
+  }
+
+  .hero {
+    padding: 60px 0;
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .hero {
+    padding: 40px 0;
+  }
+
+  .hero h1 {
+    font-size: 1.8rem !important;
+  }
+
+  .hero p {
+    font-size: 0.9rem !important;
+  }
+
+  .video-background {
+    height: 100vh;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+
+  /* Increase touch targets */
+  .btn,
+  .nav-link,
+  .accordion-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Remove hover effects on touch devices */
+  .insurance-card:hover,
+  .step-card:hover,
+  .benefit-item:hover {
+    transform: none;
+  }
+
+  /* Improve form controls for touch */
+  .form-control,
+  .form-select {
+    min-height: 44px;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+
+  .logo img,
+  .partner-item img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/*-----
+---------------------------------------------------------
+# Mobile Navigation Enhancements
+--------------------------------------------------------------*/
+
+/* Ensure mobile nav toggle is always visible on mobile */
+@media (max-width: 768px) {
+  .mobile-nav-toggle {
+    position: fixed !important;
+    top: 15px !important;
+    right: 15px !important;
+    z-index: 10001 !important;
+    width: 48px !important;
+    height: 48px !important;
+    background: #269523 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-size: 22px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 20px rgba(38, 149, 35, 0.4) !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .mobile-nav-toggle:hover {
+    background: #1e7a1c !important;
+    transform: scale(1.05) !important;
+  }
+
+  .mobile-nav-toggle:active {
+    transform: scale(0.95) !important;
+  }
+
+  /* Mobile navigation menu */
+  .navmenu {
+    position: fixed !important;
+    top: 0 !important;
+    right: -100% !important;
+    width: 300px !important;
+    height: 100vh !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.98)) !important;
+    backdrop-filter: blur(20px) !important;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15) !important;
+    transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    z-index: 10000 !important;
+    padding-top: 80px !important;
+    overflow-y: auto !important;
+  }
+
+  .navmenu.mobile-nav-active {
+    right: 0 !important;
+  }
+
+  .navmenu ul {
+    flex-direction: column !important;
+    padding: 30px 20px !important;
+    margin: 0 !important;
+    list-style: none !important;
+    gap: 8px !important;
+  }
+
+  .navmenu ul li {
+    margin-bottom: 0 !important;
+  }
+
+  .navmenu ul li a {
+    display: block !important;
+    padding: 16px 24px !important;
+    color: #333 !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease !important;
+    border: 2px solid transparent !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  .navmenu ul li a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(38, 149, 35, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .navmenu ul li a:hover::before {
+    left: 100%;
+  }
+
+  .navmenu ul li a:hover,
+  .navmenu ul li a.active {
+    background: linear-gradient(135deg, #269523, #1e7a1c) !important;
+    color: white !important;
+    border-color: #269523 !important;
+    transform: translateX(8px) !important;
+    box-shadow: 0 4px 15px rgba(38, 149, 35, 0.3) !important;
+  }
+
+  .navmenu ul li a i {
+    margin-right: 10px;
+    font-size: 18px;
+  }
+
+  /* Mobile nav overlay */
+  .mobile-nav-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    z-index: 9999 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.4s ease !important;
+    backdrop-filter: blur(2px) !important;
+  }
+
+  .mobile-nav-overlay.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Hide desktop navigation on mobile */
+  .nav-wrap {
+    display: none !important;
+  }
+
+  /* Prevent body scroll when menu is open */
+  body.mobile-nav-open {
+    overflow: hidden !important;
+  }
+
+  /* Animation for menu items */
+  .navmenu.mobile-nav-active ul li {
+    animation: slideInRight 0.3s ease forwards;
+    opacity: 0;
+    transform: translateX(30px);
+  }
+
+  .navmenu.mobile-nav-active ul li:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+
+  .navmenu.mobile-nav-active ul li:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .navmenu.mobile-nav-active ul li:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  .navmenu.mobile-nav-active ul li:nth-child(4) {
+    animation-delay: 0.25s;
+  }
+
+  .navmenu.mobile-nav-active ul li:nth-child(5) {
+    animation-delay: 0.3s;
+  }
+
+  .navmenu.mobile-nav-active ul li:nth-child(6) {
+    animation-delay: 0.35s;
+  }
+
+  .navmenu.mobile-nav-active ul li:nth-child(7) {
+    animation-delay: 0.4s;
+  }
+
+  .navmenu.mobile-nav-active ul li:nth-child(8) {
+    animation-delay: 0.45s;
+  }
+}
+
+@keyframes slideInRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Desktop navigation - ensure mobile elements are hidden */
+@media (min-width: 769px) {
+  .mobile-nav-toggle {
+    display: none !important;
+  }
+
+  .mobile-nav-overlay {
+    display: none !important;
+  }
+
+  .navmenu {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding-top: 0 !important;
+  }
+
+  .navmenu ul {
+    flex-direction: row !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .navmenu ul li a {
+    padding: 10px 15px !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Very small screens adjustments */
+@media (max-width: 480px) {
+  .mobile-nav-toggle {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+  }
+
+  .navmenu {
+    width: 280px !important;
+  }
+
+  .navmenu ul {
+    padding: 20px 15px !important;
+  }
+
+  .navmenu ul li a {
+    padding: 14px 20px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+
+  .navmenu,
+  .mobile-nav-overlay,
+  .mobile-nav-toggle,
+  .navmenu ul li a {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .navmenu.mobile-nav-active ul li {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mobile-nav-toggle {
+    border: 2px solid currentColor !important;
+  }
+
+  .navmenu ul li a {
+    border: 1px solid currentColor !important;
   }
 }

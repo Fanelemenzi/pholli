@@ -2,8 +2,6 @@
 {% load static %}
 {% load survey_extras %}
 
-
-
 {% block content %}
 <head>
     <style>
@@ -183,7 +181,169 @@
             font-weight: 700;
         }
         
-        /* Animated background elements */
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .survey-container {
+                padding: 20px 15px;
+            }
+            
+            .survey-header h1 {
+                font-size: 1.8rem;
+                line-height: 1.3;
+            }
+            
+            .survey-header .lead {
+                font-size: 1rem;
+            }
+            
+            .question-card {
+                padding: 25px 20px;
+                border-radius: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .question-card:hover {
+                transform: none; /* Disable hover effects on mobile */
+            }
+            
+            .question-title {
+                font-size: 1.2rem;
+                line-height: 1.4;
+                margin-bottom: 15px;
+            }
+            
+            .form-control, .form-select {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 12px 15px;
+                border-radius: 8px;
+                min-height: 44px; /* Touch-friendly */
+            }
+            
+            .form-check {
+                padding: 10px 12px;
+                margin-bottom: 12px;
+                border-radius: 8px;
+            }
+            
+            .form-check-input {
+                width: 1.1em;
+                height: 1.1em;
+            }
+            
+            .form-check-label {
+                font-size: 0.95rem;
+                line-height: 1.4;
+            }
+            
+            .btn-primary {
+                width: 100%;
+                padding: 15px 20px;
+                font-size: 1rem;
+                border-radius: 12px;
+                margin-top: 20px;
+            }
+            
+            .progress {
+                height: 10px;
+                border-radius: 8px;
+            }
+            
+            .progress-bar {
+                font-size: 0.8rem;
+                border-radius: 8px;
+            }
+            
+            .alert {
+                border-radius: 12px;
+                padding: 15px;
+                font-size: 0.9rem;
+            }
+            
+            .form-text {
+                font-size: 0.8rem;
+            }
+            
+            /* Stack radio buttons and checkboxes better on mobile */
+            .radio-group, .checkbox-group {
+                gap: 5px;
+            }
+            
+            /* Page title adjustments */
+            .page-title h1 {
+                font-size: 1.8rem !important;
+                line-height: 1.3;
+            }
+            
+            .page-title p {
+                font-size: 0.95rem;
+                line-height: 1.5;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 480px) {
+            .survey-container {
+                padding: 15px 10px;
+            }
+            
+            .survey-header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .question-card {
+                padding: 20px 15px;
+                border-radius: 12px;
+            }
+            
+            .question-title {
+                font-size: 1.1rem;
+            }
+            
+            .form-control, .form-select {
+                padding: 10px 12px;
+                font-size: 16px;
+            }
+            
+            .btn-primary {
+                padding: 12px 15px;
+                font-size: 0.95rem;
+            }
+            
+            .page-title h1 {
+                font-size: 1.6rem !important;
+            }
+            
+            .page-title p {
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .form-check {
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+            }
+            
+            .form-check-input {
+                min-width: 20px;
+                min-height: 20px;
+            }
+            
+            .btn-primary {
+                min-height: 48px;
+            }
+            
+            /* Remove hover effects on touch devices */
+            .question-card:hover,
+            .form-check:hover,
+            .btn-primary:hover {
+                transform: none;
+            }
+        }
+        
+        /* Animated background elements - simplified for mobile */
         .survey-container::before {
             content: '';
             position: fixed;

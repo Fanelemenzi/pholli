@@ -4,6 +4,196 @@
 {% block title %}{{ category.name }} Survey{% endblock %}
 
 {% block content %}
+<style>
+/* Mobile-specific survey optimizations */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+  }
+  
+  .card {
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  
+  .card-header {
+    padding: 20px 15px 15px;
+    background: linear-gradient(135deg, #269523, #1e7a1c);
+    color: white;
+    border-radius: 15px 15px 0 0;
+  }
+  
+  .card-header h3 {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: white !important;
+  }
+  
+  .progress {
+    height: 8px;
+    border-radius: 4px;
+    background-color: rgba(255,255,255,0.3);
+  }
+  
+  .progress-bar {
+    border-radius: 4px;
+    background-color: #f1d925;
+  }
+  
+  .card-body {
+    padding: 25px 15px;
+  }
+  
+  .card-body h4 {
+    font-size: 1.2rem;
+    line-height: 1.4;
+    margin-bottom: 15px;
+    color: #333;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 16px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    margin-bottom: 15px;
+    min-height: 44px;
+  }
+  
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #269523;
+    box-shadow: 0 0 0 0.2rem rgba(38, 149, 35, 0.25);
+  }
+  
+  .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+  }
+  
+  .btn {
+    min-height: 44px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-primary {
+    background-color: #269523;
+    border-color: #269523;
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1e7a1c;
+    border-color: #1e7a1c;
+    transform: translateY(-2px);
+  }
+  
+  .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .btn-success {
+    background-color: #269523;
+    border-color: #269523;
+    width: 100%;
+  }
+  
+  .d-flex.justify-content-between {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .text-center h4 {
+    color: #269523;
+    margin-bottom: 20px;
+  }
+  
+  .text-muted {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  
+  .text-danger small {
+    font-size: 0.85rem;
+  }
+  
+  /* Progress sidebar mobile optimization */
+  .col-md-4 {
+    margin-top: 20px;
+  }
+  
+  .col-md-4 .card-header h5 {
+    font-size: 1.1rem;
+    color: white !important;
+  }
+  
+  .progress-sm {
+    height: 6px;
+  }
+  
+  /* Range input styling for confidence level */
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e0e0e0;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #269523;
+    cursor: pointer;
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #269523;
+    cursor: pointer;
+    border: none;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .mt-5 {
+    margin-top: 2rem !important;
+  }
+  
+  .card-body {
+    padding: 20px 12px;
+  }
+  
+  .card-header {
+    padding: 15px 12px 12px;
+  }
+  
+  .card-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .card-body h4 {
+    font-size: 1.1rem;
+  }
+}
+</style>
+
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-8">

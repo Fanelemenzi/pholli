@@ -5,7 +5,11 @@
 
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" name="viewport">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Pholli - Insurance Comparison Made Easy</title>
   <meta name="description"
     content="Compare insurance policies from top providers. Find the best deals on health, funeral, life, vehicle and business insurance. Save money with our free comparison service.">
@@ -116,6 +120,158 @@
     .footer .footer-contact .contact-item .contact-icon i {
         color: #269523 !important;
     }
+
+    /* Mobile-specific optimizations */
+    @media (max-width: 768px) {
+      .header .top-row {
+        padding: 10px 15px;
+      }
+      
+      .header .contact-info {
+        order: 3;
+        width: 100%;
+        text-align: center;
+        margin-top: 10px;
+      }
+      
+      .header .social-links {
+        order: 2;
+      }
+      
+      /* Mobile Navigation Styles */
+      .navmenu {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 280px;
+        height: 100vh;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(15px);
+        box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s ease;
+        z-index: 9999;
+        padding-top: 80px;
+        overflow-y: auto;
+      }
+      
+      .navmenu.mobile-nav-active {
+        right: 0;
+      }
+      
+      .navmenu ul {
+        flex-direction: column;
+        padding: 20px;
+        margin: 0;
+        list-style: none;
+      }
+      
+      .navmenu ul li {
+        margin-bottom: 10px;
+      }
+      
+      .navmenu ul li a {
+        display: block;
+        padding: 15px 20px;
+        color: #333;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 16px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+      }
+      
+      .navmenu ul li a:hover,
+      .navmenu ul li a.active {
+        background-color: #269523;
+        color: white !important;
+        border-color: #269523;
+        transform: translateX(5px);
+      }
+      
+      /* Mobile nav toggle button */
+      .mobile-nav-toggle {
+        position: fixed !important;
+        top: 20px !important;
+        right: 20px !important;
+        z-index: 10000 !important;
+        width: 48px !important;
+        height: 48px !important;
+        background: #269523 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 20px !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 15px rgba(38, 149, 35, 0.3) !important;
+        transition: all 0.3s ease !important;
+      }
+      
+      .mobile-nav-toggle:hover {
+        background: #1e7a1c !important;
+        transform: scale(1.05) !important;
+      }
+      
+      .mobile-nav-toggle.bi-x {
+        font-size: 24px !important;
+      }
+      
+      /* Mobile nav overlay */
+      .mobile-nav-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+      
+      .mobile-nav-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      
+      /* Hide desktop navigation on mobile */
+      .nav-wrap {
+        display: none;
+      }
+      
+      .footer .row > div {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      
+      .footer .footer-links ul {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+      }
+    }
+    
+    /* Desktop navigation - hide mobile toggle */
+    @media (min-width: 769px) {
+      .mobile-nav-toggle {
+        display: none !important;
+      }
+      
+      .mobile-nav-overlay {
+        display: none !important;
+      }
+    }
+    
+    /* Ensure mobile toggle is visible on mobile */
+    @media (max-width: 768px) {
+      .mobile-nav-toggle {
+        display: flex !important;
+      }
+    }
   </style>
 </head>
 
@@ -157,10 +313,17 @@
             <li><a href="#about">About Us</a></li>
             <li><a href="#contact">Contact</a></li>
           </ul>
-          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
         </nav>
       </div>
     </div>
+    
+    <!-- Mobile Navigation Toggle - Outside nav-wrap so it's always visible -->
+    <button class="mobile-nav-toggle" aria-label="Toggle navigation">
+      <i class="bi bi-list"></i>
+    </button>
+    
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay"></div>
   </header>
 
    
@@ -247,6 +410,187 @@
 
   <!-- Main JS File -->
   <script src="{% static 'assets/js/main.js' %}"></script>
+
+  <!-- Mobile Navigation Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Mobile nav script loaded');
+      
+      const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+      const navMenu = document.querySelector('.navmenu');
+      const navOverlay = document.querySelector('.mobile-nav-overlay');
+      const navLinks = document.querySelectorAll('.navmenu ul li a');
+      const body = document.body;
+      
+      console.log('Mobile nav elements:', {
+        toggle: mobileNavToggle,
+        menu: navMenu,
+        overlay: navOverlay,
+        links: navLinks.length
+      });
+      
+      if (mobileNavToggle && navMenu && navOverlay) {
+        console.log('All mobile nav elements found, setting up event listeners');
+        
+        // Toggle mobile menu
+        mobileNavToggle.addEventListener('click', function(e) {
+          console.log('Mobile nav toggle clicked');
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const isActive = navMenu.classList.contains('mobile-nav-active');
+          console.log('Menu is currently active:', isActive);
+          
+          if (isActive) {
+            closeMobileNav();
+          } else {
+            openMobileNav();
+          }
+        });
+        
+        // Close menu when clicking overlay
+        navOverlay.addEventListener('click', function(e) {
+          e.preventDefault();
+          closeMobileNav();
+        });
+        
+        // Close menu when clicking on nav links
+        navLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            // Add small delay to allow navigation to start
+            setTimeout(closeMobileNav, 100);
+          });
+        });
+        
+        // Close menu on escape key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && navMenu.classList.contains('mobile-nav-active')) {
+            closeMobileNav();
+          }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+          if (window.innerWidth > 768 && navMenu.classList.contains('mobile-nav-active')) {
+            closeMobileNav();
+          }
+        });
+        
+        // Prevent clicks inside menu from closing it
+        navMenu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+        
+        function openMobileNav() {
+          console.log('Opening mobile nav');
+          navMenu.classList.add('mobile-nav-active');
+          navOverlay.classList.add('active');
+          body.classList.add('mobile-nav-open');
+          
+          const toggleIcon = mobileNavToggle.querySelector('i');
+          if (toggleIcon) {
+            toggleIcon.className = 'bi bi-x';
+          }
+          
+          mobileNavToggle.setAttribute('aria-expanded', 'true');
+          mobileNavToggle.setAttribute('aria-label', 'Close navigation menu');
+          
+          // Focus management for accessibility
+          navMenu.setAttribute('aria-hidden', 'false');
+          
+          // Trap focus within the menu
+          trapFocus(navMenu);
+        }
+        
+        function closeMobileNav() {
+          console.log('Closing mobile nav');
+          navMenu.classList.remove('mobile-nav-active');
+          navOverlay.classList.remove('active');
+          body.classList.remove('mobile-nav-open');
+          
+          const toggleIcon = mobileNavToggle.querySelector('i');
+          if (toggleIcon) {
+            toggleIcon.className = 'bi bi-list';
+          }
+          
+          mobileNavToggle.setAttribute('aria-expanded', 'false');
+          mobileNavToggle.setAttribute('aria-label', 'Open navigation menu');
+          
+          // Focus management for accessibility
+          navMenu.setAttribute('aria-hidden', 'true');
+          
+          // Return focus to toggle button
+          mobileNavToggle.focus();
+        }
+        
+        // Focus trap function for accessibility
+        function trapFocus(element) {
+          const focusableElements = element.querySelectorAll(
+            'a[href], button, textarea, input[type="text"], input[type="radio"], input[type="checkbox"], select'
+          );
+          const firstFocusableElement = focusableElements[0];
+          const lastFocusableElement = focusableElements[focusableElements.length - 1];
+          
+          element.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+              if (e.shiftKey) {
+                if (document.activeElement === firstFocusableElement) {
+                  lastFocusableElement.focus();
+                  e.preventDefault();
+                }
+              } else {
+                if (document.activeElement === lastFocusableElement) {
+                  firstFocusableElement.focus();
+                  e.preventDefault();
+                }
+              }
+            }
+          });
+          
+          // Focus first element when menu opens
+          if (firstFocusableElement) {
+            setTimeout(() => firstFocusableElement.focus(), 100);
+          }
+        }
+        
+        // Initialize ARIA attributes
+        mobileNavToggle.setAttribute('aria-expanded', 'false');
+        mobileNavToggle.setAttribute('aria-label', 'Open navigation menu');
+        navMenu.setAttribute('aria-hidden', 'true');
+      } else {
+        console.error('Mobile nav elements not found:', {
+          toggle: !!mobileNavToggle,
+          menu: !!navMenu,
+          overlay: !!navOverlay
+        });
+      }
+      
+      // Set active nav link based on current page
+      const currentPath = window.location.pathname;
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        const linkPath = link.getAttribute('href');
+        
+        if (linkPath === currentPath || 
+            (currentPath === '/' && linkPath && linkPath.includes('home')) ||
+            (currentPath.includes('health') && linkPath && linkPath.includes('health')) ||
+            (currentPath.includes('funerals') && linkPath && linkPath.includes('funerals'))) {
+          link.classList.add('active');
+        }
+      });
+      
+      // Add touch feedback for mobile nav toggle
+      if ('ontouchstart' in window && mobileNavToggle) {
+        mobileNavToggle.addEventListener('touchstart', function() {
+          this.style.transform = 'scale(0.95)';
+        });
+        
+        mobileNavToggle.addEventListener('touchend', function() {
+          this.style.transform = '';
+        });
+      }
+    });
+  </script>
 
 </body>
 
