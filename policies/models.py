@@ -296,6 +296,50 @@ class BasePolicy(models.Model):
     def __str__(self):
         return f"{self.name} - {self.organization.name}"
     
+    def get_policy_features(self):
+        """Get the PolicyFeatures instance for this policy."""
+        try:
+            return self.policy_features
+        except PolicyFeatures.DoesNotExist:
+            return None
+    
+    def get_feature_value(self, feature_name):
+        """Get the value of a specific feature."""
+        policy_features = self.get_policy_features()
+        if policy_features:
+            return getattr(policy_features, feature_name, None)
+        return None
+    
+    def get_all_features_dict(self):
+        """Get all feature values as a dictionary."""
+        policy_features = self.get_policy_features()
+        if not policy_features:
+            return {}
+        
+        features = {}
+        if policy_features.insurance_type == 'HEALTH':
+            features.update({
+                'annual_limit_per_member': policy_features.annual_limit_per_member,
+                'monthly_household_income': policy_features.monthly_household_income,
+                'in_hospital_benefit': policy_features.in_hospital_benefit,
+                'out_hospital_benefit': policy_features.out_hospital_benefit,
+                'chronic_medication_availability': policy_features.chronic_medication_availability,
+            })
+        elif policy_features.insurance_type == 'FUNERAL':
+            features.update({
+                'cover_amount': policy_features.cover_amount,
+                'marital_status_requirement': policy_features.marital_status_requirement,
+                'gender_requirement': policy_features.gender_requirement,
+                'monthly_net_income': policy_features.monthly_net_income,
+            })
+        
+        return {k: v for k, v in features.items() if v is not None}
+    
+    def calculate_feature_compatibility(self, user_preferences):
+        """Calculate compatibility score based on user preferences."""
+        # This will be implemented by the FeatureMatchingEngine in a later task
+        pass
+    
     def is_approved(self):
         """Check if policy is approved."""
         return self.approval_status == self.ApprovalStatus.APPROVED
@@ -319,24 +363,117 @@ class BasePolicy(models.Model):
         self.save(update_fields=['comparison_count'])
 
 
-class PolicyFeature(models.Model):
+class PolicyFeatures(models.Model):
     """
-    Model for policy features and benefits.
-    Each policy can have multiple features.
+    Core features model based on Docs/features.md for health and funeral policies.
+    """
+    
+    class InsuranceType(models.TextChoices):
+        HEALTH = 'HEALTH', _('Health Policies')
+        FUNERAL = 'FUNERAL', _('Funeral Policies')
+    
+    policy = models.OneToOneField(
+        BasePolicy, 
+        on_delete=models.CASCADE, 
+        related_name='policy_features'
+    )
+    insurance_type = models.CharField(
+        max_length=20, 
+        choices=InsuranceType.choices,
+        help_text=_("Type of insurance policy")
+    )
+    
+    # Health Policy Features (from Docs/features.md)
+    annual_limit_per_member = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text=_("Overall annual limit per member per family")
+    )
+    monthly_household_income = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text=_("Monthly household income requirement")
+    )
+    in_hospital_benefit = models.BooleanField(
+        null=True, 
+        blank=True,
+        help_text=_("With or without in-hospital benefit")
+    )
+    out_hospital_benefit = models.BooleanField(
+        null=True, 
+        blank=True,
+        help_text=_("With or without out of hospital benefits")
+    )
+    chronic_medication_availability = models.BooleanField(
+        null=True, 
+        blank=True,
+        help_text=_("Chronic medication availability")
+    )
+    
+    # Funeral Policy Features (from Docs/features.md)
+    cover_amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text=_("Cover amount for funeral policy")
+    )
+    marital_status_requirement = models.CharField(
+        max_length=50, 
+        null=True, 
+        blank=True,
+        help_text=_("Marital status requirement")
+    )
+    gender_requirement = models.CharField(
+        max_length=20, 
+        null=True, 
+        blank=True,
+        help_text=_("Gender requirement")
+    )
+    monthly_net_income = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text=_("Monthly net income requirement")
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = _("Policy Features")
+        verbose_name_plural = _("Policy Features")
+        indexes = [
+            models.Index(fields=['insurance_type']),
+            models.Index(fields=['policy']),
+        ]
+    
+    def __str__(self):
+        return f"{self.policy.name} - {self.get_insurance_type_display()} Features"
+
+
+class AdditionalFeatures(models.Model):
+    """
+    Additional features and benefits for policies (renamed from PolicyFeature).
     """
     policy = models.ForeignKey(
         BasePolicy,
         on_delete=models.CASCADE,
-        related_name='features'
+        related_name='additional_features'
     )
     
     title = models.CharField(
         max_length=255,
-        help_text=_("Feature title")
+        help_text=_("Additional feature title")
     )
     
     description = models.TextField(
-        help_text=_("Detailed feature description")
+        help_text=_("Detailed additional feature description")
     )
     
     icon = models.CharField(
@@ -347,20 +484,20 @@ class PolicyFeature(models.Model):
     
     is_highlighted = models.BooleanField(
         default=False,
-        help_text=_("Whether to highlight this feature")
+        help_text=_("Whether to highlight this additional feature")
     )
     
     display_order = models.PositiveIntegerField(
         default=0,
-        help_text=_("Order in which to display features")
+        help_text=_("Order in which to display additional features")
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         ordering = ['policy', 'display_order', 'title']
-        verbose_name = _("Policy Feature")
-        verbose_name_plural = _("Policy Features")
+        verbose_name = _("Additional Features")
+        verbose_name_plural = _("Additional Features")
         indexes = [
             models.Index(fields=['policy', 'is_highlighted']),
         ]

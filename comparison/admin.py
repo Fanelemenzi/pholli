@@ -5,8 +5,132 @@ from .models import (
     ComparisonSession,
     ComparisonResult,
     ComparisonCriteria,
-    UserPreferenceProfile
+    UserPreferenceProfile,
+    FeatureComparisonResult
 )
+
+
+@admin.register(FeatureComparisonResult)
+class FeatureComparisonResultAdmin(admin.ModelAdmin):
+    """
+    Admin interface for FeatureComparisonResult model.
+    """
+    list_display = [
+        'survey_info', 
+        'policy_name', 
+        'compatibility_score_display',
+        'compatibility_rank',
+        'recommendation_category',
+        'feature_matches_count',
+        'created_at'
+    ]
+    
+    list_filter = [
+        'recommendation_category',
+        'survey__insurance_type',
+        'created_at',
+        'overall_compatibility_score'
+    ]
+    
+    search_fields = [
+        'policy__name',
+        'policy__organization__name',
+        'survey__first_name',
+        'survey__last_name'
+    ]
+    
+    readonly_fields = [
+        'survey',
+        'policy',
+        'overall_compatibility_score',
+        'feature_match_count',
+        'feature_mismatch_count',
+        'feature_scores',
+        'feature_matches',
+        'feature_mismatches',
+        'compatibility_rank',
+        'match_explanation',
+        'created_at',
+        'updated_at'
+    ]
+    
+    fieldsets = [
+        ('Basic Information', {
+            'fields': ['survey', 'policy', 'created_at', 'updated_at']
+        }),
+        ('Scoring', {
+            'fields': [
+                'overall_compatibility_score',
+                'compatibility_rank',
+                'recommendation_category',
+                'feature_match_count',
+                'feature_mismatch_count'
+            ]
+        }),
+        ('Feature Analysis', {
+            'fields': ['feature_scores', 'feature_matches', 'feature_mismatches'],
+            'classes': ['collapse']
+        }),
+        ('Explanation', {
+            'fields': ['match_explanation']
+        })
+    ]
+    
+    def survey_info(self, obj):
+        """Display survey information."""
+        return format_html(
+            '{} {} ({})',
+            obj.survey.first_name,
+            obj.survey.last_name,
+            obj.survey.get_insurance_type_display()
+        )
+    survey_info.short_description = 'Survey'
+    survey_info.admin_order_field = 'survey__first_name'
+    
+    def policy_name(self, obj):
+        """Display policy name with organization."""
+        return format_html(
+            '{}<br><small class="text-muted">{}</small>',
+            obj.policy.name,
+            obj.policy.organization.name if obj.policy.organization else 'No Organization'
+        )
+    policy_name.short_description = 'Policy'
+    policy_name.admin_order_field = 'policy__name'
+    
+    def compatibility_score_display(self, obj):
+        """Display compatibility score with color coding."""
+        score = float(obj.overall_compatibility_score)
+        if score >= 80:
+            color = 'green'
+        elif score >= 60:
+            color = 'orange'
+        else:
+            color = 'red'
+        
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
+            color,
+            score
+        )
+    compatibility_score_display.short_description = 'Compatibility Score'
+    compatibility_score_display.admin_order_field = 'overall_compatibility_score'
+    
+    def feature_matches_count(self, obj):
+        """Display feature match/mismatch counts."""
+        return format_html(
+            '<span style="color: green;">{}</span> / <span style="color: orange;">{}</span>',
+            obj.feature_match_count,
+            obj.feature_mismatch_count
+        )
+    feature_matches_count.short_description = 'Matches/Mismatches'
+    
+    def has_add_permission(self, request):
+        """Disable adding results through admin (should be generated automatically)."""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """Make results read-only in admin."""
+        return False
 
 
 class ComparisonResultInline(admin.TabularInline):
@@ -99,7 +223,7 @@ class ComparisonSessionAdmin(admin.ModelAdmin):
                 obj.user.id,
                 obj.user.username
             )
-        return format_html('<span style="color: #6C757D;">Anonymous</span>')
+        return format_html('<span style="color: #6C757D;">{}</span>', 'Anonymous')
     user_display.short_description = _('User')
     
     def policies_count(self, obj):
@@ -262,11 +386,11 @@ class ComparisonResultAdmin(admin.ModelAdmin):
     def rank_display(self, obj):
         """Display rank with medal icons."""
         if obj.rank == 1:
-            return format_html('<span style="font-size: 24px;">🥇</span>')
+            return format_html('<span style="font-size: 24px;">{}</span>', '🥇')
         elif obj.rank == 2:
-            return format_html('<span style="font-size: 24px;">🥈</span>')
+            return format_html('<span style="font-size: 24px;">{}</span>', '🥈')
         elif obj.rank == 3:
-            return format_html('<span style="font-size: 24px;">🥉</span>')
+            return format_html('<span style="font-size: 24px;">{}</span>', '🥉')
         return format_html('<span style="font-weight: bold;">#{}</span>', obj.rank)
     rank_display.short_description = _('Rank')
     rank_display.admin_order_field = 'rank'
@@ -386,15 +510,15 @@ class ComparisonCriteriaAdmin(admin.ModelAdmin):
                 '<span style="background: #DC3545; color: white; padding: 3px 10px; '
                 'border-radius: 3px; font-weight: bold;">REQUIRED</span>'
             )
-        return format_html('<span style="color: #6C757D;">Optional</span>')
+        return format_html('<span style="color: #6C757D;">{}</span>', 'Optional')
     required_badge.short_description = _('Required')
     required_badge.admin_order_field = 'is_required'
     
     def active_status(self, obj):
         """Display active status."""
         if obj.is_active:
-            return format_html('<span style="color: green; font-size: 16px;">✓</span>')
-        return format_html('<span style="color: red; font-size: 16px;">✗</span>')
+            return format_html('<span style="color: green; font-size: 16px;">{}</span>', '✓')
+        return format_html('<span style="color: red; font-size: 16px;">{}</span>', '✗')
     active_status.short_description = _('Active')
     active_status.admin_order_field = 'is_active'
 
@@ -455,6 +579,6 @@ class UserPreferenceProfileAdmin(admin.ModelAdmin):
             return format_html(
                 '<span style="color: #FFC107; font-size: 18px;" title="Default Profile">★</span>'
             )
-        return format_html('<span style="color: #DEE2E6; font-size: 18px;">☆</span>')
+        return format_html('<span style="color: #DEE2E6; font-size: 18px;">{}</span>', '☆')
     default_badge.short_description = _('Default')
     default_badge.admin_order_field = 'is_default'

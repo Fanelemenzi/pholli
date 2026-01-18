@@ -1,0 +1,329 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block title %}System Integration Status{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+.integration-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.integration-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.integration-card h3 {
+    margin-top: 0;
+    color: #495057;
+}
+
+.status-healthy { color: #28a745; }
+.status-warning { color: #ffc107; }
+.status-critical { color: #dc3545; }
+.status-error { color: #dc3545; }
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.metric-item {
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+    border-left: 4px solid #007cba;
+}
+
+.action-buttons {
+    margin: 20px 0;
+}
+
+.action-buttons button {
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.results-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.error-list {
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.error-item {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.error-item:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>System Integration Status</h1>
+
+<div class="integration-dashboard">
+    <div class="integration-card">
+        <h3>System Health</h3>
+        {% if health_metrics %}
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <strong>Cache Status:</strong><br>
+                    {{ health_metrics.cache_status|title }}
+                </div>
+                <div class="metric-item">
+                    <strong>Policy Changes Today:</strong><br>
+                    {{ health_metrics.policy_changes_today|default:"0" }}
+                </div>
+                {% if health_metrics.last_check %}
+                <div class="metric-item">
+                    <strong>Last Check:</strong><br>
+                    {{ health_metrics.last_check }}
+                </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <p>Health metrics not available</p>
+        {% endif %}
+    </div>
+    
+    <div class="integration-card">
+        <h3>Quick Actions</h3>
+        <div class="action-buttons">
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="check_system">
+                <button type="submit" class="btn btn-primary">
+                    Check System Integration
+                </button>
+            </form>
+            
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="synchronize_features">
+                <button type="submit" class="btn btn-warning">
+                    Synchronize Features
+                </button>
+            </form>
+            
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="clear_caches">
+                <button type="submit" class="btn btn-secondary">
+                    Clear Caches
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if check_results %}
+<div class="results-section">
+    <h3>System Check Results</h3>
+    
+    <div class="metric-item">
+        <strong>Overall Status:</strong>
+        <span class="status-{{ check_results.overall_status }}">
+            {{ check_results.overall_status|upper }}
+        </span>
+    </div>
+    
+    <div class="integration-dashboard">
+        <div class="integration-card">
+            <h4>Feature Consistency</h4>
+            
+            <div class="metric-item">
+                <strong>Health Features:</strong>
+                {% if check_results.feature_consistency.health %}
+                    <span class="status-critical">{{ check_results.feature_consistency.health|length }} issues</span>
+                    <div class="error-list">
+                        {% for error in check_results.feature_consistency.health %}
+                            <div class="error-item">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <span class="status-healthy">✓ Consistent</span>
+                {% endif %}
+            </div>
+            
+            <div class="metric-item">
+                <strong>Funeral Features:</strong>
+                {% if check_results.feature_consistency.funeral %}
+                    <span class="status-critical">{{ check_results.feature_consistency.funeral|length }} issues</span>
+                    <div class="error-list">
+                        {% for error in check_results.feature_consistency.funeral %}
+                            <div class="error-item">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <span class="status-healthy">✓ Consistent</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="integration-card">
+            <h4>Data Validation</h4>
+            
+            <div class="metric-item">
+                <strong>Health Policies:</strong>
+                {{ check_results.health_policies.valid }}/{{ check_results.health_policies.total }} valid
+                {% if check_results.health_policies.errors %}
+                    <div class="error-list">
+                        {% for error in check_results.health_policies.errors|slice:":5" %}
+                            <div class="error-item">{{ error }}</div>
+                        {% endfor %}
+                        {% if check_results.health_policies.errors|length > 5 %}
+                            <div class="error-item">... and {{ check_results.health_policies.errors|length|add:"-5" }} more</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="metric-item">
+                <strong>Funeral Policies:</strong>
+                {{ check_results.funeral_policies.valid }}/{{ check_results.funeral_policies.total }} valid
+                {% if check_results.funeral_policies.errors %}
+                    <div class="error-list">
+                        {% for error in check_results.funeral_policies.errors|slice:":5" %}
+                            <div class="error-item">{{ error }}</div>
+                        {% endfor %}
+                        {% if check_results.funeral_policies.errors|length > 5 %}
+                            <div class="error-item">... and {{ check_results.funeral_policies.errors|length|add:"-5" }} more</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="metric-item">
+                <strong>Health Surveys:</strong>
+                {{ check_results.health_surveys.valid }}/{{ check_results.health_surveys.total }} valid
+            </div>
+            
+            <div class="metric-item">
+                <strong>Funeral Surveys:</strong>
+                {{ check_results.funeral_surveys.valid }}/{{ check_results.funeral_surveys.total }} valid
+            </div>
+            
+            <div class="metric-item">
+                <strong>Comparison Results:</strong>
+                {{ check_results.comparison_results.valid }}/{{ check_results.comparison_results.total }} valid
+            </div>
+        </div>
+    </div>
+    
+    {% if check_results.synchronization_needed %}
+        <div class="metric-item" style="background: #fff3cd; border-left-color: #ffc107;">
+            <strong>⚠ Synchronization Needed</strong><br>
+            Some features may be out of sync. Consider running feature synchronization.
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if sync_results %}
+<div class="results-section">
+    <h3>Feature Synchronization Results</h3>
+    
+    {% if sync_results.overall_success %}
+        <div class="metric-item" style="background: #d4edda; border-left-color: #28a745;">
+            <strong>✓ Synchronization Successful</strong>
+        </div>
+    {% else %}
+        <div class="metric-item" style="background: #f8d7da; border-left-color: #dc3545;">
+            <strong>✗ Synchronization Completed with Errors</strong>
+        </div>
+    {% endif %}
+    
+    <div class="integration-dashboard">
+        {% if sync_results.health_sync %}
+        <div class="integration-card">
+            <h4>Health Insurance</h4>
+            <div class="metric-item">
+                <strong>Created:</strong> {{ sync_results.health_sync.created|default:"0" }} survey questions
+            </div>
+            <div class="metric-item">
+                <strong>Updated:</strong> {{ sync_results.health_sync.updated|default:"0" }} survey questions
+            </div>
+            {% if sync_results.health_sync.errors %}
+                <div class="error-list">
+                    {% for error in sync_results.health_sync.errors %}
+                        <div class="error-item">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if sync_results.funeral_sync %}
+        <div class="integration-card">
+            <h4>Funeral Insurance</h4>
+            <div class="metric-item">
+                <strong>Created:</strong> {{ sync_results.funeral_sync.created|default:"0" }} survey questions
+            </div>
+            <div class="metric-item">
+                <strong>Updated:</strong> {{ sync_results.funeral_sync.updated|default:"0" }} survey questions
+            </div>
+            {% if sync_results.funeral_sync.errors %}
+                <div class="error-list">
+                    {% for error in sync_results.funeral_sync.errors %}
+                        <div class="error-item">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if sync_results.system_error %}
+        <div class="metric-item" style="background: #f8d7da; border-left-color: #dc3545;">
+            <strong>System Error:</strong><br>
+            {{ sync_results.system_error }}
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="results-section">
+    <h3>Integration Documentation</h3>
+    <p>
+        The system integration module ensures consistency across policies, surveys, and comparison modules.
+        It validates that:
+    </p>
+    <ul>
+        <li>Policy features are complete and properly defined</li>
+        <li>Survey questions match policy feature definitions</li>
+        <li>Comparison results are consistent with survey and policy data</li>
+        <li>Insurance types are properly separated (Health vs Funeral)</li>
+    </ul>
+    
+    <h4>Management Commands</h4>
+    <p>You can also run integration checks from the command line:</p>
+    <pre>
+python manage.py check_system_integration
+python manage.py synchronize_features
+python manage.py validate_policy_features
+    </pre>
+</div>
+
+{% endblock %}

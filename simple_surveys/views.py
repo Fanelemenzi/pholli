@@ -10,12 +10,185 @@ from datetime import timedelta
 import json
 import logging
 
-from .models import SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession
+from .models import SimpleSurvey, SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession
+from .forms import SimpleSurveyForm, HealthSurveyForm, FuneralSurveyForm
 from .engine import SimpleSurveyEngine
 from .comparison_adapter import SimpleSurveyComparisonAdapter
 from .session_manager import SessionManager, SessionValidationError
 
 logger = logging.getLogger(__name__)
+
+
+class FeatureSurveyView(View):
+    """
+    Feature-based survey view for health and funeral insurance types.
+    Uses SimpleSurvey model with feature-specific questions.
+    """
+    
+    def get(self, request, category):
+        """Display feature-based survey form for the specified category"""
+        # Validate category
+        if category not in ['health', 'funeral']:
+            raise Http404("Invalid survey category")
+        
+        # Get or create survey instance from session
+        survey_id = request.session.get(f'survey_{category}_id')
+        survey = None
+        
+        if survey_id:
+            try:
+                survey = SimpleSurvey.objects.get(id=survey_id)
+            except SimpleSurvey.DoesNotExist:
+                survey = None
+        
+        # Create appropriate form based on category
+        if category == 'health':
+            form = HealthSurveyForm(instance=survey)
+        else:
+            form = FuneralSurveyForm(instance=survey)
+        
+        context = {
+            'category': category,
+            'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
+            'form': form,
+            'survey': survey,
+        }
+        
+        return render(request, 'surveys/feature_survey_form.html', context)
+    
+    def post(self, request, category):
+        """Process feature-based survey form submission"""
+        # Validate category
+        if category not in ['health', 'funeral']:
+            raise Http404("Invalid survey category")
+        
+        # Get existing survey instance if available
+        survey_id = request.session.get(f'survey_{category}_id')
+        survey = None
+        
+        if survey_id:
+            try:
+                survey = SimpleSurvey.objects.get(id=survey_id)
+            except SimpleSurvey.DoesNotExist:
+                survey = None
+        
+        # Create appropriate form based on category
+        if category == 'health':
+            form = HealthSurveyForm(request.POST, instance=survey)
+        else:
+            form = FuneralSurveyForm(request.POST, instance=survey)
+        
+        if form.is_valid():
+            # Save the survey
+            survey = form.save()
+            
+            # Store survey ID in session
+            request.session[f'survey_{category}_id'] = survey.id
+            
+            # Redirect to results processing
+            return redirect('simple_surveys:feature_results', category=category)
+        
+        # Form has errors, redisplay with errors
+        context = {
+            'category': category,
+            'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
+            'form': form,
+            'survey': survey,
+        }
+        
+        return render(request, 'surveys/feature_survey_form.html', context)
+
+
+class FeatureResultsView(View):
+    """
+    View for processing feature-based survey and displaying results.
+    Integrates with the comparison system to show matching policies.
+    """
+    
+    def get(self, request, category):
+        """Process survey and display matching policies"""
+        # Validate category
+        if category not in ['health', 'funeral']:
+            raise Http404("Invalid survey category")
+        
+        # Get survey from session
+        survey_id = request.session.get(f'survey_{category}_id')
+        if not survey_id:
+            return redirect('simple_surveys:feature_survey', category=category)
+        
+        try:
+            survey = SimpleSurvey.objects.get(id=survey_id)
+        except SimpleSurvey.DoesNotExist:
+            return redirect('simple_surveys:feature_survey', category=category)
+        
+        # Validate survey is complete
+        if not survey.is_complete():
+            return redirect('simple_surveys:feature_survey', category=category)
+        
+        try:
+            # Import comparison system
+            from comparison.feature_matching_engine import FeatureMatchingEngine
+            from comparison.models import FeatureComparisonResult
+            from policies.models import BasePolicy
+            
+            # Get user preferences from survey
+            user_preferences = survey.get_preferences_dict()
+            
+            # Initialize matching engine
+            insurance_type = 'HEALTH' if category == 'health' else 'FUNERAL'
+            matching_engine = FeatureMatchingEngine(insurance_type)
+            
+            # Get policies of the appropriate type
+            policies = BasePolicy.objects.filter(
+                policy_features__insurance_type=insurance_type
+            ).select_related('policy_features', 'organization')
+            
+            # Calculate matches for each policy
+            policy_results = []
+            for policy in policies:
+                compatibility = matching_engine.calculate_policy_compatibility(policy, user_preferences)
+                
+                if compatibility['overall_score'] > 0:  # Only include policies with some compatibility
+                    policy_results.append({
+                        'policy': policy,
+                        'compatibility': compatibility,
+                        'overall_score': compatibility['overall_score'],
+                        'matches': compatibility['matches'],
+                        'mismatches': compatibility['mismatches'],
+                        'explanation': compatibility['explanation']
+                    })
+            
+            # Sort by compatibility score (highest first)
+            policy_results.sort(key=lambda x: x['overall_score'], reverse=True)
+            
+            # Store results in session for potential later use
+            request.session[f'results_{category}'] = {
+                'survey_id': survey.id,
+                'total_policies': len(policy_results),
+                'generated_at': timezone.now().isoformat()
+            }
+            
+            context = {
+                'category': category,
+                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
+                'survey': survey,
+                'user_preferences': user_preferences,
+                'policy_results': policy_results,
+                'total_results': len(policy_results),
+                'best_match': policy_results[0] if policy_results else None,
+            }
+            
+            return render(request, 'surveys/feature_survey_results.html', context)
+            
+        except Exception as e:
+            logger.error(f"Error processing feature survey results for {category}: {e}")
+            context = {
+                'category': category,
+                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
+                'error_message': 'Unable to process your survey results. Please try again.',
+                'survey': survey,
+            }
+            return render(request, 'surveys/feature_survey_results.html', context)
 
 
 class SurveyView(View):
@@ -227,7 +400,7 @@ class ProcessSurveyView(View):
             return JsonResponse({
                 'success': True,
                 'quotations_count': len(quotations),
-                'redirect_url': f'/simple-surveys/{category}/results/'
+                'redirect_url': f'/survey/{category}/results/'
             })
             
         except Exception as e:
@@ -379,7 +552,7 @@ def funerals_page(request):
 
 def direct_survey(request, category_slug):
     """
-    Direct survey entry point that redirects to the appropriate survey.
+    Direct survey entry point that redirects to the feature-based survey.
     This matches the URL pattern used in the templates.
     """
     # Map category slugs to our internal category names
@@ -392,8 +565,8 @@ def direct_survey(request, category_slug):
     if not category:
         raise Http404("Invalid survey category")
     
-    # Redirect to the survey view
-    return redirect('simple_surveys:survey', category=category)
+    # Redirect to the feature-based survey view (new default)
+    return redirect('simple_surveys:feature_survey', category=category)
 
 
 def session_expired_view(request):

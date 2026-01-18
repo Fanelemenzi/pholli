@@ -1,0 +1,510 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<head>
+    <style>
+        body {
+            background: #ffffff;
+            min-height: 100vh;
+        }
+
+        .results-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #000000;
+        }
+
+        .results-header h1 {
+            color: #000000;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            font-size: 2.5rem;
+        }
+
+        .results-header .lead {
+            color: #333333;
+            font-size: 1.2rem;
+        }
+
+        .policy-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 2px solid #269523;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .policy-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #269523, #f1d925);
+        }
+
+        .policy-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(38, 149, 35, 0.2);
+            border-color: #f1d925;
+        }
+
+        .policy-card.best-match {
+            border: 3px solid #f1d925;
+            background: #ffffff;
+            box-shadow: 0 15px 35px rgba(241, 217, 37, 0.2);
+        }
+
+        .policy-card.best-match::before {
+            background: linear-gradient(90deg, #f1d925, #269523);
+            height: 6px;
+        }
+
+        .best-match-badge {
+            position: absolute;
+            top: -15px;
+            left: 30px;
+            background: linear-gradient(135deg, #f1d925, #269523);
+            color: #000000;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(241, 217, 37, 0.4);
+        }
+
+        .compatibility-score {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #269523, #f1d925);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .policy-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 15px;
+        }
+
+        .organization-name {
+            color: #666666;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-matches {
+            margin-bottom: 20px;
+        }
+
+        .feature-match {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .feature-match:last-child {
+            border-bottom: none;
+        }
+
+        .feature-match i {
+            color: #269523;
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
+        .feature-mismatch i {
+            color: #dc3545;
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
+        .feature-text {
+            font-weight: 500;
+            color: #000000;
+        }
+
+        .feature-value {
+            color: #666666;
+            font-size: 0.9rem;
+        }
+
+        .btn-contact {
+            background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
+            border: none;
+            color: #000000;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 25px rgba(38, 149, 35, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-contact:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(38, 149, 35, 0.4);
+            background: linear-gradient(135deg, #1e7a1e 0%, #d4c020 100%);
+            color: #000000;
+        }
+
+        .summary-stats {
+            background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
+            color: #000000;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 15px 35px rgba(38, 149, 35, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-stats::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .stat-item {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            display: block;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: #000000;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #000000;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 2px solid #269523;
+        }
+
+        .no-results h3 {
+            color: #000000;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .no-results p {
+            color: #666666;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #000000;
+            box-shadow: 0 8px 25px rgba(38, 149, 35, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(38, 149, 35, 0.4);
+            color: #000000;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid #269523;
+            color: #269523;
+            background: transparent;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background: #269523;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(38, 149, 35, 0.3);
+        }
+
+        .alert {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            color: #c53030;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .results-container {
+                padding: 20px 15px;
+            }
+            
+            .policy-card {
+                padding: 25px 20px;
+                border-radius: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .compatibility-score {
+                font-size: 1.8rem;
+            }
+            
+            .policy-name {
+                font-size: 1.3rem;
+            }
+            
+            .btn-contact {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+                border-radius: 12px;
+            }
+            
+            .summary-stats {
+                padding: 30px 20px;
+                border-radius: 15px;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="main" style="margin-top: 100px;">
+        <!-- Page Title -->
+        <div class="page-title dark-background" data-aos="fade"
+            style="background-image: url('{% static 'assets/img/bg/bg-2.webp' %}');">
+            <div class="container position-relative">
+                <h1>Your {{ category_display }} Results</h1>
+                <p>We've found the best {{ category_display|lower }} policies that match your preferences and requirements.</p>
+            </div>
+        </div><!-- End Page Title -->
+
+        <div class="results-container">
+            <div class="results-header">
+                <h1>Your {{ category_display }} Matches</h1>
+                {% if total_results > 0 %}
+                <p class="lead">We found {{ total_results }} {{ category_display|lower }} polic{{ total_results|pluralize:"y,ies" }} that match your preferences.</p>
+                {% endif %}
+            </div>
+
+            <!-- Error Messages -->
+            {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>{{ error_message }}
+                <div class="mt-3">
+                    <a href="{% url 'simple_surveys:feature_survey' category=category %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Survey
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if total_results > 0 %}
+            <!-- Summary Statistics -->
+            <div class="summary-stats">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_results }}</span>
+                            <span class="stat-label">Matching Policies</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <span class="stat-number">{% if best_match %}{{ best_match.overall_score|floatformat:0 }}%{% else %}0%{% endif %}</span>
+                            <span class="stat-label">Best Match</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ category_display }}</span>
+                            <span class="stat-label">Insurance Type</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <span class="stat-number">100%</span>
+                            <span class="stat-label">Free Service</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy Results -->
+            <div class="row">
+                {% for result in policy_results %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="policy-card {% if forloop.first %}best-match{% endif %}">
+                        {% if forloop.first %}
+                        <div class="best-match-badge">
+                            <i class="bi bi-star-fill me-1"></i>Best Match
+                        </div>
+                        {% endif %}
+
+                        <div class="text-center mb-3">
+                            <div class="compatibility-score">{{ result.overall_score|floatformat:0 }}%</div>
+                            <div class="policy-name">{{ result.policy.name }}</div>
+                            <div class="organization-name">{{ result.policy.organization.name }}</div>
+                        </div>
+
+                        <!-- Feature Matches -->
+                        {% if result.matches %}
+                        <div class="feature-matches">
+                            <h6 class="mb-3" style="color: #269523; font-weight: 700;">
+                                <i class="bi bi-check-circle me-2"></i>Matching Features
+                            </h6>
+                            {% for match in result.matches|slice:":4" %}
+                            <div class="feature-match">
+                                <i class="bi bi-check-circle"></i>
+                                <div>
+                                    <div class="feature-text">{{ match.feature }}</div>
+                                    <div class="feature-value">{{ match.policy_value }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Feature Mismatches -->
+                        {% if result.mismatches %}
+                        <div class="feature-matches">
+                            <h6 class="mb-3" style="color: #dc3545; font-weight: 700;">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Consider These Differences
+                            </h6>
+                            {% for mismatch in result.mismatches|slice:":2" %}
+                            <div class="feature-match">
+                                <i class="bi bi-exclamation-triangle feature-mismatch"></i>
+                                <div>
+                                    <div class="feature-text">{{ mismatch.feature }}</div>
+                                    <div class="feature-value">{{ mismatch.policy_value }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="d-grid mt-4">
+                            <button class="btn btn-contact" onclick="contactProvider('{{ result.policy.organization.name }}', '{{ result.policy.name }}')">
+                                <i class="bi bi-telephone me-2"></i>Contact Provider
+                            </button>
+                        </div>
+
+                        <div class="text-center mt-2">
+                            <small style="color: #666666;">{{ result.explanation }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <!-- No Results -->
+            <div class="no-results">
+                <h3>No Matching Policies Found</h3>
+                <p>We couldn't find any {{ category_display|lower }} policies that match your current preferences. You may want to adjust your requirements or contact our experts for personalized assistance.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'simple_surveys:feature_survey' category=category %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Modify Survey
+                    </a>
+                    <a href="tel:0800266727" class="btn btn-outline-primary">
+                        <i class="bi bi-telephone me-2"></i>Call Expert
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Call to Action -->
+            <div class="text-center mt-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h3 style="color: #000000; font-weight: 700;">Need Help Choosing?</h3>
+                        <p style="color: #333333; font-size: 1.1rem;">Our insurance experts are standing by to help you understand your options and choose the best policy for your needs.</p>
+                        <a href="tel:0800266727" class="btn btn-primary btn-lg me-3">
+                            <i class="bi bi-telephone me-2"></i>Call 0800-COMPARE
+                        </a>
+                        <a href="{% url 'simple_surveys:home' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-arrow-left me-2"></i>Start New Search
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Vendor JS Files -->
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+        function contactProvider(providerName, policyName) {
+            // Track the contact request
+            console.log('Contact requested for:', providerName, 'Policy:', policyName);
+
+            // You can implement contact tracking here
+            // For now, we'll show a simple alert
+            alert('Thank you for your interest in ' + policyName + ' from ' + providerName + '. Our team will contact you shortly with more details.');
+
+            // In a real implementation, you might:
+            // 1. Send the contact request to your backend
+            // 2. Redirect to a contact form
+            // 3. Open a modal with contact details
+            // 4. Integrate with a CRM system
+        }
+    </script>
+</body>
+
+{% endblock %}

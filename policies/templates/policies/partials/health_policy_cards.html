@@ -1,0 +1,92 @@
+{% for policy in policies %}
+<div class="policy-card">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="mb-1">{{ policy.name }}</h5>
+                <span class="badge bg-success">Health</span>
+            </div>
+            
+            <p class="text-muted small mb-2">
+                <i class="fas fa-building me-1"></i>{{ policy.organization.name }}
+            </p>
+            
+            <p class="mb-3">{{ policy.short_description|truncatewords:25 }}</p>
+            
+            <!-- Feature Display -->
+            {% if policy.policy_features %}
+            <div class="mb-3">
+                <h6 class="small text-muted mb-2">FEATURES:</h6>
+                <div class="features-list">
+                    {% if policy.policy_features.annual_limit_per_member %}
+                    <span class="feature-badge">
+                        Annual Limit: {{ policy.currency }} {{ policy.policy_features.annual_limit_per_member }}
+                    </span>
+                    {% endif %}
+                    
+                    {% if policy.policy_features.monthly_household_income %}
+                    <span class="feature-badge">
+                        Income Req: {{ policy.currency }} {{ policy.policy_features.monthly_household_income }}
+                    </span>
+                    {% endif %}
+                    
+                    <span class="feature-badge {% if policy.policy_features.in_hospital_benefit %}available{% else %}not-available{% endif %}">
+                        In-Hospital: {% if policy.policy_features.in_hospital_benefit %}✓{% else %}✗{% endif %}
+                    </span>
+                    
+                    <span class="feature-badge {% if policy.policy_features.out_hospital_benefit %}available{% else %}not-available{% endif %}">
+                        Out-Hospital: {% if policy.policy_features.out_hospital_benefit %}✓{% else %}✗{% endif %}
+                    </span>
+                    
+                    <span class="feature-badge {% if policy.policy_features.chronic_medication_availability %}available{% else %}not-available{% endif %}">
+                        Chronic Meds: {% if policy.policy_features.chronic_medication_availability %}✓{% else %}✗{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4 text-end">
+            <div class="mb-2">
+                <small class="text-muted">Monthly Premium</small>
+                <div class="h4 text-primary mb-1">
+                    {{ policy.currency }} {{ policy.base_premium }}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted">Coverage Amount</small>
+                <div class="fw-bold">
+                    {{ policy.currency }} {{ policy.coverage_amount }}
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'policies:policy_detail' policy.pk %}" 
+                   class="btn btn-primary">
+                    View Details
+                </a>
+                <button class="btn btn-outline-secondary btn-sm" 
+                        onclick="addToComparison({{ policy.pk }})">
+                    <i class="fas fa-balance-scale me-1"></i>Compare
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="no-results">
+    <i class="fas fa-search fa-3x mb-3"></i>
+    <h4>No health policies match your criteria</h4>
+    <p class="mb-3">Try adjusting your filters to see more options:</p>
+    <ul class="list-unstyled">
+        <li>• Lower the minimum annual limit requirement</li>
+        <li>• Increase the maximum income requirement</li>
+        <li>• Make benefit requirements optional</li>
+        <li>• Clear all filters to see all health policies</li>
+    </ul>
+    <a href="{% url 'policies:health_policy_list' %}" class="btn btn-primary">
+        View All Health Policies
+    </a>
+</div>
+{% endfor %}

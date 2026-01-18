@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
-from .models import SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession
+from .models import SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession, SimpleSurvey
 from .engine import SimpleSurveyEngine
 
 
@@ -1253,3 +1253,327 @@ class SimpleSurveyEngineIntegrationTest(TestCase):
             return 'Test response'
         
         return 'default'
+
+
+class SimpleSurveyModelTest(TestCase):
+    """Test cases for SimpleSurvey model"""
+    
+    def setUp(self):
+        """Set up test data"""
+        self.health_survey_data = {
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'date_of_birth': '1990-01-01',
+            'email': 'john.doe@example.com',
+            'phone': '+27123456789',
+            'insurance_type': SimpleSurvey.InsuranceType.HEALTH,
+            'preferred_annual_limit': 50000.00,
+            'household_income': 15000.00,
+            'wants_in_hospital_benefit': True,
+            'wants_out_hospital_benefit': True,
+            'needs_chronic_medication': False,
+        }
+        
+        self.funeral_survey_data = {
+            'first_name': 'Jane',
+            'last_name': 'Smith',
+            'date_of_birth': '1985-05-15',
+            'email': 'jane.smith@example.com',
+            'phone': '+27987654321',
+            'insurance_type': SimpleSurvey.InsuranceType.FUNERAL,
+            'preferred_cover_amount': 25000.00,
+            'marital_status': 'married',
+            'gender': 'female',
+            'net_income': 12000.00,
+        }
+    
+    def test_health_survey_creation_valid(self):
+        """Test creating a valid health survey"""
+        survey = SimpleSurvey.objects.create(**self.health_survey_data)
+        
+        self.assertEqual(survey.first_name, 'John')
+        self.assertEqual(survey.last_name, 'Doe')
+        self.assertEqual(survey.insurance_type, SimpleSurvey.InsuranceType.HEALTH)
+        self.assertEqual(survey.preferred_annual_limit, 50000.00)
+        self.assertTrue(survey.wants_in_hospital_benefit)
+        self.assertIsNone(survey.preferred_cover_amount)  # Funeral field should be None
+        
+        # Test string representation
+        self.assertEqual(str(survey), 'John Doe - Health Policies')
+    
+    def test_funeral_survey_creation_valid(self):
+        """Test creating a valid funeral survey"""
+        survey = SimpleSurvey.objects.create(**self.funeral_survey_data)
+        
+        self.assertEqual(survey.first_name, 'Jane')
+        self.assertEqual(survey.last_name, 'Smith')
+        self.assertEqual(survey.insurance_type, SimpleSurvey.InsuranceType.FUNERAL)
+        self.assertEqual(survey.preferred_cover_amount, 25000.00)
+        self.assertEqual(survey.marital_status, 'married')
+        self.assertIsNone(survey.preferred_annual_limit)  # Health field should be None
+        
+        # Test string representation
+        self.assertEqual(str(survey), 'Jane Smith - Funeral Policies')
+    
+    def test_health_survey_validation_missing_fields(self):
+        """Test health survey validation with missing required fields"""
+        # Remove required health fields
+        incomplete_data = self.health_survey_data.copy()
+        del incomplete_data['preferred_annual_limit']
+        del incomplete_data['wants_in_hospital_benefit']
+        
+        survey = SimpleSurvey(**incomplete_data)
+        
+        with self.assertRaises(ValidationError) as context:
+            survey.clean()
+        
+        errors = context.exception.message_dict
+        self.assertIn('preferred_annual_limit', errors)
+        self.assertIn('wants_in_hospital_benefit', errors)
+        self.assertIn('Annual limit preference is required', errors['preferred_annual_limit'][0])
+    
+    def test_funeral_survey_validation_missing_fields(self):
+        """Test funeral survey validation with missing required fields"""
+        # Remove required funeral fields
+        incomplete_data = self.funeral_survey_data.copy()
+        del incomplete_data['preferred_cover_amount']
+        del incomplete_data['marital_status']
+        
+        survey = SimpleSurvey(**incomplete_data)
+        
+        with self.assertRaises(ValidationError) as context:
+            survey.clean()
+        
+        errors = context.exception.message_dict
+        self.assertIn('preferred_cover_amount', errors)
+        self.assertIn('marital_status', errors)
+        self.assertIn('Cover amount preference is required', errors['preferred_cover_amount'][0])
+    
+    def test_health_survey_validation_invalid_values(self):
+        """Test health survey validation with invalid values"""
+        invalid_data = self.health_survey_data.copy()
+        invalid_data['preferred_annual_limit'] = -1000.00  # Negative value
+        invalid_data['household_income'] = 0  # Zero value
+        
+        survey = SimpleSurvey(**invalid_data)
+        
+        with self.assertRaises(ValidationError) as context:
+            survey.clean()
+        
+        errors = context.exception.message_dict
+        self.assertIn('preferred_annual_limit', errors)
+        self.assertIn('household_income', errors)
+        self.assertIn('must be greater than 0', errors['preferred_annual_limit'][0])
+    
+    def test_funeral_survey_validation_invalid_values(self):
+        """Test funeral survey validation with invalid values"""
+        invalid_data = self.funeral_survey_data.copy()
+        invalid_data['preferred_cover_amount'] = -5000.00  # Negative value
+        invalid_data['net_income'] = 0  # Zero value
+        
+        survey = SimpleSurvey(**invalid_data)
+        
+        with self.assertRaises(ValidationError) as context:
+            survey.clean()
+        
+        errors = context.exception.message_dict
+        self.assertIn('preferred_cover_amount', errors)
+        self.assertIn('net_income', errors)
+        self.assertIn('must be greater than 0', errors['preferred_cover_amount'][0])
+    
+    def test_get_preferences_dict_health(self):
+        """Test getting preferences dictionary for health survey"""
+        survey = SimpleSurvey.objects.create(**self.health_survey_data)
+        preferences = survey.get_preferences_dict()
+        
+        expected = {
+            'annual_limit_per_member': 50000.00,
+            'monthly_household_income': 15000.00,
+            'in_hospital_benefit': True,
+            'out_hospital_benefit': True,
+            'chronic_medication_availability': False,
+        }
+        
+        self.assertEqual(preferences, expected)
+    
+    def test_get_preferences_dict_funeral(self):
+        """Test getting preferences dictionary for funeral survey"""
+        survey = SimpleSurvey.objects.create(**self.funeral_survey_data)
+        preferences = survey.get_preferences_dict()
+        
+        expected = {
+            'cover_amount': 25000.00,
+            'marital_status_requirement': 'married',
+            'gender_requirement': 'female',
+            'monthly_net_income': 12000.00,
+        }
+        
+        self.assertEqual(preferences, expected)
+    
+    def test_is_complete_health_survey(self):
+        """Test completion check for health survey"""
+        # Complete survey
+        complete_survey = SimpleSurvey.objects.create(**self.health_survey_data)
+        self.assertTrue(complete_survey.is_complete())
+        
+        # Incomplete survey
+        incomplete_data = self.health_survey_data.copy()
+        del incomplete_data['preferred_annual_limit']
+        incomplete_survey = SimpleSurvey(**incomplete_data)
+        self.assertFalse(incomplete_survey.is_complete())
+    
+    def test_is_complete_funeral_survey(self):
+        """Test completion check for funeral survey"""
+        # Complete survey
+        complete_survey = SimpleSurvey.objects.create(**self.funeral_survey_data)
+        self.assertTrue(complete_survey.is_complete())
+        
+        # Incomplete survey
+        incomplete_data = self.funeral_survey_data.copy()
+        del incomplete_data['marital_status']
+        incomplete_survey = SimpleSurvey(**incomplete_data)
+        self.assertFalse(incomplete_survey.is_complete())
+    
+    def test_get_missing_fields_health(self):
+        """Test getting missing fields for health survey"""
+        incomplete_data = self.health_survey_data.copy()
+        del incomplete_data['preferred_annual_limit']
+        del incomplete_data['wants_in_hospital_benefit']
+        
+        survey = SimpleSurvey(**incomplete_data)
+        missing_fields = survey.get_missing_fields()
+        
+        self.assertIn('preferred_annual_limit', missing_fields)
+        self.assertIn('wants_in_hospital_benefit', missing_fields)
+    
+    def test_get_missing_fields_funeral(self):
+        """Test getting missing fields for funeral survey"""
+        incomplete_data = self.funeral_survey_data.copy()
+        del incomplete_data['preferred_cover_amount']
+        del incomplete_data['gender']
+        
+        survey = SimpleSurvey(**incomplete_data)
+        missing_fields = survey.get_missing_fields()
+        
+        self.assertIn('preferred_cover_amount', missing_fields)
+        self.assertIn('gender', missing_fields)
+    
+    def test_optional_contact_fields(self):
+        """Test that email and phone are optional"""
+        data = self.health_survey_data.copy()
+        del data['email']
+        del data['phone']
+        
+        survey = SimpleSurvey.objects.create(**data)
+        self.assertEqual(survey.email, '')
+        self.assertEqual(survey.phone, '')
+        self.assertTrue(survey.is_complete())
+
+
+class SimpleSurveyFormTest(TestCase):
+    """Test cases for SimpleSurvey forms"""
+    
+    def setUp(self):
+        """Set up test data"""
+        self.health_form_data = {
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'date_of_birth': '1990-01-01',
+            'email': 'john.doe@example.com',
+            'phone': '+27123456789',
+            'insurance_type': SimpleSurvey.InsuranceType.HEALTH,
+            'preferred_annual_limit': '50000.00',
+            'household_income': '15000.00',
+            'wants_in_hospital_benefit': True,
+            'wants_out_hospital_benefit': True,
+            'needs_chronic_medication': False,
+        }
+        
+        self.funeral_form_data = {
+            'first_name': 'Jane',
+            'last_name': 'Smith',
+            'date_of_birth': '1985-05-15',
+            'email': 'jane.smith@example.com',
+            'phone': '+27987654321',
+            'insurance_type': SimpleSurvey.InsuranceType.FUNERAL,
+            'preferred_cover_amount': '25000.00',
+            'marital_status': 'married',
+            'gender': 'female',
+            'net_income': '12000.00',
+        }
+    
+    def test_health_survey_form_valid(self):
+        """Test valid health survey form"""
+        from .forms import HealthSurveyForm
+        
+        form = HealthSurveyForm(data=self.health_form_data)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        
+        survey = form.save()
+        self.assertEqual(survey.insurance_type, SimpleSurvey.InsuranceType.HEALTH)
+        self.assertEqual(survey.preferred_annual_limit, 50000.00)
+    
+    def test_funeral_survey_form_valid(self):
+        """Test valid funeral survey form"""
+        from .forms import FuneralSurveyForm
+        
+        form = FuneralSurveyForm(data=self.funeral_form_data)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        
+        survey = form.save()
+        self.assertEqual(survey.insurance_type, SimpleSurvey.InsuranceType.FUNERAL)
+        self.assertEqual(survey.preferred_cover_amount, 25000.00)
+    
+    def test_health_survey_form_invalid_missing_fields(self):
+        """Test health survey form with missing required fields"""
+        from .forms import HealthSurveyForm
+        
+        incomplete_data = self.health_form_data.copy()
+        del incomplete_data['preferred_annual_limit']
+        del incomplete_data['wants_in_hospital_benefit']
+        
+        form = HealthSurveyForm(data=incomplete_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('preferred_annual_limit', form.errors)
+        self.assertIn('wants_in_hospital_benefit', form.errors)
+    
+    def test_funeral_survey_form_invalid_missing_fields(self):
+        """Test funeral survey form with missing required fields"""
+        from .forms import FuneralSurveyForm
+        
+        incomplete_data = self.funeral_form_data.copy()
+        del incomplete_data['preferred_cover_amount']
+        del incomplete_data['marital_status']
+        
+        form = FuneralSurveyForm(data=incomplete_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('preferred_cover_amount', form.errors)
+        self.assertIn('marital_status', form.errors)
+    
+    def test_general_survey_form_insurance_type_validation(self):
+        """Test general survey form with insurance type validation"""
+        from .forms import SimpleSurveyForm
+        
+        # Test without insurance type
+        data = self.health_form_data.copy()
+        del data['insurance_type']
+        
+        form = SimpleSurveyForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Please select an insurance type', str(form.errors))
+    
+    def test_form_field_widgets_and_attributes(self):
+        """Test that form fields have correct widgets and attributes"""
+        from .forms import SimpleSurveyForm
+        
+        form = SimpleSurveyForm()
+        
+        # Test CSS classes
+        self.assertIn('form-control', form.fields['first_name'].widget.attrs['class'])
+        self.assertIn('health-field', form.fields['preferred_annual_limit'].widget.attrs['class'])
+        self.assertIn('funeral-field', form.fields['preferred_cover_amount'].widget.attrs['class'])
+        
+        # Test input types
+        self.assertEqual(form.fields['date_of_birth'].widget.attrs['type'], 'date')
+        self.assertEqual(form.fields['preferred_annual_limit'].widget.attrs['step'], '0.01')
+        self.assertEqual(form.fields['preferred_annual_limit'].widget.attrs['min'], '0')

@@ -338,9 +338,30 @@
         <div class="results-container">
             <div class="results-header">
                 <h1>Your {{ category_display }} Quotes</h1>
-                <p class="lead">We found {{ total_quotations }} personalized quotes for you from top South African
-                    providers.</p>
+                <p class="lead">We found {{ total_quotations }} personalized quotes for you from top Eswatini providers.</p>
             </div>
+
+            <!-- Feature Survey Promotion -->
+            {% if quotations %}
+            <div class="alert" style="background: linear-gradient(135deg, #e8f5e8, #f0f8e8); color: #2d5a2d; border: 2px solid #269523; border-radius: 20px; margin-bottom: 40px;" role="alert">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-stars me-3" style="font-size: 2rem; color: #f1d925;"></i>
+                            <div>
+                                <h5 class="mb-1" style="color: #1a4a1a; font-weight: 700;">Get Even Better Matches!</h5>
+                                <p class="mb-0">Try our new feature-based survey for more precise policy recommendations based on specific {{ category_display|lower }} features.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <a href="{% url 'simple_surveys:feature_survey' category=category %}" class="btn" style="background: linear-gradient(135deg, #269523, #f1d925); color: #000000; border: none; border-radius: 25px; padding: 12px 25px; font-weight: 700;">
+                            <i class="bi bi-arrow-right me-2"></i>Try Feature Survey
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Summary Statistics -->
             {% if metadata %}

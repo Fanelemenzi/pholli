@@ -29,6 +29,10 @@ urlpatterns = [
     path('survey/<str:category>/process/', views.ProcessSurveyView.as_view(), name='process'),
     path('survey/<str:category>/results/', views.SurveyResultsView.as_view(), name='results'),
     
+    # Feature-based survey functionality
+    path('feature-survey/<str:category>/', views.FeatureSurveyView.as_view(), name='feature_survey'),
+    path('feature-survey/<str:category>/results/', views.FeatureResultsView.as_view(), name='feature_results'),
+    
     # AJAX endpoints
     path('ajax/save-response/', views.save_response_ajax, name='save_response'),
     path('ajax/survey-status/<str:category>/', views.survey_status_ajax, name='survey_status'),

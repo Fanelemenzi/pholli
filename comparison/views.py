@@ -6,13 +6,299 @@ from django.contrib import messages
 from django.urls import reverse
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import ComparisonSession, ComparisonResult
+from decimal import Decimal
+from .models import ComparisonSession, ComparisonResult, FeatureComparisonResult
 from .engine import PolicyComparisonEngine
+from .feature_comparison_manager import FeatureComparisonManager
+from .ranking_utils import ComparisonResultAnalyzer
 from policies.models import PolicyCategory
+from simple_surveys.models import SimpleSurvey
 import json
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def feature_comparison_results_view(request, survey_id):
+    """
+    Display feature-based comparison results for a SimpleSurvey with filtering and sorting.
+    """
+    try:
+        # Get the survey
+        survey = get_object_or_404(SimpleSurvey, id=survey_id)
+        
+        # Check if survey is complete
+        if not survey.is_complete():
+            messages.error(request, 'Survey must be completed before viewing results.')
+            return redirect('simple_surveys:survey_form', insurance_type=survey.insurance_type.lower())
+        
+        # Get or generate comparison results
+        comparison_manager = FeatureComparisonManager()
+        all_results = comparison_manager.compare_policies_for_survey(survey)
+        
+        if not all_results:
+            messages.warning(request, 'No matching policies found for your preferences.')
+            return redirect('simple_surveys:survey_form', insurance_type=survey.insurance_type.lower())
+        
+        # Apply filtering and sorting
+        filtered_results = _apply_feature_filters(request, all_results, survey)
+        sorted_results = _apply_sorting(request, filtered_results)
+        
+        # Pagination
+        page_size = int(request.GET.get('page_size', 10))
+        paginator = Paginator(sorted_results, page_size)
+        page_number = request.GET.get('page')
+        results_page = paginator.get_page(page_number)
+        
+        # Get analysis
+        analyzer = ComparisonResultAnalyzer()
+        analysis = analyzer.analyze_survey_results(survey, all_results)
+        
+        # Get available filter options
+        filter_options = _get_filter_options(all_results, survey)
+        
+        # Prepare context
+        context = {
+            'survey': survey,
+            'results': results_page,
+            'all_results': all_results,
+            'total_results': len(all_results),
+            'filtered_count': len(sorted_results),
+            'analysis': analysis,
+            'best_match': all_results[0] if all_results else None,
+            'insurance_type': survey.get_insurance_type_display(),
+            'user_preferences': survey.get_preferences_dict(),
+            'filter_options': filter_options,
+            'current_filters': _get_current_filters(request),
+            'current_sort': request.GET.get('sort', 'compatibility_rank'),
+            'page_sizes': [5, 10, 20, 50],
+            'current_page_size': page_size,
+        }
+        
+        return render(request, 'comparison/feature_results.html', context)
+        
+    except Exception as e:
+        logger.error(f"Error displaying feature comparison results for survey {survey_id}: {str(e)}")
+        messages.error(request, 'An error occurred while loading comparison results.')
+        return redirect('simple_surveys:category_selection')
+
+
+def feature_comparison_detail_view(request, survey_id, result_id):
+    """
+    Display detailed view of a specific feature comparison result.
+    """
+    try:
+        survey = get_object_or_404(SimpleSurvey, id=survey_id)
+        result = get_object_or_404(
+            FeatureComparisonResult, 
+            id=result_id, 
+            survey=survey
+        )
+        
+        # Get all results for context
+        all_results = FeatureComparisonResult.objects.filter(
+            survey=survey
+        ).order_by('compatibility_rank')
+        
+        # Get detailed feature analysis
+        feature_analysis = {}
+        for feature_name, score_data in result.feature_scores.items():
+            if isinstance(score_data, dict):
+                feature_analysis[feature_name] = {
+                    'display_name': feature_name.replace('_', ' ').title(),
+                    'score': score_data.get('score', 0),
+                    'user_preference': score_data.get('user_preference'),
+                    'policy_value': score_data.get('policy_value'),
+                    'explanation': score_data.get('explanation', '')
+                }
+        
+        context = {
+            'survey': survey,
+            'result': result,
+            'all_results': all_results,
+            'feature_analysis': feature_analysis,
+            'user_preferences': survey.get_preferences_dict(),
+        }
+        
+        return render(request, 'comparison/feature_result_detail.html', context)
+        
+    except Exception as e:
+        logger.error(f"Error displaying feature comparison detail: {str(e)}")
+        messages.error(request, 'An error occurred while loading result details.')
+        return redirect('comparison:feature_results', survey_id=survey_id)
+
+
+def feature_comparison_matrix_view(request, survey_id):
+    """
+    Display side-by-side feature comparison matrix for top policies.
+    """
+    try:
+        survey = get_object_or_404(SimpleSurvey, id=survey_id)
+        
+        # Get top results (limit to 4 for readability)
+        results = FeatureComparisonResult.objects.filter(
+            survey=survey
+        ).select_related('policy', 'policy__organization').order_by('compatibility_rank')[:4]
+        
+        if not results.exists():
+            messages.error(request, 'No comparison results found.')
+            return redirect('comparison:feature_results', survey_id=survey_id)
+        
+        # Build comparison matrix
+        matrix_data = _build_feature_comparison_matrix(results, survey)
+        
+        context = {
+            'survey': survey,
+            'results': results,
+            'matrix_data': matrix_data,
+            'user_preferences': survey.get_preferences_dict(),
+        }
+        
+        return render(request, 'comparison/feature_matrix.html', context)
+        
+    except Exception as e:
+        logger.error(f"Error displaying feature comparison matrix: {str(e)}")
+        messages.error(request, 'An error occurred while loading comparison matrix.')
+        return redirect('comparison:feature_results', survey_id=survey_id)
+
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def regenerate_comparison_results_ajax(request, survey_id):
+    """
+    AJAX endpoint to regenerate comparison results for a survey.
+    """
+    try:
+        survey = get_object_or_404(SimpleSurvey, id=survey_id)
+        
+        if not survey.is_complete():
+            return JsonResponse({
+                'success': False,
+                'error': 'Survey must be completed before generating results'
+            }, status=400)
+        
+        # Regenerate results
+        comparison_manager = FeatureComparisonManager()
+        results = comparison_manager.compare_policies_for_survey(
+            survey, 
+            force_regenerate=True
+        )
+        
+        if results:
+            return JsonResponse({
+                'success': True,
+                'message': f'Generated {len(results)} comparison results',
+                'results_count': len(results),
+                'best_match_score': float(results[0].overall_compatibility_score) if results else 0
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'No matching policies found for your preferences'
+            }, status=404)
+        
+    except Exception as e:
+        logger.error(f"Error regenerating comparison results: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An error occurred while regenerating results'
+        }, status=500)
+
+
+def _build_feature_comparison_matrix(results, survey):
+    """
+    Build feature comparison matrix data for side-by-side comparison.
+    
+    Args:
+        results: QuerySet of FeatureComparisonResult instances
+        survey: SimpleSurvey instance
+        
+    Returns:
+        Dictionary with matrix data structure
+    """
+    matrix_data = {
+        'policies': [],
+        'features': [],
+        'comparison_rows': []
+    }
+    
+    if not results:
+        return matrix_data
+    
+    # Get policies
+    policies = [r.policy for r in results]
+    matrix_data['policies'] = policies
+    
+    # Get user preferences for comparison
+    user_preferences = survey.get_preferences_dict()
+    
+    # Build feature list from first result
+    first_result = results[0]
+    feature_names = list(first_result.feature_scores.keys())
+    
+    for feature_name in feature_names:
+        display_name = feature_name.replace('_', ' ').title()
+        user_pref = user_preferences.get(feature_name)
+        
+        matrix_data['features'].append({
+            'name': feature_name,
+            'display_name': display_name,
+            'user_preference': user_pref
+        })
+    
+    # Build comparison rows
+    for feature in matrix_data['features']:
+        feature_name = feature['name']
+        row = {
+            'feature': feature,
+            'values': []
+        }
+        
+        for result in results:
+            score_data = result.feature_scores.get(feature_name, {})
+            policy_value = score_data.get('policy_value', 'N/A')
+            score = score_data.get('score', 0)
+            
+            row['values'].append({
+                'policy': result.policy,
+                'value': policy_value,
+                'score': score,
+                'formatted_value': _format_feature_value(feature_name, policy_value),
+                'matches_preference': score >= 0.8  # High match threshold
+            })
+        
+        matrix_data['comparison_rows'].append(row)
+    
+    return matrix_data
+
+
+def _format_feature_value(feature_name, value):
+    """
+    Format feature value for display in comparison matrix.
+    
+    Args:
+        feature_name: Name of the feature
+        value: Raw feature value
+        
+    Returns:
+        Formatted string for display
+    """
+    if value is None or value == 'N/A':
+        return 'N/A'
+    
+    # Format based on feature type
+    if 'amount' in feature_name.lower() or 'limit' in feature_name.lower():
+        if isinstance(value, (int, float)):
+            return f"R{value:,.0f}"
+    elif 'income' in feature_name.lower():
+        if isinstance(value, (int, float)):
+            return f"R{value:,.0f}/month"
+    elif isinstance(value, bool):
+        return 'Yes' if value else 'No'
+    elif isinstance(value, (int, float)):
+        return f"{value:,.0f}"
+    
+    return str(value)
 
 
 def enhanced_results_view(request, session_key):
@@ -489,3 +775,398 @@ def _get_policy_details(policy):
         details['features'].append(f"Repatriation: {'Covered' if policy.repatriation_covered else 'Not Covered'}")
     
     return details
+
+
+def _apply_feature_filters(request, results, survey):
+    """
+    Apply feature-based filters to comparison results.
+    
+    Args:
+        request: HTTP request object with filter parameters
+        results: List of FeatureComparisonResult objects
+        survey: SimpleSurvey instance
+        
+    Returns:
+        Filtered list of results
+    """
+    filtered_results = results.copy()
+    
+    # Compatibility score filter
+    min_score = request.GET.get('min_score')
+    if min_score:
+        try:
+            min_score = float(min_score)
+            filtered_results = [r for r in filtered_results if r.overall_compatibility_score >= min_score]
+        except ValueError:
+            pass
+    
+    # Premium range filter
+    min_premium = request.GET.get('min_premium')
+    max_premium = request.GET.get('max_premium')
+    if min_premium:
+        try:
+            min_premium = float(min_premium)
+            filtered_results = [r for r in filtered_results if r.policy.base_premium >= min_premium]
+        except (ValueError, AttributeError):
+            pass
+    if max_premium:
+        try:
+            max_premium = float(max_premium)
+            filtered_results = [r for r in filtered_results if r.policy.base_premium <= max_premium]
+        except (ValueError, AttributeError):
+            pass
+    
+    # Coverage amount filter
+    min_coverage = request.GET.get('min_coverage')
+    if min_coverage:
+        try:
+            min_coverage = float(min_coverage)
+            filtered_results = [r for r in filtered_results if r.policy.coverage_amount >= min_coverage]
+        except (ValueError, AttributeError):
+            pass
+    
+    # Insurance type specific filters
+    if survey.insurance_type == 'HEALTH':
+        filtered_results = _apply_health_filters(request, filtered_results)
+    elif survey.insurance_type == 'FUNERAL':
+        filtered_results = _apply_funeral_filters(request, filtered_results)
+    
+    # Organization filter
+    organization = request.GET.get('organization')
+    if organization:
+        filtered_results = [r for r in filtered_results if r.policy.organization.name == organization]
+    
+    # Recommendation category filter
+    recommendation_category = request.GET.get('recommendation_category')
+    if recommendation_category:
+        filtered_results = [r for r in filtered_results if r.recommendation_category == recommendation_category]
+    
+    return filtered_results
+
+
+def _apply_health_filters(request, results):
+    """
+    Apply health insurance specific filters.
+    
+    Args:
+        request: HTTP request object
+        results: List of FeatureComparisonResult objects
+        
+    Returns:
+        Filtered list of results
+    """
+    filtered_results = results.copy()
+    
+    # In-hospital benefit filter
+    in_hospital_benefit = request.GET.get('in_hospital_benefit')
+    if in_hospital_benefit == 'true':
+        filtered_results = [r for r in filtered_results 
+                          if r.policy.policy_features and r.policy.policy_features.in_hospital_benefit == True]
+    elif in_hospital_benefit == 'false':
+        filtered_results = [r for r in filtered_results 
+                          if r.policy.policy_features and r.policy.policy_features.in_hospital_benefit == False]
+    
+    # Out-of-hospital benefit filter
+    out_hospital_benefit = request.GET.get('out_hospital_benefit')
+    if out_hospital_benefit == 'true':
+        filtered_results = [r for r in filtered_results 
+                          if r.policy.policy_features and r.policy.policy_features.out_hospital_benefit == True]
+    elif out_hospital_benefit == 'false':
+        filtered_results = [r for r in filtered_results 
+                          if r.policy.policy_features and r.policy.policy_features.out_hospital_benefit == False]
+    
+    # Chronic medication coverage filter
+    chronic_medication = request.GET.get('chronic_medication')
+    if chronic_medication == 'true':
+        filtered_results = [r for r in filtered_results 
+                          if r.policy.policy_features and r.policy.policy_features.chronic_medication_availability == True]
+    elif chronic_medication == 'false':
+        filtered_results = [r for r in filtered_results 
+                          if r.policy.policy_features and r.policy.policy_features.chronic_medication_availability == False]
+    
+    # Annual limit filter
+    min_annual_limit = request.GET.get('min_annual_limit')
+    if min_annual_limit:
+        try:
+            min_annual_limit = float(min_annual_limit)
+            filtered_results = [r for r in filtered_results 
+                              if r.policy.policy_features and 
+                              r.policy.policy_features.annual_limit_per_member and
+                              r.policy.policy_features.annual_limit_per_member >= min_annual_limit]
+        except ValueError:
+            pass
+    
+    return filtered_results
+
+
+def _apply_funeral_filters(request, results):
+    """
+    Apply funeral insurance specific filters.
+    
+    Args:
+        request: HTTP request object
+        results: List of FeatureComparisonResult objects
+        
+    Returns:
+        Filtered list of results
+    """
+    filtered_results = results.copy()
+    
+    # Cover amount filter
+    min_cover_amount = request.GET.get('min_cover_amount')
+    if min_cover_amount:
+        try:
+            min_cover_amount = float(min_cover_amount)
+            filtered_results = [r for r in filtered_results 
+                              if r.policy.policy_features and 
+                              r.policy.policy_features.cover_amount and
+                              r.policy.policy_features.cover_amount >= min_cover_amount]
+        except ValueError:
+            pass
+    
+    # Marital status requirement filter
+    marital_status = request.GET.get('marital_status')
+    if marital_status:
+        filtered_results = [r for r in filtered_results 
+                          if r.policy.policy_features and 
+                          r.policy.policy_features.marital_status_requirement == marital_status]
+    
+    # Gender requirement filter
+    gender = request.GET.get('gender')
+    if gender:
+        filtered_results = [r for r in filtered_results 
+                          if r.policy.policy_features and 
+                          r.policy.policy_features.gender_requirement == gender]
+    
+    # Waiting period filter
+    max_waiting_period = request.GET.get('max_waiting_period')
+    if max_waiting_period:
+        try:
+            max_waiting_period = int(max_waiting_period)
+            filtered_results = [r for r in filtered_results 
+                              if r.policy.waiting_period_days <= max_waiting_period]
+        except (ValueError, AttributeError):
+            pass
+    
+    return filtered_results
+
+
+def _apply_sorting(request, results):
+    """
+    Apply sorting to comparison results.
+    
+    Args:
+        request: HTTP request object
+        results: List of FeatureComparisonResult objects
+        
+    Returns:
+        Sorted list of results
+    """
+    sort_by = request.GET.get('sort', 'compatibility_rank')
+    sort_order = request.GET.get('order', 'asc')
+    
+    reverse = sort_order == 'desc'
+    
+    if sort_by == 'compatibility_rank':
+        # Default sorting by compatibility rank (ascending = best first)
+        sorted_results = sorted(results, key=lambda r: r.compatibility_rank, reverse=False)
+    elif sort_by == 'compatibility_score':
+        # Sort by compatibility score (descending = highest first)
+        sorted_results = sorted(results, key=lambda r: r.overall_compatibility_score, reverse=True)
+    elif sort_by == 'premium':
+        # Sort by premium
+        sorted_results = sorted(results, key=lambda r: r.policy.base_premium or 0, reverse=reverse)
+    elif sort_by == 'coverage':
+        # Sort by coverage amount
+        sorted_results = sorted(results, key=lambda r: r.policy.coverage_amount or 0, reverse=reverse)
+    elif sort_by == 'organization':
+        # Sort by organization name
+        sorted_results = sorted(results, key=lambda r: r.policy.organization.name, reverse=reverse)
+    elif sort_by == 'policy_name':
+        # Sort by policy name
+        sorted_results = sorted(results, key=lambda r: r.policy.name, reverse=reverse)
+    elif sort_by == 'feature_matches':
+        # Sort by number of feature matches
+        sorted_results = sorted(results, key=lambda r: r.feature_match_count, reverse=not reverse)
+    elif sort_by == 'waiting_period':
+        # Sort by waiting period
+        sorted_results = sorted(results, key=lambda r: r.policy.waiting_period_days or 0, reverse=reverse)
+    else:
+        # Default to compatibility rank
+        sorted_results = sorted(results, key=lambda r: r.compatibility_rank, reverse=False)
+    
+    return sorted_results
+
+
+def _get_filter_options(results, survey):
+    """
+    Get available filter options based on the results.
+    
+    Args:
+        results: List of FeatureComparisonResult objects
+        survey: SimpleSurvey instance
+        
+    Returns:
+        Dictionary of filter options
+    """
+    filter_options = {
+        'organizations': [],
+        'recommendation_categories': [],
+        'premium_range': {'min': 0, 'max': 0},
+        'coverage_range': {'min': 0, 'max': 0},
+        'score_range': {'min': 0, 'max': 100},
+    }
+    
+    if not results:
+        return filter_options
+    
+    # Get unique organizations
+    organizations = set()
+    premiums = []
+    coverages = []
+    scores = []
+    recommendation_categories = set()
+    
+    for result in results:
+        organizations.add(result.policy.organization.name)
+        recommendation_categories.add(result.recommendation_category)
+        scores.append(float(result.overall_compatibility_score))
+        
+        if result.policy.base_premium:
+            premiums.append(float(result.policy.base_premium))
+        if result.policy.coverage_amount:
+            coverages.append(float(result.policy.coverage_amount))
+    
+    filter_options['organizations'] = sorted(list(organizations))
+    filter_options['recommendation_categories'] = sorted(list(recommendation_categories))
+    
+    if premiums:
+        filter_options['premium_range'] = {
+            'min': min(premiums),
+            'max': max(premiums)
+        }
+    
+    if coverages:
+        filter_options['coverage_range'] = {
+            'min': min(coverages),
+            'max': max(coverages)
+        }
+    
+    if scores:
+        filter_options['score_range'] = {
+            'min': min(scores),
+            'max': max(scores)
+        }
+    
+    # Add insurance type specific options
+    if survey.insurance_type == 'HEALTH':
+        filter_options.update(_get_health_filter_options(results))
+    elif survey.insurance_type == 'FUNERAL':
+        filter_options.update(_get_funeral_filter_options(results))
+    
+    return filter_options
+
+
+def _get_health_filter_options(results):
+    """Get health insurance specific filter options."""
+    options = {
+        'annual_limits': [],
+        'has_in_hospital': False,
+        'has_out_hospital': False,
+        'has_chronic_medication': False,
+    }
+    
+    annual_limits = set()
+    
+    for result in results:
+        if result.policy.policy_features:
+            features = result.policy.policy_features
+            
+            if features.annual_limit_per_member:
+                annual_limits.add(float(features.annual_limit_per_member))
+            
+            if features.in_hospital_benefit:
+                options['has_in_hospital'] = True
+            
+            if features.out_hospital_benefit:
+                options['has_out_hospital'] = True
+            
+            if features.chronic_medication_availability:
+                options['has_chronic_medication'] = True
+    
+    if annual_limits:
+        options['annual_limits'] = sorted(list(annual_limits))
+    
+    return options
+
+
+def _get_funeral_filter_options(results):
+    """Get funeral insurance specific filter options."""
+    options = {
+        'cover_amounts': [],
+        'marital_statuses': [],
+        'genders': [],
+        'waiting_periods': [],
+    }
+    
+    cover_amounts = set()
+    marital_statuses = set()
+    genders = set()
+    waiting_periods = set()
+    
+    for result in results:
+        if result.policy.policy_features:
+            features = result.policy.policy_features
+            
+            if features.cover_amount:
+                cover_amounts.add(float(features.cover_amount))
+            
+            if features.marital_status_requirement:
+                marital_statuses.add(features.marital_status_requirement)
+            
+            if features.gender_requirement:
+                genders.add(features.gender_requirement)
+        
+        if result.policy.waiting_period_days:
+            waiting_periods.add(result.policy.waiting_period_days)
+    
+    options['cover_amounts'] = sorted(list(cover_amounts))
+    options['marital_statuses'] = sorted(list(marital_statuses))
+    options['genders'] = sorted(list(genders))
+    options['waiting_periods'] = sorted(list(waiting_periods))
+    
+    return options
+
+
+def _get_current_filters(request):
+    """
+    Get currently applied filters from request.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Dictionary of current filter values
+    """
+    filters = {}
+    
+    # General filters
+    for param in ['min_score', 'min_premium', 'max_premium', 'min_coverage', 
+                  'organization', 'recommendation_category']:
+        value = request.GET.get(param)
+        if value:
+            filters[param] = value
+    
+    # Health specific filters
+    for param in ['in_hospital_benefit', 'out_hospital_benefit', 'chronic_medication', 'min_annual_limit']:
+        value = request.GET.get(param)
+        if value:
+            filters[param] = value
+    
+    # Funeral specific filters
+    for param in ['min_cover_amount', 'marital_status', 'gender', 'max_waiting_period']:
+        value = request.GET.get(param)
+        if value:
+            filters[param] = value
+    
+    return filters

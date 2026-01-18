@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from policies.models import BasePolicy, PolicyCategory
+from simple_surveys.models import SimpleSurvey
 
 User = get_user_model()
 
@@ -394,6 +395,159 @@ class ComparisonResult(models.Model):
     
     def __str__(self):
         return f"{self.policy.name} - Score: {self.overall_score} (Rank #{self.rank})"
+
+
+class FeatureComparisonResult(models.Model):
+    """
+    Enhanced comparison results with feature-specific scoring for health and funeral policies.
+    Based on standardized features from Docs/features.md.
+    """
+    
+    class RecommendationCategory(models.TextChoices):
+        PERFECT_MATCH = 'PERFECT_MATCH', _('Perfect Match')
+        EXCELLENT_MATCH = 'EXCELLENT_MATCH', _('Excellent Match')
+        GOOD_MATCH = 'GOOD_MATCH', _('Good Match')
+        PARTIAL_MATCH = 'PARTIAL_MATCH', _('Partial Match')
+        POOR_MATCH = 'POOR_MATCH', _('Poor Match')
+    
+    survey = models.ForeignKey(
+        SimpleSurvey,
+        on_delete=models.CASCADE,
+        related_name='feature_comparison_results',
+        help_text=_("SimpleSurvey this result is based on")
+    )
+    
+    policy = models.ForeignKey(
+        BasePolicy,
+        on_delete=models.CASCADE,
+        related_name='feature_comparison_results',
+        help_text=_("Policy being evaluated")
+    )
+    
+    # Overall scoring
+    overall_compatibility_score = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        help_text=_("Overall compatibility score (0-100)")
+    )
+    
+    feature_match_count = models.PositiveIntegerField(
+        help_text=_("Number of features that match user preferences")
+    )
+    
+    feature_mismatch_count = models.PositiveIntegerField(
+        help_text=_("Number of features that don't match user preferences")
+    )
+    
+    # Detailed feature analysis
+    feature_scores = models.JSONField(
+        default=dict,
+        help_text=_("Individual feature scores and analysis")
+    )
+    
+    feature_matches = models.JSONField(
+        default=list,
+        help_text=_("List of features that match user preferences")
+    )
+    
+    feature_mismatches = models.JSONField(
+        default=list,
+        help_text=_("List of features that don't match user preferences")
+    )
+    
+    # Ranking and recommendations
+    compatibility_rank = models.PositiveIntegerField(
+        help_text=_("Rank among compared policies (1 = best match)")
+    )
+    
+    recommendation_category = models.CharField(
+        max_length=50,
+        choices=RecommendationCategory.choices,
+        help_text=_("Category of recommendation based on compatibility score")
+    )
+    
+    # Explanations
+    match_explanation = models.TextField(
+        help_text=_("Human-readable explanation of the match quality")
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['survey', 'compatibility_rank']
+        verbose_name = _("Feature Comparison Result")
+        verbose_name_plural = _("Feature Comparison Results")
+        unique_together = ['survey', 'policy']
+        indexes = [
+            models.Index(fields=['survey', 'compatibility_rank']),
+            models.Index(fields=['policy']),
+            models.Index(fields=['overall_compatibility_score']),
+            models.Index(fields=['recommendation_category']),
+        ]
+    
+    def __str__(self):
+        return f"{self.policy.name} - {self.overall_compatibility_score}% (Rank #{self.compatibility_rank})"
+    
+    def get_match_percentage(self):
+        """Get compatibility score as a percentage for display."""
+        return round(float(self.overall_compatibility_score), 1)
+    
+    def get_recommendation_badge_class(self):
+        """Get CSS class for recommendation category badge."""
+        badge_classes = {
+            self.RecommendationCategory.PERFECT_MATCH: 'badge-success',
+            self.RecommendationCategory.EXCELLENT_MATCH: 'badge-primary',
+            self.RecommendationCategory.GOOD_MATCH: 'badge-info',
+            self.RecommendationCategory.PARTIAL_MATCH: 'badge-warning',
+            self.RecommendationCategory.POOR_MATCH: 'badge-secondary',
+        }
+        return badge_classes.get(self.recommendation_category, 'badge-secondary')
+    
+    def get_top_matching_features(self, limit=3):
+        """Get the top matching features for display."""
+        return self.feature_matches[:limit] if self.feature_matches else []
+    
+    def get_main_concerns(self, limit=3):
+        """Get the main feature concerns for display."""
+        return self.feature_mismatches[:limit] if self.feature_mismatches else []
+    
+    def has_strong_match(self):
+        """Check if this is a strong match (>= 80% compatibility)."""
+        return self.overall_compatibility_score >= 80
+    
+    def has_good_match(self):
+        """Check if this is a good match (>= 60% compatibility)."""
+        return self.overall_compatibility_score >= 60
+    
+    def get_feature_score(self, feature_name):
+        """Get the score for a specific feature."""
+        return self.feature_scores.get(feature_name, {}).get('score', 0)
+    
+    def get_feature_analysis(self, feature_name):
+        """Get detailed analysis for a specific feature."""
+        return self.feature_scores.get(feature_name, {})
+    
+    def update_ranking(self, new_rank):
+        """Update the ranking of this result."""
+        self.compatibility_rank = new_rank
+        self.save(update_fields=['compatibility_rank', 'updated_at'])
+    
+    def categorize_recommendation(self):
+        """Automatically categorize recommendation based on compatibility score."""
+        score = float(self.overall_compatibility_score)
+        
+        if score >= 95:
+            return self.RecommendationCategory.PERFECT_MATCH
+        elif score >= 80:
+            return self.RecommendationCategory.EXCELLENT_MATCH
+        elif score >= 60:
+            return self.RecommendationCategory.GOOD_MATCH
+        elif score >= 40:
+            return self.RecommendationCategory.PARTIAL_MATCH
+        else:
+            return self.RecommendationCategory.POOR_MATCH
 
 
 class UserPreferenceProfile(models.Model):

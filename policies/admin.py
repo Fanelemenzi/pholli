@@ -4,22 +4,43 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.urls import reverse
 from django.db.models import Avg, Count, Q
+from django.core.exceptions import ValidationError
 from .models import (
     PolicyCategory,
     PolicyType,
     BasePolicy,
-    PolicyFeature,
+    PolicyFeatures,
+    AdditionalFeatures,
     PolicyEligibility,
     PolicyExclusion,
     PolicyDocument,
     PolicyPremiumCalculation,
     PolicyReview
 )
+from .forms import PolicyFeaturesAdminForm, AdditionalFeaturesAdminForm
 
 
 # Inline Admin Classes
-class PolicyFeatureInline(admin.TabularInline):
-    model = PolicyFeature
+class PolicyFeaturesInline(admin.StackedInline):
+    model = PolicyFeatures
+    extra = 0
+    fields = [
+        'insurance_type',
+        'annual_limit_per_member',
+        'monthly_household_income', 
+        'in_hospital_benefit',
+        'out_hospital_benefit',
+        'chronic_medication_availability',
+        'cover_amount',
+        'marital_status_requirement',
+        'gender_requirement',
+        'monthly_net_income'
+    ]
+    classes = ['collapse']
+
+
+class AdditionalFeaturesInline(admin.TabularInline):
+    model = AdditionalFeatures
     extra = 1
     fields = ['title', 'description', 'icon', 'is_highlighted', 'display_order']
     classes = ['collapse']
@@ -277,7 +298,8 @@ class BasePolicyAdmin(admin.ModelAdmin):
     )
     
     inlines = [
-        PolicyFeatureInline,
+        PolicyFeaturesInline,
+        AdditionalFeaturesInline,
         PolicyEligibilityInline,
         PolicyExclusionInline,
         PolicyDocumentInline,
@@ -463,19 +485,435 @@ class PolicyReviewAdmin(admin.ModelAdmin):
     
     def approval_status(self, obj):
         if obj.is_approved:
-            return format_html('<span style="color: green;">✓ Approved</span>')
-        return format_html('<span style="color: orange;">⧗ Pending</span>')
+            return format_html('<span style="color: green;">{}</span>', '✓ Approved')
+        return format_html('<span style="color: orange;">{}</span>', '⧗ Pending')
     approval_status.short_description = _('Status')
     approval_status.boolean = True
 
 
-# Register remaining models with simple admin
-@admin.register(PolicyFeature)
-class PolicyFeatureAdmin(admin.ModelAdmin):
-    list_display = ['title', 'policy', 'is_highlighted', 'display_order']
-    list_filter = ['is_highlighted', 'policy__category']
-    search_fields = ['title', 'description', 'policy__name']
-    list_select_related = ['policy']
+# Enhanced Admin Classes for Policy Features
+@admin.register(PolicyFeatures)
+class PolicyFeaturesAdmin(admin.ModelAdmin):
+    form = PolicyFeaturesAdminForm
+    list_display = [
+        'policy_name_display',
+        'insurance_type_display',
+        'feature_summary',
+        'validation_status',
+        'created_at'
+    ]
+    list_filter = [
+        'insurance_type',
+        'policy__category',
+        'policy__organization',
+        'policy__approval_status',
+        'created_at'
+    ]
+    search_fields = [
+        'policy__name',
+        'policy__policy_number',
+        'policy__organization__name'
+    ]
+    list_select_related = ['policy', 'policy__organization', 'policy__category']
+    readonly_fields = ['created_at', 'updated_at', 'validation_status_display']
+    
+    fieldsets = (
+        (_('Policy Association'), {
+            'fields': ('policy', 'insurance_type'),
+            'description': _('Select the policy and specify the insurance type. This determines which feature fields are relevant.')
+        }),
+        (_('Health Policy Features'), {
+            'fields': (
+                'annual_limit_per_member',
+                'monthly_household_income',
+                'in_hospital_benefit',
+                'out_hospital_benefit',
+                'chronic_medication_availability'
+            ),
+            'description': _('Features specific to health/medical insurance policies. Only fill these if insurance type is Health.'),
+            'classes': ('collapse',)
+        }),
+        (_('Funeral Policy Features'), {
+            'fields': (
+                'cover_amount',
+                'marital_status_requirement',
+                'gender_requirement',
+                'monthly_net_income'
+            ),
+            'description': _('Features specific to funeral insurance policies. Only fill these if insurance type is Funeral.'),
+            'classes': ('collapse',)
+        }),
+        (_('Validation & Metadata'), {
+            'fields': ('validation_status_display', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    actions = [
+        'validate_features',
+        'clear_irrelevant_features',
+        'duplicate_features_to_similar_policies'
+    ]
+    
+    def policy_name_display(self, obj):
+        """Display policy name with link to policy admin"""
+        url = reverse('admin:policies_basepolicy_change', args=[obj.policy.pk])
+        return format_html(
+            '<a href="{}" style="text-decoration: none;">{}</a>',
+            url,
+            obj.policy.name
+        )
+    policy_name_display.short_description = _('Policy')
+    policy_name_display.admin_order_field = 'policy__name'
+    
+    def insurance_type_display(self, obj):
+        """Display insurance type with color coding"""
+        colors = {
+            'HEALTH': '#28a745',
+            'FUNERAL': '#6f42c1'
+        }
+        color = colors.get(obj.insurance_type, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">{}</span>',
+            color,
+            obj.get_insurance_type_display()
+        )
+    insurance_type_display.short_description = _('Insurance Type')
+    insurance_type_display.admin_order_field = 'insurance_type'
+    
+    def feature_summary(self, obj):
+        """Display summary of filled features"""
+        if obj.insurance_type == 'HEALTH':
+            features = [
+                obj.annual_limit_per_member,
+                obj.monthly_household_income,
+                obj.in_hospital_benefit,
+                obj.out_hospital_benefit,
+                obj.chronic_medication_availability
+            ]
+            filled = sum(1 for f in features if f is not None)
+            return f"💊 {filled}/5 features"
+        elif obj.insurance_type == 'FUNERAL':
+            features = [
+                obj.cover_amount,
+                obj.marital_status_requirement,
+                obj.gender_requirement,
+                obj.monthly_net_income
+            ]
+            filled = sum(1 for f in features if f is not None)
+            return f"⚱️ {filled}/4 features"
+        return "❓ Unknown type"
+    feature_summary.short_description = _('Features Filled')
+    
+    def validation_status(self, obj):
+        """Display validation status"""
+        errors = self._validate_features(obj)
+        if not errors:
+            return format_html('<span style="color: green;">{}</span>', '✓ Valid')
+        return format_html('<span style="color: red;">✗ {} errors</span>', len(errors))
+    validation_status.short_description = _('Validation')
+    
+    def validation_status_display(self, obj):
+        """Detailed validation status for readonly field"""
+        errors = self._validate_features(obj)
+        if not errors:
+            return "✅ All features are valid"
+        return "❌ Validation errors:\n" + "\n".join(f"• {error}" for error in errors)
+    validation_status_display.short_description = _('Validation Status')
+    
+    def _validate_features(self, obj):
+        """Internal method to validate features"""
+        errors = []
+        
+        if obj.insurance_type == 'HEALTH':
+            # Check that health features are filled and funeral features are empty
+            health_features = [
+                ('annual_limit_per_member', obj.annual_limit_per_member),
+                ('monthly_household_income', obj.monthly_household_income),
+                ('in_hospital_benefit', obj.in_hospital_benefit),
+                ('out_hospital_benefit', obj.out_hospital_benefit),
+                ('chronic_medication_availability', obj.chronic_medication_availability)
+            ]
+            
+            # Check for missing required health features
+            missing_health = [name for name, value in health_features if value is None]
+            if missing_health:
+                errors.append(f"Missing health features: {', '.join(missing_health)}")
+            
+            # Check for incorrectly filled funeral features
+            funeral_features = [
+                ('cover_amount', obj.cover_amount),
+                ('marital_status_requirement', obj.marital_status_requirement),
+                ('gender_requirement', obj.gender_requirement),
+                ('monthly_net_income', obj.monthly_net_income)
+            ]
+            filled_funeral = [name for name, value in funeral_features if value is not None]
+            if filled_funeral:
+                errors.append(f"Funeral features should be empty for health policies: {', '.join(filled_funeral)}")
+                
+        elif obj.insurance_type == 'FUNERAL':
+            # Check that funeral features are filled and health features are empty
+            funeral_features = [
+                ('cover_amount', obj.cover_amount),
+                ('marital_status_requirement', obj.marital_status_requirement),
+                ('gender_requirement', obj.gender_requirement),
+                ('monthly_net_income', obj.monthly_net_income)
+            ]
+            
+            # Check for missing required funeral features
+            missing_funeral = [name for name, value in funeral_features if value is None]
+            if missing_funeral:
+                errors.append(f"Missing funeral features: {', '.join(missing_funeral)}")
+            
+            # Check for incorrectly filled health features
+            health_features = [
+                ('annual_limit_per_member', obj.annual_limit_per_member),
+                ('monthly_household_income', obj.monthly_household_income),
+                ('in_hospital_benefit', obj.in_hospital_benefit),
+                ('out_hospital_benefit', obj.out_hospital_benefit),
+                ('chronic_medication_availability', obj.chronic_medication_availability)
+            ]
+            filled_health = [name for name, value in health_features if value is not None]
+            if filled_health:
+                errors.append(f"Health features should be empty for funeral policies: {', '.join(filled_health)}")
+        
+        # Validate numeric values
+        if obj.annual_limit_per_member is not None and obj.annual_limit_per_member <= 0:
+            errors.append("Annual limit per member must be positive")
+        if obj.monthly_household_income is not None and obj.monthly_household_income <= 0:
+            errors.append("Monthly household income must be positive")
+        if obj.cover_amount is not None and obj.cover_amount <= 0:
+            errors.append("Cover amount must be positive")
+        if obj.monthly_net_income is not None and obj.monthly_net_income <= 0:
+            errors.append("Monthly net income must be positive")
+            
+        return errors
+    
+    def clean(self):
+        """Custom validation for the admin form"""
+        from django.core.exceptions import ValidationError
+        errors = self._validate_features(self)
+        if errors:
+            raise ValidationError(errors)
+    
+    # Admin Actions
+    @admin.action(description=_('Validate selected policy features'))
+    def validate_features(self, request, queryset):
+        total_errors = 0
+        for obj in queryset:
+            errors = self._validate_features(obj)
+            if errors:
+                total_errors += len(errors)
+                self.message_user(
+                    request,
+                    f'{obj.policy.name}: {", ".join(errors)}',
+                    level='ERROR'
+                )
+        
+        if total_errors == 0:
+            self.message_user(request, f'All {queryset.count()} policy features are valid.')
+        else:
+            self.message_user(
+                request,
+                f'Found {total_errors} validation errors across {queryset.count()} policies.',
+                level='WARNING'
+            )
+    
+    @admin.action(description=_('Clear irrelevant features based on insurance type'))
+    def clear_irrelevant_features(self, request, queryset):
+        updated_count = 0
+        for obj in queryset:
+            if obj.insurance_type == 'HEALTH':
+                # Clear funeral features
+                obj.cover_amount = None
+                obj.marital_status_requirement = None
+                obj.gender_requirement = None
+                obj.monthly_net_income = None
+                obj.save()
+                updated_count += 1
+            elif obj.insurance_type == 'FUNERAL':
+                # Clear health features
+                obj.annual_limit_per_member = None
+                obj.monthly_household_income = None
+                obj.in_hospital_benefit = None
+                obj.out_hospital_benefit = None
+                obj.chronic_medication_availability = None
+                obj.save()
+                updated_count += 1
+        
+        self.message_user(request, f'Cleared irrelevant features for {updated_count} policies.')
+    
+    @admin.action(description=_('Duplicate features to similar policies'))
+    def duplicate_features_to_similar_policies(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(request, 'Please select exactly one policy to use as template.', level='ERROR')
+            return
+        
+        template = queryset.first()
+        similar_policies = BasePolicy.objects.filter(
+            category=template.policy.category,
+            policy_type=template.policy.policy_type
+        ).exclude(pk=template.policy.pk)
+        
+        duplicated_count = 0
+        for policy in similar_policies:
+            features, created = PolicyFeatures.objects.get_or_create(
+                policy=policy,
+                defaults={
+                    'insurance_type': template.insurance_type,
+                    'annual_limit_per_member': template.annual_limit_per_member,
+                    'monthly_household_income': template.monthly_household_income,
+                    'in_hospital_benefit': template.in_hospital_benefit,
+                    'out_hospital_benefit': template.out_hospital_benefit,
+                    'chronic_medication_availability': template.chronic_medication_availability,
+                    'cover_amount': template.cover_amount,
+                    'marital_status_requirement': template.marital_status_requirement,
+                    'gender_requirement': template.gender_requirement,
+                    'monthly_net_income': template.monthly_net_income,
+                }
+            )
+            if created:
+                duplicated_count += 1
+        
+        self.message_user(request, f'Duplicated features to {duplicated_count} similar policies.')
+
+
+@admin.register(AdditionalFeatures)
+class AdditionalFeaturesAdmin(admin.ModelAdmin):
+    form = AdditionalFeaturesAdminForm
+    list_display = [
+        'title',
+        'policy_name_display',
+        'insurance_type_display',
+        'is_highlighted_display',
+        'display_order',
+        'created_at'
+    ]
+    list_filter = [
+        'is_highlighted',
+        'policy__category',
+        'policy__organization',
+        'policy__policy_features__insurance_type',
+        'created_at'
+    ]
+    search_fields = [
+        'title',
+        'description',
+        'policy__name',
+        'policy__organization__name'
+    ]
+    list_select_related = ['policy', 'policy__organization', 'policy__policy_features']
+    list_editable = ['display_order']
+    ordering = ['policy', 'display_order', 'title']
+    
+    fieldsets = (
+        (_('Basic Information'), {
+            'fields': ('policy', 'title', 'description'),
+            'description': _('Basic information about this additional feature.')
+        }),
+        (_('Display Settings'), {
+            'fields': ('icon', 'is_highlighted', 'display_order'),
+            'description': _('Control how this feature appears in the user interface.')
+        }),
+        (_('Metadata'), {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        })
+    )
+    
+    readonly_fields = ['created_at']
+    
+    actions = [
+        'highlight_features',
+        'unhighlight_features',
+        'duplicate_to_similar_policies'
+    ]
+    
+    def policy_name_display(self, obj):
+        """Display policy name with link"""
+        url = reverse('admin:policies_basepolicy_change', args=[obj.policy.pk])
+        return format_html(
+            '<a href="{}" style="text-decoration: none;">{}</a>',
+            url,
+            obj.policy.name
+        )
+    policy_name_display.short_description = _('Policy')
+    policy_name_display.admin_order_field = 'policy__name'
+    
+    def insurance_type_display(self, obj):
+        """Display insurance type from related PolicyFeatures"""
+        try:
+            insurance_type = obj.policy.policy_features.insurance_type
+            colors = {
+                'HEALTH': '#28a745',
+                'FUNERAL': '#6f42c1'
+            }
+            color = colors.get(insurance_type, '#6c757d')
+            display_name = obj.policy.policy_features.get_insurance_type_display()
+            return format_html(
+                '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">{}</span>',
+                color,
+                display_name
+            )
+        except PolicyFeatures.DoesNotExist:
+            return format_html('<span style="color: #6c757d;">{}</span>', '❓ Not Set')
+    insurance_type_display.short_description = _('Insurance Type')
+    
+    def is_highlighted_display(self, obj):
+        """Display highlighted status with visual indicator"""
+        if obj.is_highlighted:
+            return format_html('<span style="color: #ffc107;">{}</span>', '⭐ Highlighted')
+        return format_html('<span style="color: #6c757d;">{}</span>', '☆ Regular')
+    is_highlighted_display.short_description = _('Highlight Status')
+    is_highlighted_display.admin_order_field = 'is_highlighted'
+    
+    def get_queryset(self, request):
+        """Optimize queryset with related objects"""
+        qs = super().get_queryset(request)
+        return qs.select_related(
+            'policy',
+            'policy__organization',
+            'policy__policy_features'
+        )
+    
+    # Admin Actions
+    @admin.action(description=_('Highlight selected features'))
+    def highlight_features(self, request, queryset):
+        updated = queryset.update(is_highlighted=True)
+        self.message_user(request, f'{updated} features highlighted.')
+    
+    @admin.action(description=_('Remove highlight from selected features'))
+    def unhighlight_features(self, request, queryset):
+        updated = queryset.update(is_highlighted=False)
+        self.message_user(request, f'{updated} features unhighlighted.')
+    
+    @admin.action(description=_('Duplicate features to similar policies'))
+    def duplicate_to_similar_policies(self, request, queryset):
+        duplicated_count = 0
+        for feature in queryset:
+            # Find similar policies (same category and type)
+            similar_policies = BasePolicy.objects.filter(
+                category=feature.policy.category,
+                policy_type=feature.policy.policy_type
+            ).exclude(pk=feature.policy.pk)
+            
+            for policy in similar_policies:
+                # Check if similar feature already exists
+                if not AdditionalFeatures.objects.filter(
+                    policy=policy,
+                    title=feature.title
+                ).exists():
+                    AdditionalFeatures.objects.create(
+                        policy=policy,
+                        title=feature.title,
+                        description=feature.description,
+                        icon=feature.icon,
+                        is_highlighted=feature.is_highlighted,
+                        display_order=feature.display_order
+                    )
+                    duplicated_count += 1
+        
+        self.message_user(request, f'Duplicated {duplicated_count} features to similar policies.')
 
 
 @admin.register(PolicyEligibility)
@@ -508,3 +946,114 @@ class PolicyPremiumCalculationAdmin(admin.ModelAdmin):
     list_filter = ['factor_name', 'is_active', 'policy__category']
     search_fields = ['factor_name', 'factor_value', 'policy__name']
     list_select_related = ['policy']
+
+# Import integration utilities
+from .admin_integration import (
+    SystemIntegrationAdminMixin,
+    validate_policies_action,
+    validate_surveys_action,
+    IntegrationStatusFilter,
+    integration_urlpatterns
+)
+from .signals import get_cached_validation_errors
+
+
+# Add integration features to existing admin classes
+class IntegratedBasePolicyAdmin(BasePolicyAdmin, SystemIntegrationAdminMixin):
+    """Enhanced BasePolicy admin with integration features."""
+    
+    list_display = BasePolicyAdmin.list_display + ['integration_status']
+    list_filter = BasePolicyAdmin.list_filter + [IntegrationStatusFilter]
+    actions = BasePolicyAdmin.actions + [validate_policies_action]
+    
+    def integration_status(self, obj):
+        """Display integration status for policy."""
+        return self.get_validation_errors_display(obj, 'policy')
+    
+    integration_status.short_description = "Integration Status"
+
+
+class IntegratedPolicyFeaturesAdmin(PolicyFeaturesAdmin, SystemIntegrationAdminMixin):
+    """Enhanced PolicyFeatures admin with integration features."""
+    
+    list_display = PolicyFeaturesAdmin.list_display + ['integration_status']
+    actions = PolicyFeaturesAdmin.actions + [validate_policies_action]
+    
+    def integration_status(self, obj):
+        """Display integration status for policy features."""
+        return self.get_validation_errors_display(obj.policy, 'policy')
+    
+    integration_status.short_description = "Integration Status"
+
+
+# Re-register with integration features
+admin.site.unregister(BasePolicy)
+admin.site.unregister(PolicyFeatures)
+
+admin.site.register(BasePolicy, IntegratedBasePolicyAdmin)
+admin.site.register(PolicyFeatures, IntegratedPolicyFeaturesAdmin)
+
+
+# Add integration URLs to admin - removed to avoid recursion
+# Integration URLs will be added through the custom admin site instead
+
+
+# Add integration menu item to admin
+def add_integration_to_admin_index(request):
+    """Add integration link to admin index."""
+    from django.template.response import TemplateResponse
+    from django.urls import reverse
+    
+    # This would be used in a custom admin template
+    integration_url = reverse('admin:system_integration')
+    return {
+        'integration_url': integration_url,
+        'integration_title': 'System Integration'
+    }
+
+
+# Custom admin site configuration
+class IntegratedAdminSite(admin.AdminSite):
+    """Custom admin site with integration features."""
+    
+    site_header = "Policy System Administration"
+    site_title = "Policy Admin"
+    index_title = "Policy System Management"
+    
+    def get_urls(self):
+        """Add integration URLs to admin."""
+        urls = super().get_urls()
+        integration_urls = [
+            path('integration/', include(integration_urlpatterns)),
+        ]
+        return integration_urls + urls
+    
+    def index(self, request, extra_context=None):
+        """Add integration context to admin index."""
+        extra_context = extra_context or {}
+        
+        # Add system health metrics
+        from .signals import get_system_health_metrics
+        extra_context['system_health'] = get_system_health_metrics()
+        
+        # Add integration status
+        from .integration import SystemIntegrationManager
+        try:
+            system_status = SystemIntegrationManager.perform_full_system_check()
+            extra_context['system_status'] = system_status['overall_status']
+        except Exception:
+            extra_context['system_status'] = 'unknown'
+        
+        return super().index(request, extra_context)
+
+
+# Create integrated admin site instance
+integrated_admin_site = IntegratedAdminSite(name='integrated_admin')
+
+# Register models with integrated admin site
+integrated_admin_site.register(PolicyCategory, PolicyCategoryAdmin)
+integrated_admin_site.register(PolicyType, PolicyTypeAdmin)
+integrated_admin_site.register(BasePolicy, IntegratedBasePolicyAdmin)
+integrated_admin_site.register(PolicyFeatures, IntegratedPolicyFeaturesAdmin)
+integrated_admin_site.register(AdditionalFeatures, AdditionalFeaturesAdmin)
+integrated_admin_site.register(PolicyReview, PolicyReviewAdmin)

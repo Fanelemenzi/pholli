@@ -1,0 +1,403 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Policy Details - {{ result.policy.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a href="{% url 'comparison:feature_results' survey.id %}">Results</a>
+                                    </li>
+                                    <li class="breadcrumb-item active">{{ result.policy.name }}</li>
+                                </ol>
+                            </nav>
+                            <h2 class="mb-2">{{ result.policy.name }}</h2>
+                            <p class="text-muted mb-0">{{ result.policy.organization.name }}</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="badge {{ result.get_recommendation_badge_class }} fs-5 me-2">
+                                {{ result.get_match_percentage }}% Match
+                            </span>
+                            <div class="small text-muted">Rank #{{ result.compatibility_rank }} of {{ all_results.count }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Main Policy Details -->
+                <div class="col-lg-8">
+                    <!-- Overall Match Summary -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Match Summary</h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="h3 text-primary">{{ result.get_match_percentage }}%</div>
+                                        <div class="small text-muted">Overall Match</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="h3 text-success">{{ result.feature_match_count }}</div>
+                                        <div class="small text-muted">Feature Matches</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="h3 text-warning">{{ result.feature_mismatch_count }}</div>
+                                        <div class="small text-muted">Considerations</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if result.match_explanation %}
+                            <div class="mt-3">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> {{ result.match_explanation }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Feature Analysis -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Detailed Feature Analysis</h5>
+                            
+                            {% if feature_analysis %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Feature</th>
+                                            <th>Your Preference</th>
+                                            <th>Policy Value</th>
+                                            <th>Match Score</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for feature_name, analysis in feature_analysis.items %}
+                                        <tr>
+                                            <td class="fw-bold">{{ analysis.display_name }}</td>
+                                            <td>
+                                                {% if analysis.user_preference is not None %}
+                                                    {% if analysis.user_preference == True %}
+                                                        <span class="badge bg-success">Yes</span>
+                                                    {% elif analysis.user_preference == False %}
+                                                        <span class="badge bg-secondary">No</span>
+                                                    {% else %}
+                                                        {{ analysis.user_preference }}
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">Not specified</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if analysis.policy_value is not None %}
+                                                    {% if analysis.policy_value == True %}
+                                                        <span class="badge bg-success">Yes</span>
+                                                    {% elif analysis.policy_value == False %}
+                                                        <span class="badge bg-secondary">No</span>
+                                                    {% else %}
+                                                        {{ analysis.policy_value }}
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar {% if analysis.score >= 0.8 %}bg-success{% elif analysis.score >= 0.5 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                         role="progressbar" 
+                                                         style="width: {{ analysis.score|floatformat:0 }}%">
+                                                        {{ analysis.score|floatformat:0 }}%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if analysis.score >= 0.8 %}
+                                                    <i class="fas fa-check-circle text-success"></i> Match
+                                                {% elif analysis.score >= 0.5 %}
+                                                    <i class="fas fa-exclamation-triangle text-warning"></i> Partial
+                                                {% else %}
+                                                    <i class="fas fa-times-circle text-danger"></i> Mismatch
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                No detailed feature analysis available for this policy.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Policy Features -->
+                    {% if result.policy.policy_features %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Policy Features</h5>
+                            <div class="row">
+                                {% if survey.insurance_type == 'HEALTH' %}
+                                    {% if result.policy.policy_features.annual_limit_per_member %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-money-bill-wave text-primary"></i>
+                                            <strong>Annual Limit per Member:</strong>
+                                            <span>R{{ result.policy.policy_features.annual_limit_per_member|floatformat:0 }}</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if result.policy.policy_features.monthly_household_income %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-home text-primary"></i>
+                                            <strong>Income Requirement:</strong>
+                                            <span>R{{ result.policy.policy_features.monthly_household_income|floatformat:0 }}/month</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if result.policy.policy_features.in_hospital_benefit is not None %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-hospital text-primary"></i>
+                                            <strong>In-Hospital Benefits:</strong>
+                                            <span class="badge {% if result.policy.policy_features.in_hospital_benefit %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {% if result.policy.policy_features.in_hospital_benefit %}Included{% else %}Not Included{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if result.policy.policy_features.out_hospital_benefit is not None %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-user-md text-primary"></i>
+                                            <strong>Out-of-Hospital Benefits:</strong>
+                                            <span class="badge {% if result.policy.policy_features.out_hospital_benefit %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {% if result.policy.policy_features.out_hospital_benefit %}Included{% else %}Not Included{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if result.policy.policy_features.chronic_medication_availability is not None %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-pills text-primary"></i>
+                                            <strong>Chronic Medication:</strong>
+                                            <span class="badge {% if result.policy.policy_features.chronic_medication_availability %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {% if result.policy.policy_features.chronic_medication_availability %}Covered{% else %}Not Covered{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% elif survey.insurance_type == 'FUNERAL' %}
+                                    {% if result.policy.policy_features.cover_amount %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-money-bill-wave text-primary"></i>
+                                            <strong>Cover Amount:</strong>
+                                            <span>R{{ result.policy.policy_features.cover_amount|floatformat:0 }}</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if result.policy.policy_features.monthly_net_income %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-wallet text-primary"></i>
+                                            <strong>Income Requirement:</strong>
+                                            <span>R{{ result.policy.policy_features.monthly_net_income|floatformat:0 }}/month</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if result.policy.policy_features.marital_status_requirement %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-ring text-primary"></i>
+                                            <strong>Marital Status:</strong>
+                                            <span>{{ result.policy.policy_features.marital_status_requirement }}</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if result.policy.policy_features.gender_requirement %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="feature-item">
+                                            <i class="fas fa-user text-primary"></i>
+                                            <strong>Gender Requirement:</strong>
+                                            <span>{{ result.policy.policy_features.gender_requirement }}</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Additional Features -->
+                    {% if result.policy.additional_features.exists %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Additional Benefits</h5>
+                            <div class="row">
+                                {% for feature in result.policy.additional_features.all %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="additional-feature-item">
+                                        {% if feature.icon %}
+                                        <i class="{{ feature.icon }} text-primary me-2"></i>
+                                        {% else %}
+                                        <i class="fas fa-plus-circle text-primary me-2"></i>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ feature.title }}</strong>
+                                            {% if feature.description %}
+                                            <div class="small text-muted">{{ feature.description }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Quick Actions -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">Actions</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="selectPolicy({{ result.policy.id }})">
+                                    <i class="fas fa-hand-pointer"></i> Select This Policy
+                                </button>
+                                <a href="{% url 'comparison:feature_matrix' survey.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-table"></i> Compare with Others
+                                </a>
+                                <a href="{% url 'comparison:feature_results' survey.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Results
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Policy Rankings -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">All Results Ranking</h6>
+                            <div class="ranking-list">
+                                {% for other_result in all_results %}
+                                <div class="ranking-item {% if other_result.id == result.id %}active{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">{{ other_result.policy.name }}</div>
+                                            <div class="small text-muted">{{ other_result.policy.organization.name }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="badge bg-primary">{{ other_result.get_match_percentage }}%</div>
+                                            <div class="small text-muted">#{{ other_result.compatibility_rank }}</div>
+                                        </div>
+                                    </div>
+                                    {% if other_result.id != result.id %}
+                                    <div class="mt-2">
+                                        <a href="{% url 'comparison:feature_result_detail' survey.id other_result.id %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            View Details
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Your Preferences Summary -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Your Preferences</h6>
+                            {% for key, value in user_preferences.items %}
+                            {% if value is not None %}
+                            <div class="preference-item mb-2">
+                                <div class="small text-muted">{{ key|title }}</div>
+                                <div>
+                                    {% if value == True %}
+                                        <span class="badge bg-success">Yes</span>
+                                    {% elif value == False %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.additional-feature-item {
+    display: flex;
+    align-items-start;
+    gap: 8px;
+}
+
+.ranking-item {
+    padding: 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.ranking-item.active {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.preference-item {
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.preference-item:last-child {
+    border-bottom: none;
+}
+</style>
+
+<script>
+function selectPolicy(policyId) {
+    // This would typically redirect to a policy application or contact form
+    alert('Policy selection functionality would be implemented here for policy ID: ' + policyId);
+}
+</script>
+{% endblock %}

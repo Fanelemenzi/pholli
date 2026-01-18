@@ -1,0 +1,228 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .feature-preview {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .feature-preview h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .feature-icon-preview {
+            font-size: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .highlight-indicator {
+            background-color: #ffc107;
+            color: #212529;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .regular-indicator {
+            background-color: #6c757d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        
+        .character-counter {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .character-counter.warning {
+            color: #ffc107;
+        }
+        
+        .character-counter.error {
+            color: #dc3545;
+        }
+        
+        .policy-info {
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .policy-info h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+    {{ block.super }}
+    
+    <script>
+        (function($) {
+            'use strict';
+            
+            $(document).ready(function() {
+                // Add feature preview
+                addFeaturePreview();
+                
+                // Add character counters
+                addCharacterCounters();
+                
+                // Add policy information
+                addPolicyInformation();
+                
+                // Update preview when fields change
+                $('input, textarea, select').on('input change', function() {
+                    updateFeaturePreview();
+                    updateCharacterCounters();
+                });
+                
+                // Initial updates
+                updateFeaturePreview();
+                updateCharacterCounters();
+            });
+            
+            function addFeaturePreview() {
+                var previewHtml = '<div class="feature-preview">' +
+                    '<h4>Feature Preview</h4>' +
+                    '<div id="feature-preview-content">' +
+                    '<p><em>Fill in the fields below to see a preview of how this feature will appear.</em></p>' +
+                    '</div>' +
+                    '</div>';
+                
+                $('.form-row.field-policy').after(previewHtml);
+            }
+            
+            function updateFeaturePreview() {
+                var title = $('#id_title').val() || 'Feature Title';
+                var description = $('#id_description').val() || 'Feature description will appear here...';
+                var icon = $('#id_icon').val();
+                var isHighlighted = $('#id_is_highlighted').is(':checked');
+                var displayOrder = $('#id_display_order').val() || '0';
+                
+                var iconHtml = '';
+                if (icon) {
+                    if (icon.startsWith('fa-') || icon.startsWith('icon-')) {
+                        iconHtml = '<i class="' + icon + ' feature-icon-preview"></i>';
+                    } else {
+                        iconHtml = '<span class="feature-icon-preview">' + icon + '</span>';
+                    }
+                }
+                
+                var highlightBadge = isHighlighted ? 
+                    '<span class="highlight-indicator">HIGHLIGHTED</span>' :
+                    '<span class="regular-indicator">Regular</span>';
+                
+                var previewContent = '<div style="border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: white;">' +
+                    '<div style="display: flex; align-items: center; margin-bottom: 10px;">' +
+                    iconHtml +
+                    '<h5 style="margin: 0; flex-grow: 1;">' + title + '</h5>' +
+                    highlightBadge +
+                    '</div>' +
+                    '<p style="margin: 0; color: #666;">' + description + '</p>' +
+                    '<small style="color: #999;">Display Order: ' + displayOrder + '</small>' +
+                    '</div>';
+                
+                $('#feature-preview-content').html(previewContent);
+            }
+            
+            function addCharacterCounters() {
+                // Add counter for title field
+                $('#id_title').after('<div id="title-counter" class="character-counter"></div>');
+                
+                // Add counter for description field
+                $('#id_description').after('<div id="description-counter" class="character-counter"></div>');
+            }
+            
+            function updateCharacterCounters() {
+                // Title counter
+                var titleLength = $('#id_title').val().length;
+                var titleMax = 255;
+                var titleCounter = $('#title-counter');
+                
+                titleCounter.text(titleLength + '/' + titleMax + ' characters');
+                
+                if (titleLength > titleMax * 0.9) {
+                    titleCounter.removeClass('warning').addClass('error');
+                } else if (titleLength > titleMax * 0.8) {
+                    titleCounter.removeClass('error').addClass('warning');
+                } else {
+                    titleCounter.removeClass('warning error');
+                }
+                
+                // Description counter
+                var descriptionLength = $('#id_description').val().length;
+                var descriptionCounter = $('#description-counter');
+                
+                descriptionCounter.text(descriptionLength + ' characters');
+                
+                if (descriptionLength < 10) {
+                    descriptionCounter.addClass('warning');
+                } else {
+                    descriptionCounter.removeClass('warning');
+                }
+            }
+            
+            function addPolicyInformation() {
+                var policySelect = $('#id_policy');
+                if (policySelect.length === 0) return;
+                
+                var policyInfoHtml = '<div class="policy-info">' +
+                    '<h4>Policy Information</h4>' +
+                    '<div id="policy-info-content">' +
+                    '<p><em>Select a policy to see its information.</em></p>' +
+                    '</div>' +
+                    '</div>';
+                
+                policySelect.closest('.form-row').after(policyInfoHtml);
+                
+                // Update policy info when selection changes
+                policySelect.change(function() {
+                    updatePolicyInformation();
+                });
+                
+                // Initial update
+                updatePolicyInformation();
+            }
+            
+            function updatePolicyInformation() {
+                var policySelect = $('#id_policy');
+                var selectedOption = policySelect.find('option:selected');
+                var policyInfoContent = $('#policy-info-content');
+                
+                if (!selectedOption.val()) {
+                    policyInfoContent.html('<p><em>Select a policy to see its information.</em></p>');
+                    return;
+                }
+                
+                // Extract policy information from the option text
+                // This is a simplified version - in a real implementation, 
+                // you might want to make an AJAX call to get detailed policy info
+                var policyText = selectedOption.text();
+                var policyInfo = '<div>' +
+                    '<p><strong>Selected Policy:</strong> ' + policyText + '</p>' +
+                    '<p><small>Make sure this additional feature is relevant to the selected policy type.</small></p>' +
+                    '</div>';
+                
+                policyInfoContent.html(policyInfo);
+            }
+            
+        })(django.jQuery);
+    </script>
+{% endblock %}

@@ -1,0 +1,298 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Insurance Policies - Pholli{% endblock %}
+
+{% block extra_css %}
+<style>
+    .insurance-type-selector {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .type-card {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .type-card:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,123,255,0.2);
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .type-card.active {
+        border-color: #007bff;
+        background: #f8f9ff;
+    }
+    
+    .type-icon {
+        font-size: 3rem;
+        color: #007bff;
+        margin-bottom: 15px;
+    }
+    
+    .policy-stats {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 text-center mb-3">Insurance Policies</h1>
+            <p class="lead text-center text-muted">
+                Choose the type of insurance coverage that best fits your needs
+            </p>
+        </div>
+    </div>
+    
+    <!-- Insurance Type Selector - Requirement 7.1, 7.2 -->
+    <div class="insurance-type-selector">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <a href="{% url 'policies:health_policy_list' %}" class="type-card d-block">
+                    <div class="type-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h4>Health Insurance</h4>
+                    <p class="text-muted mb-0">
+                        Medical coverage, hospital benefits, and chronic medication support
+                    </p>
+                </a>
+            </div>
+            <div class="col-md-6 mb-3">
+                <a href="{% url 'policies:funeral_policy_list' %}" class="type-card d-block">
+                    <div class="type-icon">
+                        <i class="fas fa-hands-helping"></i>
+                    </div>
+                    <h4>Funeral Insurance</h4>
+                    <p class="text-muted mb-0">
+                        Funeral coverage, repatriation, and additional benefits
+                    </p>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Policy Statistics -->
+    <div class="policy-stats">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ policies.count }}</div>
+                    <div class="stat-label">Total Policies</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ categories.count }}</div>
+                    <div class="stat-label">Categories</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ policies|length }}</div>
+                    <div class="stat-label">Available Now</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Support</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form method="get" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" 
+                       placeholder="Search policies..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <select name="sort" class="form-control" onchange="this.form.submit()">
+                <option value="-created_at" {% if current_sort == '-created_at' %}selected{% endif %}>
+                    Newest First
+                </option>
+                <option value="name" {% if current_sort == 'name' %}selected{% endif %}>
+                    Name A-Z
+                </option>
+                <option value="-name" {% if current_sort == '-name' %}selected{% endif %}>
+                    Name Z-A
+                </option>
+                <option value="base_premium" {% if current_sort == 'base_premium' %}selected{% endif %}>
+                    Price Low-High
+                </option>
+                <option value="-base_premium" {% if current_sort == '-base_premium' %}selected{% endif %}>
+                    Price High-Low
+                </option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Policy Grid -->
+    <div class="row">
+        {% for policy in policies %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title">{{ policy.name }}</h5>
+                        {% if policy.policy_features %}
+                        <span class="badge bg-primary">
+                            {{ policy.policy_features.get_insurance_type_display }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <p class="text-muted small mb-2">{{ policy.organization.name }}</p>
+                    <p class="card-text">{{ policy.short_description|truncatewords:20 }}</p>
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <small class="text-muted">Premium</small>
+                            <div class="fw-bold">{{ policy.currency }} {{ policy.base_premium }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Coverage</small>
+                            <div class="fw-bold">{{ policy.currency }} {{ policy.coverage_amount }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'policies:policy_detail' policy.pk %}" 
+                       class="btn btn-primary btn-sm w-100">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4>No policies found</h4>
+                <p class="text-muted">Try adjusting your search criteria or browse by insurance type above.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Policy pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">
+                    First
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    Previous
+                </a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    Next
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    Last
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle sort dropdown
+    const sortSelect = document.querySelector('select[name="sort"]');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const form = this.closest('form') || document.createElement('form');
+            form.method = 'get';
+            form.action = '';
+            
+            // Preserve search query
+            const searchInput = document.querySelector('input[name="search"]');
+            if (searchInput && searchInput.value) {
+                const hiddenSearch = document.createElement('input');
+                hiddenSearch.type = 'hidden';
+                hiddenSearch.name = 'search';
+                hiddenSearch.value = searchInput.value;
+                form.appendChild(hiddenSearch);
+            }
+            
+            // Add sort parameter
+            const hiddenSort = document.createElement('input');
+            hiddenSort.type = 'hidden';
+            hiddenSort.name = 'sort';
+            hiddenSort.value = this.value;
+            form.appendChild(hiddenSort);
+            
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+});
+</script>
+{% endblock %}

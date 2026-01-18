@@ -1,0 +1,391 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<head>
+    <style>
+        body {
+            background: #ffffff;
+            min-height: 100vh;
+        }
+        
+        .survey-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .survey-header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #000000;
+        }
+        
+        .survey-header h1 {
+            color: #000000;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        .survey-header .lead {
+            color: #333333;
+            font-size: 1.1rem;
+        }
+        
+        .form-section {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 2px solid #269523;
+            transition: all 0.3s ease;
+        }
+        
+        .form-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(38, 149, 35, 0.2);
+            border-color: #f1d925;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #000000;
+            background: linear-gradient(135deg, #269523, #f1d925);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            padding: 15px 18px;
+            font-size: 1rem;
+            background: #ffffff;
+            transition: all 0.3s ease;
+            color: #000000;
+            margin-bottom: 15px;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #269523;
+            box-shadow: 0 0 0 0.2rem rgba(38, 149, 35, 0.25);
+            background: #ffffff;
+            transform: translateY(-1px);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .required {
+            color: #dc3545;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #000000;
+            box-shadow: 0 8px 25px rgba(38, 149, 35, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(38, 149, 35, 0.5);
+            background: linear-gradient(135deg, #1e7a1e 0%, #d4c020 100%);
+            color: #000000;
+        }
+        
+        .alert {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            color: #c53030;
+        }
+        
+        .form-text {
+            margin-top: 5px;
+            font-size: 0.875rem;
+            color: #666666;
+            font-style: italic;
+        }
+        
+        .health-field, .funeral-field {
+            display: none;
+        }
+        
+        .show-health .health-field {
+            display: block;
+        }
+        
+        .show-funeral .funeral-field {
+            display: block;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .survey-container {
+                padding: 20px 15px;
+            }
+            
+            .form-section {
+                padding: 25px 20px;
+                border-radius: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .form-control, .form-select {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 12px 15px;
+                border-radius: 8px;
+                min-height: 44px; /* Touch-friendly */
+            }
+            
+            .btn-primary {
+                width: 100%;
+                padding: 15px 20px;
+                font-size: 1rem;
+                border-radius: 12px;
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="main" style="margin-top: 100px;">
+        <!-- Page Title -->
+        <div class="page-title dark-background" data-aos="fade"
+            style="background-image: url('{% static 'assets/img/bg/bg-2.webp' %}');">
+            <div class="container position-relative">
+                <h1>{{ category_display }} Survey</h1>
+                <p>Find the perfect {{ category_display|lower }} plan for you and your family. Answer a few questions about your needs and preferences to get personalized policy recommendations.</p>
+            </div>
+        </div><!-- End Page Title -->
+
+        <div class="survey-container">
+            <div class="survey-header">
+                <h1>{{ category_display }} Survey</h1>
+                <p class="lead">Help us find the perfect {{ category_display|lower }} plan for you by providing your details and preferences.</p>
+            </div>
+
+            <!-- Error Messages -->
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in form.non_field_errors %}
+                    <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Survey Form -->
+            <form method="post" class="{% if category == 'health' %}show-health{% else %}show-funeral{% endif %}">
+                {% csrf_token %}
+                
+                <!-- Contact Information Section -->
+                <div class="form-section">
+                    <h3 class="section-title">Contact Information</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                {{ form.first_name.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger">{{ form.first_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                {{ form.last_name.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger">{{ form.last_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">
+                                {{ form.date_of_birth.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.date_of_birth }}
+                            {% if form.date_of_birth.errors %}
+                                <div class="text-danger">{{ form.date_of_birth.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                {{ form.email.label }}
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                {{ form.phone.label }}
+                            </label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger">{{ form.phone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insurance Type (Hidden) -->
+                {{ form.insurance_type }}
+
+                <!-- Health Insurance Preferences -->
+                {% if category == 'health' %}
+                <div class="form-section health-field">
+                    <h3 class="section-title">Health Insurance Preferences</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.preferred_annual_limit.id_for_label }}" class="form-label">
+                                {{ form.preferred_annual_limit.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.preferred_annual_limit }}
+                            <div class="form-text">Enter your preferred annual coverage limit per family member in Emalangeni (E)</div>
+                            {% if form.preferred_annual_limit.errors %}
+                                <div class="text-danger">{{ form.preferred_annual_limit.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.household_income.id_for_label }}" class="form-label">
+                                {{ form.household_income.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.household_income }}
+                            <div class="form-text">Enter your monthly household income in Emalangeni (E)</div>
+                            {% if form.household_income.errors %}
+                                <div class="text-danger">{{ form.household_income.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="{{ form.wants_in_hospital_benefit.id_for_label }}" class="form-label">
+                                {{ form.wants_in_hospital_benefit.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.wants_in_hospital_benefit }}
+                            {% if form.wants_in_hospital_benefit.errors %}
+                                <div class="text-danger">{{ form.wants_in_hospital_benefit.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.wants_out_hospital_benefit.id_for_label }}" class="form-label">
+                                {{ form.wants_out_hospital_benefit.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.wants_out_hospital_benefit }}
+                            {% if form.wants_out_hospital_benefit.errors %}
+                                <div class="text-danger">{{ form.wants_out_hospital_benefit.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.needs_chronic_medication.id_for_label }}" class="form-label">
+                                {{ form.needs_chronic_medication.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.needs_chronic_medication }}
+                            {% if form.needs_chronic_medication.errors %}
+                                <div class="text-danger">{{ form.needs_chronic_medication.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Funeral Insurance Preferences -->
+                {% if category == 'funeral' %}
+                <div class="form-section funeral-field">
+                    <h3 class="section-title">Funeral Insurance Preferences</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.preferred_cover_amount.id_for_label }}" class="form-label">
+                                {{ form.preferred_cover_amount.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.preferred_cover_amount }}
+                            <div class="form-text">Enter your preferred coverage amount in Emalangeni (E)</div>
+                            {% if form.preferred_cover_amount.errors %}
+                                <div class="text-danger">{{ form.preferred_cover_amount.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.net_income.id_for_label }}" class="form-label">
+                                {{ form.net_income.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.net_income }}
+                            <div class="form-text">Enter your monthly net income in Emalangeni (E)</div>
+                            {% if form.net_income.errors %}
+                                <div class="text-danger">{{ form.net_income.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.marital_status.id_for_label }}" class="form-label">
+                                {{ form.marital_status.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.marital_status }}
+                            {% if form.marital_status.errors %}
+                                <div class="text-danger">{{ form.marital_status.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.gender.id_for_label }}" class="form-label">
+                                {{ form.gender.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.gender }}
+                            {% if form.gender.errors %}
+                                <div class="text-danger">{{ form.gender.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Submit Button -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-search me-2"></i>Find My Policies
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Vendor JS Files -->
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+
+{% endblock %}

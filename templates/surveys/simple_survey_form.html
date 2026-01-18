@@ -376,7 +376,7 @@
         <div class="survey-container">
             <div class="survey-header">
                 <h1>{{ category_display }} Survey</h1>
-                <p class="lead">Help us find the perfect {{ category_display|lower }} plan for you by answering a few quick questions.</p>
+                <p class="lead">Help us find the perfect {{ category_display|lower }} plan for you by answering a few quick questions about your specific needs and preferences.</p>
             </div>
 
             <!-- Progress Bar -->
@@ -398,6 +398,20 @@
                 <i class="bi bi-exclamation-triangle me-2"></i>{{ error_message }}
             </div>
             {% endif %}
+
+            <!-- Feature-Based Survey Notice -->
+            <div class="alert" style="background: linear-gradient(135deg, #e8f5e8, #f0f8e8); color: #2d5a2d; border: 2px solid #269523; border-radius: 15px;" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-lightbulb-fill me-3" style="font-size: 1.5rem; color: #f1d925;"></i>
+                    <div>
+                        <h6 class="mb-1" style="color: #1a4a1a; font-weight: 700;">New Feature-Based Survey Available!</h6>
+                        <p class="mb-2">Get more accurate policy matches with our improved survey that focuses on specific {{ category_display|lower }} features.</p>
+                        <a href="{% url 'simple_surveys:feature_survey' category=category %}" class="btn btn-sm" style="background: linear-gradient(135deg, #269523, #f1d925); color: #000000; border: none; border-radius: 20px; padding: 8px 20px; font-weight: 600;">
+                            <i class="bi bi-arrow-right me-1"></i>Try Feature Survey
+                        </a>
+                    </div>
+                </div>
+            </div>
 
             <!-- Survey Form -->
             <form id="surveyForm" method="post">

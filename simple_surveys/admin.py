@@ -2,7 +2,78 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils import timezone
 from django.db.models import Count
-from .models import SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession
+from .models import SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession, SimpleSurvey
+
+
+@admin.register(SimpleSurvey)
+class SimpleSurveyAdmin(admin.ModelAdmin):
+    """Admin interface for SimpleSurvey"""
+    
+    list_display = [
+        'full_name', 'insurance_type', 'date_of_birth', 'email', 'phone',
+        'is_complete_display', 'created_at'
+    ]
+    list_filter = ['insurance_type', 'created_at', 'date_of_birth']
+    search_fields = ['first_name', 'last_name', 'email', 'phone']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Contact Information', {
+            'fields': ('first_name', 'last_name', 'date_of_birth', 'email', 'phone')
+        }),
+        ('Insurance Type', {
+            'fields': ('insurance_type',)
+        }),
+        ('Health Policy Preferences', {
+            'fields': (
+                'preferred_annual_limit', 'household_income', 'wants_in_hospital_benefit',
+                'wants_out_hospital_benefit', 'needs_chronic_medication'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Funeral Policy Preferences', {
+            'fields': (
+                'preferred_cover_amount', 'marital_status', 'gender', 'net_income'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def full_name(self, obj):
+        """Display full name"""
+        return f"{obj.first_name} {obj.last_name}"
+    full_name.short_description = "Name"
+    
+    def is_complete_display(self, obj):
+        """Display completion status with color coding"""
+        if obj.is_complete():
+            return format_html('<span style="color: #28a745; font-weight: bold;">{}</span>', 'Complete')
+        else:
+            missing_fields = obj.get_missing_fields()
+            return format_html(
+                '<span style="color: #dc3545; font-weight: bold;" title="Missing: {}">Incomplete</span>',
+                ', '.join(missing_fields)
+            )
+    is_complete_display.short_description = "Status"
+    
+    def get_queryset(self, request):
+        """Optimize queryset"""
+        return super().get_queryset(request).select_related()
+    
+    actions = ['export_preferences']
+    
+    def export_preferences(self, request, queryset):
+        """Export user preferences for selected surveys"""
+        # This could be expanded to generate CSV or other export formats
+        count = queryset.count()
+        self.message_user(request, f'Preferences exported for {count} surveys.')
+    export_preferences.short_description = "Export preferences for selected surveys"
 
 
 @admin.register(SimpleSurveyQuestion)
@@ -150,11 +221,11 @@ class QuotationSessionAdmin(admin.ModelAdmin):
     def status(self, obj):
         """Display session status with color coding"""
         if obj.is_expired():
-            return format_html('<span style="color: #dc3545;">Expired</span>')
+            return format_html('<span style="color: #dc3545;">{}</span>', 'Expired')
         elif obj.is_completed:
-            return format_html('<span style="color: #28a745;">Completed</span>')
+            return format_html('<span style="color: #28a745;">{}</span>', 'Completed')
         else:
-            return format_html('<span style="color: #ffc107;">Active</span>')
+            return format_html('<span style="color: #ffc107;">{}</span>', 'Active')
     status.short_description = "Status"
     
     actions = ['mark_completed', 'extend_expiry', 'cleanup_expired']

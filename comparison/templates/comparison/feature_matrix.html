@@ -1,0 +1,215 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Feature Comparison Matrix - {{ insurance_type }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">Feature Comparison Matrix</h2>
+                            <p class="text-muted mb-0">
+                                Side-by-side comparison of top {{ results|length }} policies based on your preferences.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'comparison:feature_results' survey.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-list"></i> Back to Results
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Matrix -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered comparison-matrix">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 200px;">Feature</th>
+                                    <th class="text-center">Your Preference</th>
+                                    {% for result in results %}
+                                    <th class="text-center">
+                                        <div class="policy-header">
+                                            <div class="fw-bold">{{ result.policy.name }}</div>
+                                            <div class="small text-muted">{{ result.policy.organization.name }}</div>
+                                            <div class="badge bg-primary mt-1">{{ result.get_match_percentage }}% Match</div>
+                                        </div>
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in matrix_data.comparison_rows %}
+                                <tr>
+                                    <td class="fw-bold">{{ row.feature.display_name }}</td>
+                                    <td class="text-center user-preference">
+                                        {% if row.feature.user_preference is not None %}
+                                            {% if row.feature.user_preference == True %}
+                                                <span class="badge bg-success">Yes</span>
+                                            {% elif row.feature.user_preference == False %}
+                                                <span class="badge bg-secondary">No</span>
+                                            {% else %}
+                                                {{ row.feature.user_preference }}
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </td>
+                                    {% for value in row.values %}
+                                    <td class="text-center {% if value.matches_preference %}table-success{% elif value.score < 0.5 %}table-warning{% endif %}">
+                                        <div class="policy-value">
+                                            {{ value.formatted_value }}
+                                            {% if value.matches_preference %}
+                                                <i class="fas fa-check text-success ms-1" title="Matches your preference"></i>
+                                            {% elif value.score < 0.5 %}
+                                                <i class="fas fa-exclamation-triangle text-warning ms-1" title="Doesn't match your preference"></i>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{{ results|length|add:2 }}" class="text-center text-muted">
+                                        No feature data available for comparison
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy Summary Cards -->
+            <div class="row mt-4">
+                {% for result in results %}
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card h-100 {% if result.compatibility_rank == 1 %}border-primary{% endif %}">
+                        {% if result.compatibility_rank == 1 %}
+                        <div class="card-header bg-primary text-white text-center">
+                            <i class="fas fa-crown"></i> Best Match
+                        </div>
+                        {% endif %}
+                        
+                        <div class="card-body text-center">
+                            <h6 class="card-title">{{ result.policy.name }}</h6>
+                            <p class="text-muted small">{{ result.policy.organization.name }}</p>
+                            
+                            <div class="mb-3">
+                                <div class="h4 text-primary">{{ result.get_match_percentage }}%</div>
+                                <div class="small text-muted">Compatibility</div>
+                            </div>
+                            
+                            <div class="row text-center small">
+                                {% if result.policy.base_premium %}
+                                <div class="col-12 mb-2">
+                                    <div class="text-muted">Premium</div>
+                                    <div class="fw-bold">R{{ result.policy.base_premium|floatformat:0 }}/month</div>
+                                </div>
+                                {% endif %}
+                                {% if result.policy.coverage_amount %}
+                                <div class="col-12 mb-2">
+                                    <div class="text-muted">Coverage</div>
+                                    <div class="fw-bold">R{{ result.policy.coverage_amount|floatformat:0 }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <div class="d-grid">
+                                <a href="{% url 'comparison:feature_result_detail' survey.id result.id %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Legend -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6 class="card-title">Legend</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="legend-box table-success me-2"></div>
+                                <span>Matches your preference</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="legend-box table-warning me-2"></div>
+                                <span>Doesn't match your preference</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="legend-box bg-light me-2"></div>
+                                <span>Neutral/No preference specified</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.comparison-matrix th {
+    vertical-align: middle;
+}
+
+.policy-header {
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.policy-value {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-preference {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.legend-box {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+}
+
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.comparison-matrix thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+</style>
+{% endblock %}
+</content>
+</invoke>

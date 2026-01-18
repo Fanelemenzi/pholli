@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from datetime import timedelta
 import json
 
@@ -322,3 +323,199 @@ class QuotationSession(models.Model):
         ).count()
         
         return int((completed / total_required) * 100)
+
+
+class SimpleSurvey(models.Model):
+    """
+    Simplified survey focusing only on policy features and contact info.
+    Based on features from Docs/features.md for health and funeral policies.
+    """
+    
+    class InsuranceType(models.TextChoices):
+        HEALTH = 'HEALTH', 'Health Policies'
+        FUNERAL = 'FUNERAL', 'Funeral Policies'
+    
+    # Contact Information (for survey only)
+    first_name = models.CharField(
+        max_length=100,
+        help_text="First name of the survey respondent"
+    )
+    last_name = models.CharField(
+        max_length=100,
+        help_text="Last name of the survey respondent"
+    )
+    date_of_birth = models.DateField(
+        help_text="Date of birth of the survey respondent"
+    )
+    email = models.EmailField(
+        blank=True,
+        help_text="Email address (optional)"
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Phone number (optional)"
+    )
+    
+    # Insurance type selection
+    insurance_type = models.CharField(
+        max_length=20,
+        choices=InsuranceType.choices,
+        help_text="Type of insurance being surveyed"
+    )
+    
+    # Health Policy Preferences (from Docs/features.md)
+    preferred_annual_limit = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Preferred overall annual limit per member per family"
+    )
+    household_income = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Monthly household income"
+    )
+    wants_in_hospital_benefit = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Do you want in-hospital benefits?"
+    )
+    wants_out_hospital_benefit = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Do you want out-of-hospital benefits?"
+    )
+    needs_chronic_medication = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Do you need chronic medication coverage?"
+    )
+    
+    # Funeral Policy Preferences (from Docs/features.md)
+    preferred_cover_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Preferred cover amount for funeral policy"
+    )
+    marital_status = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Marital status"
+    )
+    gender = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Gender"
+    )
+    net_income = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Monthly net income"
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Simple Survey"
+        verbose_name_plural = "Simple Surveys"
+        indexes = [
+            models.Index(fields=['insurance_type', 'created_at']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.get_insurance_type_display()}"
+    
+    def clean(self):
+        """Validate survey responses based on insurance type."""
+        super().clean()
+        errors = {}
+        
+        # Validate health policy fields
+        if self.insurance_type == self.InsuranceType.HEALTH:
+            if self.preferred_annual_limit is None:
+                errors['preferred_annual_limit'] = 'Annual limit preference is required for health policies'
+            elif self.preferred_annual_limit <= 0:
+                errors['preferred_annual_limit'] = 'Annual limit must be greater than 0'
+                
+            if self.household_income is None:
+                errors['household_income'] = 'Household income is required for health policies'
+            elif self.household_income <= 0:
+                errors['household_income'] = 'Household income must be greater than 0'
+                
+            if self.wants_in_hospital_benefit is None:
+                errors['wants_in_hospital_benefit'] = 'In-hospital benefit preference is required for health policies'
+                
+            if self.wants_out_hospital_benefit is None:
+                errors['wants_out_hospital_benefit'] = 'Out-of-hospital benefit preference is required for health policies'
+                
+            if self.needs_chronic_medication is None:
+                errors['needs_chronic_medication'] = 'Chronic medication preference is required for health policies'
+        
+        # Validate funeral policy fields
+        elif self.insurance_type == self.InsuranceType.FUNERAL:
+            if self.preferred_cover_amount is None:
+                errors['preferred_cover_amount'] = 'Cover amount preference is required for funeral policies'
+            elif self.preferred_cover_amount <= 0:
+                errors['preferred_cover_amount'] = 'Cover amount must be greater than 0'
+                
+            if not self.marital_status:
+                errors['marital_status'] = 'Marital status is required for funeral policies'
+                
+            if not self.gender:
+                errors['gender'] = 'Gender is required for funeral policies'
+                
+            if self.net_income is None:
+                errors['net_income'] = 'Net income is required for funeral policies'
+            elif self.net_income <= 0:
+                errors['net_income'] = 'Net income must be greater than 0'
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def get_preferences_dict(self):
+        """Get user preferences as dictionary for matching."""
+        if self.insurance_type == self.InsuranceType.HEALTH:
+            return {
+                'annual_limit_per_member': self.preferred_annual_limit,
+                'monthly_household_income': self.household_income,
+                'in_hospital_benefit': self.wants_in_hospital_benefit,
+                'out_hospital_benefit': self.wants_out_hospital_benefit,
+                'chronic_medication_availability': self.needs_chronic_medication,
+            }
+        elif self.insurance_type == self.InsuranceType.FUNERAL:
+            return {
+                'cover_amount': self.preferred_cover_amount,
+                'marital_status_requirement': self.marital_status,
+                'gender_requirement': self.gender,
+                'monthly_net_income': self.net_income,
+            }
+        return {}
+    
+    def is_complete(self):
+        """Check if all required fields for the insurance type are filled."""
+        try:
+            self.clean()
+            return True
+        except ValidationError:
+            return False
+    
+    def get_missing_fields(self):
+        """Get list of missing required fields for the insurance type."""
+        try:
+            self.clean()
+            return []
+        except ValidationError as e:
+            return list(e.message_dict.keys()) if hasattr(e, 'message_dict') else []
