@@ -99,7 +99,6 @@ DATABASES = {
 
 DATABASES ["default"] = dj_database_url.parse("postgresql://neondb_owner:npg_TeLJO3Y5rRDX@ep-dawn-fog-a8mxgcsn-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require")
 
-
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
