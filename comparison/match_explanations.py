@@ -231,7 +231,6 @@ class MatchExplanationGenerator:
             'Annual Limit per Member',
             'Coverage Amount',
             'Monthly Household Income Requirement',
-            'Monthly Net Income Requirement'
         ]
         
         if feature in high_impact_features:
@@ -261,7 +260,6 @@ class MatchExplanationGenerator:
             'Annual Limit per Member': "Consider if the policy limit meets your minimum needs, or look for supplementary coverage.",
             'Coverage Amount': "Evaluate if this coverage amount provides adequate financial protection for your situation.",
             'Monthly Household Income Requirement': "Verify that you meet the income requirements for this policy.",
-            'Monthly Net Income Requirement': "Confirm your income qualifies you for this policy.",
             'In-Hospital Benefits': "Consider the importance of in-hospital coverage for your health needs.",
             'Out-of-Hospital Benefits': "Evaluate how often you might need out-of-hospital medical services.",
             'Chronic Medication Coverage': "If you need chronic medication, this could be a significant gap in coverage."
@@ -370,6 +368,38 @@ class MatchExplanationGenerator:
             List of health-specific insights
         """
         insights = []
+        
+        # Check annual family limit preferences
+        family_limit_pref = user_preferences.get('preferred_annual_limit_per_family')
+        if family_limit_pref:
+            family_limit_match = any(m['feature'] == 'Annual Limit per Family' for m in matches)
+            if family_limit_match:
+                insights.append(f"The annual family limit meets your preference of R{family_limit_pref:,.0f}.")
+            else:
+                family_limit_mismatch = any(m['feature'] == 'Annual Limit per Family' for m in mismatches)
+                if family_limit_mismatch:
+                    insights.append("The annual family limit may not meet your preferred amount.")
+        
+        # Check medical aid status compatibility
+        currently_on_aid = user_preferences.get('currently_on_medical_aid')
+        if currently_on_aid is not None:
+            aid_match = any(m['feature'] == 'Current Medical Aid Status' for m in matches)
+            if aid_match:
+                if currently_on_aid:
+                    insights.append("This policy is compatible with your current medical aid status.")
+                else:
+                    insights.append("This policy is suitable for someone not currently on medical aid.")
+        
+        # Check ambulance coverage needs
+        wants_ambulance = user_preferences.get('wants_ambulance_coverage')
+        if wants_ambulance:
+            ambulance_match = any(m['feature'] == 'Ambulance Coverage' for m in matches)
+            if ambulance_match:
+                insights.append("Great news - this policy includes ambulance coverage as you requested.")
+            else:
+                ambulance_mismatch = any(m['feature'] == 'Ambulance Coverage' for m in mismatches)
+                if ambulance_mismatch:
+                    insights.append("Important: This policy may not include ambulance coverage, which you indicated as needed.")
         
         # Check chronic medication needs
         chronic_needed = user_preferences.get('needs_chronic_medication')
@@ -501,6 +531,9 @@ class MatchExplanationGenerator:
         
         # Check for important health features
         important_health_features = [
+            'Annual Limit per Family',
+            'Current Medical Aid Status',
+            'Ambulance Coverage',
             'Chronic Medication Coverage',
             'In-Hospital Benefits',
             'Out-of-Hospital Benefits'
@@ -510,6 +543,13 @@ class MatchExplanationGenerator:
         if len(matched_important) >= 2:
             features = [m['feature'] for m in matched_important]
             reasons.append(f"Covers key health benefits: {', '.join(features).lower()}.")
+        
+        # Specific feature highlights
+        if any(m['feature'] == 'Annual Limit per Family' for m in matches):
+            reasons.append("Annual family limit meets your requirements.")
+        
+        if any(m['feature'] == 'Ambulance Coverage' for m in matches):
+            reasons.append("Includes ambulance coverage as requested.")
         
         return reasons
     

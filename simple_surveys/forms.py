@@ -14,10 +14,11 @@ class SimpleSurveyForm(forms.ModelForm):
             'first_name', 'last_name', 'date_of_birth', 'email', 'phone',
             'insurance_type',
             # Health fields
-            'preferred_annual_limit', 'household_income', 'wants_in_hospital_benefit',
+            'preferred_annual_limit_per_family', 'household_income', 'currently_on_medical_aid',
+            'wants_ambulance_coverage', 'wants_in_hospital_benefit',
             'wants_out_hospital_benefit', 'needs_chronic_medication',
             # Funeral fields
-            'preferred_cover_amount', 'marital_status', 'gender', 'net_income'
+            'preferred_cover_amount', 'marital_status', 'gender'
         ]
         widgets = {
             'first_name': forms.TextInput(attrs={
@@ -45,9 +46,9 @@ class SimpleSurveyForm(forms.ModelForm):
                 'id': 'insurance-type-select'
             }),
             # Health fields
-            'preferred_annual_limit': forms.NumberInput(attrs={
+            'preferred_annual_limit_per_family': forms.NumberInput(attrs={
                 'class': 'form-control health-field',
-                'placeholder': 'Enter preferred annual limit',
+                'placeholder': 'Enter preferred annual limit per family',
                 'step': '0.01',
                 'min': '0'
             }),
@@ -57,6 +58,14 @@ class SimpleSurveyForm(forms.ModelForm):
                 'step': '0.01',
                 'min': '0'
             }),
+            'currently_on_medical_aid': forms.Select(
+                choices=[(None, 'Select an option'), (True, 'Yes'), (False, 'No')],
+                attrs={'class': 'form-control health-field'}
+            ),
+            'wants_ambulance_coverage': forms.Select(
+                choices=[(None, 'Select an option'), (True, 'Yes'), (False, 'No')],
+                attrs={'class': 'form-control health-field'}
+            ),
             'wants_in_hospital_benefit': forms.Select(
                 choices=[(None, 'Select an option'), (True, 'Yes'), (False, 'No')],
                 attrs={'class': 'form-control health-field'}
@@ -95,12 +104,6 @@ class SimpleSurveyForm(forms.ModelForm):
                 ],
                 attrs={'class': 'form-control funeral-field'}
             ),
-            'net_income': forms.NumberInput(attrs={
-                'class': 'form-control funeral-field',
-                'placeholder': 'Enter monthly net income',
-                'step': '0.01',
-                'min': '0'
-            }),
         }
     
     def __init__(self, *args, **kwargs):
@@ -115,8 +118,10 @@ class SimpleSurveyForm(forms.ModelForm):
             'phone': 'Phone Number',
             'insurance_type': 'Insurance Type',
             # Health field labels
-            'preferred_annual_limit': 'Preferred Annual Limit per Member',
+            'preferred_annual_limit_per_family': 'Preferred Annual Limit per Family',
             'household_income': 'Monthly Household Income',
+            'currently_on_medical_aid': 'Are you currently on medical aid?',
+            'wants_ambulance_coverage': 'Do you want ambulance coverage?',
             'wants_in_hospital_benefit': 'Do you want in-hospital benefits?',
             'wants_out_hospital_benefit': 'Do you want out-of-hospital benefits?',
             'needs_chronic_medication': 'Do you need chronic medication coverage?',
@@ -124,7 +129,6 @@ class SimpleSurveyForm(forms.ModelForm):
             'preferred_cover_amount': 'Preferred Cover Amount',
             'marital_status': 'Marital Status',
             'gender': 'Gender',
-            'net_income': 'Monthly Net Income',
         }
         
         for field_name, label in field_labels.items():
@@ -143,15 +147,21 @@ class SimpleSurveyForm(forms.ModelForm):
         if insurance_type == SimpleSurvey.InsuranceType.HEALTH:
             health_errors = {}
             
-            if not cleaned_data.get('preferred_annual_limit'):
-                health_errors['preferred_annual_limit'] = 'This field is required for health policies.'
-            elif cleaned_data.get('preferred_annual_limit') <= 0:
-                health_errors['preferred_annual_limit'] = 'Annual limit must be greater than 0.'
+            if not cleaned_data.get('preferred_annual_limit_per_family'):
+                health_errors['preferred_annual_limit_per_family'] = 'This field is required for health policies.'
+            elif cleaned_data.get('preferred_annual_limit_per_family') <= 0:
+                health_errors['preferred_annual_limit_per_family'] = 'Annual limit per family must be greater than 0.'
             
             if not cleaned_data.get('household_income'):
                 health_errors['household_income'] = 'This field is required for health policies.'
             elif cleaned_data.get('household_income') <= 0:
                 health_errors['household_income'] = 'Household income must be greater than 0.'
+            
+            if cleaned_data.get('currently_on_medical_aid') is None:
+                health_errors['currently_on_medical_aid'] = 'This field is required for health policies.'
+            
+            if cleaned_data.get('wants_ambulance_coverage') is None:
+                health_errors['wants_ambulance_coverage'] = 'This field is required for health policies.'
             
             if cleaned_data.get('wants_in_hospital_benefit') is None:
                 health_errors['wants_in_hospital_benefit'] = 'This field is required for health policies.'
@@ -180,11 +190,6 @@ class SimpleSurveyForm(forms.ModelForm):
             if not cleaned_data.get('gender'):
                 funeral_errors['gender'] = 'This field is required for funeral policies.'
             
-            if not cleaned_data.get('net_income'):
-                funeral_errors['net_income'] = 'This field is required for funeral policies.'
-            elif cleaned_data.get('net_income') <= 0:
-                funeral_errors['net_income'] = 'Net income must be greater than 0.'
-            
             if funeral_errors:
                 raise ValidationError(funeral_errors)
         
@@ -200,7 +205,8 @@ class HealthSurveyForm(SimpleSurveyForm):
         fields = [
             'first_name', 'last_name', 'date_of_birth', 'email', 'phone',
             'insurance_type',  # Include insurance_type field
-            'preferred_annual_limit', 'household_income', 'wants_in_hospital_benefit',
+            'preferred_annual_limit_per_family', 'household_income', 'currently_on_medical_aid',
+            'wants_ambulance_coverage', 'wants_in_hospital_benefit',
             'wants_out_hospital_benefit', 'needs_chronic_medication'
         ]
     
@@ -213,7 +219,7 @@ class HealthSurveyForm(SimpleSurveyForm):
         
         # Remove funeral-specific fields that might be inherited
         funeral_fields = [
-            'preferred_cover_amount', 'marital_status', 'gender', 'net_income'
+            'preferred_cover_amount', 'marital_status', 'gender'
         ]
         for field in funeral_fields:
             if field in self.fields:
@@ -229,7 +235,7 @@ class FuneralSurveyForm(SimpleSurveyForm):
         fields = [
             'first_name', 'last_name', 'date_of_birth', 'email', 'phone',
             'insurance_type',  # Include insurance_type field
-            'preferred_cover_amount', 'marital_status', 'gender', 'net_income'
+            'preferred_cover_amount', 'marital_status', 'gender'
         ]
     
     def __init__(self, *args, **kwargs):
@@ -241,7 +247,8 @@ class FuneralSurveyForm(SimpleSurveyForm):
         
         # Remove health-specific fields that might be inherited
         health_fields = [
-            'preferred_annual_limit', 'household_income', 'wants_in_hospital_benefit',
+            'preferred_annual_limit_per_family', 'household_income', 'currently_on_medical_aid',
+            'wants_ambulance_coverage', 'wants_in_hospital_benefit',
             'wants_out_hospital_benefit', 'needs_chronic_medication'
         ]
         for field in health_fields:

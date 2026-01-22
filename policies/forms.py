@@ -58,7 +58,6 @@ class PolicyFeaturesAdminForm(forms.ModelForm):
             'cover_amount': _('Total coverage amount for funeral expenses (Funeral policies only)'),
             'marital_status_requirement': _('Required marital status (Funeral policies only)'),
             'gender_requirement': _('Required gender (Funeral policies only)'),
-            'monthly_net_income': _('Required monthly net income (Funeral policies only)'),
         }
     
     def __init__(self, *args, **kwargs):
@@ -192,7 +191,6 @@ class PolicyFeaturesAdminForm(forms.ModelForm):
             ('annual_limit_per_member', 'Annual limit per member'),
             ('monthly_household_income', 'Monthly household income'),
             ('cover_amount', 'Cover amount'),
-            ('monthly_net_income', 'Monthly net income')
         ]
         
         for field_name, field_label in numeric_fields:
@@ -224,6 +222,11 @@ class AdditionalFeaturesAdminForm(forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Detailed description of this additional feature...'
             }),
+            'coverage_details': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Comprehensive coverage information and specific details about what is covered...'
+            }),
             'icon': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'e.g., fa-phone, icon-support'
@@ -236,6 +239,7 @@ class AdditionalFeaturesAdminForm(forms.ModelForm):
         help_texts = {
             'title': _('Short, descriptive title for this additional feature'),
             'description': _('Detailed explanation of what this feature provides'),
+            'coverage_details': _('Comprehensive coverage information including specific terms, conditions, and what is covered'),
             'icon': _('CSS class or icon name for visual representation'),
             'is_highlighted': _('Check to make this feature stand out in listings'),
             'display_order': _('Lower numbers appear first (0 = first)')
@@ -260,6 +264,15 @@ class AdditionalFeaturesAdminForm(forms.ModelForm):
             if len(description) < 10:
                 raise ValidationError(_('Description must be at least 10 characters long.'))
         return description
+    
+    def clean_coverage_details(self):
+        """Validate coverage details field"""
+        coverage_details = self.cleaned_data.get('coverage_details')
+        if coverage_details:
+            coverage_details = coverage_details.strip()
+            if len(coverage_details) < 20:
+                raise ValidationError(_('Coverage details must be at least 20 characters long for meaningful information.'))
+        return coverage_details
     
     def clean_display_order(self):
         """Validate display order"""

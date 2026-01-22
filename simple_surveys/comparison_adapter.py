@@ -190,7 +190,15 @@ class SimpleSurveyComparisonAdapter:
                 'chronic_conditions': 'chronic_conditions',
                 'coverage_priority': 'coverage_priority',
                 'monthly_budget': 'base_premium',
-                'preferred_deductible': 'deductible_amount'
+                'preferred_deductible': 'deductible_amount',
+                # New health policy fields
+                'preferred_annual_limit_per_family': 'annual_limit_per_family',
+                'household_income': 'monthly_household_income',
+                'currently_on_medical_aid': 'currently_on_medical_aid',
+                'wants_ambulance_coverage': 'ambulance_coverage',
+                'wants_in_hospital_benefit': 'in_hospital_benefit',
+                'wants_out_hospital_benefit': 'out_hospital_benefit',
+                'needs_chronic_medication': 'chronic_medication_availability'
             }
         elif self.category == 'funeral':
             return {
@@ -200,7 +208,11 @@ class SimpleSurveyComparisonAdapter:
                 'coverage_amount_needed': 'coverage_amount',
                 'service_preference': 'service_level',
                 'monthly_budget': 'base_premium',
-                'waiting_period_tolerance': 'waiting_period_days'
+                'waiting_period_tolerance': 'waiting_period_days',
+                # Funeral policy fields
+                'preferred_cover_amount': 'cover_amount',
+                'marital_status': 'marital_status_requirement',
+                'gender': 'gender_requirement'
             }
         else:
             return {}
@@ -217,11 +229,27 @@ class SimpleSurveyComparisonAdapter:
             Converted value for comparison engine
         """
         # Handle numeric conversions
-        if survey_field in ['age', 'family_size', 'family_members_to_cover', 'monthly_budget']:
+        if survey_field in ['age', 'family_size', 'family_members_to_cover', 'monthly_budget', 'household_income']:
             try:
                 return int(response_value) if response_value else 0
             except (ValueError, TypeError):
                 return 0
+        
+        # Handle decimal conversions for monetary amounts
+        if survey_field in ['preferred_annual_limit_per_family', 'preferred_cover_amount']:
+            try:
+                return float(response_value) if response_value else 0.0
+            except (ValueError, TypeError):
+                return 0.0
+        
+        # Handle boolean conversions
+        if survey_field in ['currently_on_medical_aid', 'wants_ambulance_coverage', 'wants_in_hospital_benefit', 
+                           'wants_out_hospital_benefit', 'needs_chronic_medication']:
+            if isinstance(response_value, bool):
+                return response_value
+            elif isinstance(response_value, str):
+                return response_value.lower() in ['true', 'yes', '1', 'on']
+            return bool(response_value)
         
         # Handle coverage amount conversions (remove 'R' and 'k' suffixes)
         if survey_field == 'coverage_amount_needed':
@@ -264,18 +292,26 @@ class SimpleSurveyComparisonAdapter:
         
         if self.category == 'health':
             default_weights = {
-                'base_premium': 30,  # Budget is important
-                'coverage_priority': 25,  # Coverage type matters
-                'health_status': 20,  # Health status affects eligibility
-                'chronic_conditions': 15,  # Chronic conditions are important
-                'deductible_amount': 10   # Deductible preference
+                'base_premium': 25,  # Budget is important
+                'annual_limit_per_family': 30,  # New primary coverage field - very important
+                'monthly_household_income': 20,  # Income eligibility is important
+                'currently_on_medical_aid': 15,  # Medical aid status affects eligibility
+                'ambulance_coverage': 12,  # Important safety feature
+                'coverage_priority': 20,  # Coverage type matters
+                'health_status': 15,  # Health status affects eligibility
+                'chronic_medication_availability': 15,  # Important for chronic conditions
+                'in_hospital_benefit': 10,  # Hospital benefits
+                'out_hospital_benefit': 10,  # Hospital benefits
+                'deductible_amount': 8   # Deductible preference
             }
         elif self.category == 'funeral':
             default_weights = {
                 'base_premium': 35,  # Budget is very important for funeral
-                'coverage_amount': 30,  # Coverage amount is key
+                'cover_amount': 30,  # Coverage amount is key
                 'service_level': 20,  # Service preference matters
-                'waiting_period_days': 15  # Waiting period tolerance
+                'waiting_period_days': 15,  # Waiting period tolerance
+                'marital_status_requirement': 10,  # Eligibility criteria
+                'gender_requirement': 10  # Eligibility criteria
             }
         
         # Only include weights for criteria that exist
@@ -411,7 +447,8 @@ class SimpleSurveyComparisonAdapter:
                 'pros': result.get('pros', [])[:3],  # Limit to top 3 pros
                 'cons': result.get('cons', [])[:3],  # Limit to top 3 cons
                 'value_rating': self._get_value_rating(score_data.get('value_score', 50)),
-                'get_quote_url': f'/policies/{policy.id}/quote/'
+                'get_quote_url': f'/policies/{policy.id}/quote/',
+                'policy_features': self._get_policy_features(policy)  # Add policy features
             }
             
             simplified_policies.append(simplified_policy)
@@ -448,7 +485,32 @@ class SimpleSurveyComparisonAdapter:
         """
         features = []
         
-        # Add category-specific features
+        # Add PolicyFeatures-based features
+        try:
+            policy_features = policy.policy_features
+            
+            if self.category == 'health':
+                # Add new health policy features
+                if policy_features.annual_limit_per_family:
+                    features.append(f'Annual Family Limit: R{policy_features.annual_limit_per_family:,.0f}')
+                if policy_features.ambulance_coverage:
+                    features.append('Ambulance Coverage')
+                if policy_features.in_hospital_benefit:
+                    features.append('In-Hospital Benefits')
+                if policy_features.out_hospital_benefit:
+                    features.append('Out-of-Hospital Benefits')
+                if policy_features.chronic_medication_availability:
+                    features.append('Chronic Medication')
+            
+            elif self.category == 'funeral':
+                if policy_features.cover_amount:
+                    features.append(f'Cover Amount: R{policy_features.cover_amount:,.0f}')
+                
+        except AttributeError:
+            # Policy has no policy_features, fall back to legacy attributes
+            pass
+        
+        # Add category-specific features (legacy support)
         if self.category == 'health':
             if hasattr(policy, 'includes_dental_cover') and policy.includes_dental_cover:
                 features.append('Dental Cover')
@@ -496,6 +558,36 @@ class SimpleSurveyComparisonAdapter:
             return 'Fair'
         else:
             return 'Poor'
+    
+    def _get_policy_features(self, policy: BasePolicy) -> dict:
+        """
+        Extract PolicyFeatures data for template display.
+        
+        Args:
+            policy: Policy instance
+            
+        Returns:
+            Dictionary with policy features or None if no features exist
+        """
+        try:
+            policy_features = policy.policy_features
+            return {
+                'annual_limit_per_family': policy_features.annual_limit_per_family,
+                'annual_limit_per_member': policy_features.annual_limit_per_member,
+                'monthly_household_income': policy_features.monthly_household_income,
+                'currently_on_medical_aid': policy_features.currently_on_medical_aid,
+                'ambulance_coverage': policy_features.ambulance_coverage,
+                'in_hospital_benefit': policy_features.in_hospital_benefit,
+                'out_hospital_benefit': policy_features.out_hospital_benefit,
+                'chronic_medication_availability': policy_features.chronic_medication_availability,
+                'cover_amount': policy_features.cover_amount,
+                'marital_status_requirement': policy_features.marital_status_requirement,
+                'gender_requirement': policy_features.gender_requirement,
+                'insurance_type': policy_features.insurance_type,
+            }
+        except AttributeError:
+            # Policy has no policy_features
+            return None
     
     def _update_quotation_session(
         self, 

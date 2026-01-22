@@ -15,7 +15,8 @@ from .models import (
     PolicyExclusion,
     PolicyDocument,
     PolicyPremiumCalculation,
-    PolicyReview
+    PolicyReview,
+    Rewards
 )
 from .forms import PolicyFeaturesAdminForm, AdditionalFeaturesAdminForm
 
@@ -42,7 +43,7 @@ class PolicyFeaturesInline(admin.StackedInline):
 class AdditionalFeaturesInline(admin.TabularInline):
     model = AdditionalFeatures
     extra = 1
-    fields = ['title', 'description', 'icon', 'is_highlighted', 'display_order']
+    fields = ['title', 'description', 'coverage_details', 'icon', 'is_highlighted', 'display_order']
     classes = ['collapse']
 
 
@@ -72,6 +73,14 @@ class PolicyPremiumCalculationInline(admin.TabularInline):
     extra = 0
     fields = ['factor_name', 'factor_value', 'multiplier', 'additional_amount', 'is_active']
     classes = ['collapse']
+
+
+class RewardsInline(admin.TabularInline):
+    model = Rewards
+    extra = 1
+    fields = ['title', 'reward_type', 'value', 'percentage', 'is_active', 'display_order']
+    classes = ['collapse']
+    ordering = ['display_order', 'title']
 
 
 # Main Admin Classes
@@ -300,6 +309,7 @@ class BasePolicyAdmin(admin.ModelAdmin):
     inlines = [
         PolicyFeaturesInline,
         AdditionalFeaturesInline,
+        RewardsInline,
         PolicyEligibilityInline,
         PolicyExclusionInline,
         PolicyDocumentInline,
@@ -525,7 +535,10 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
         (_('Health Policy Features'), {
             'fields': (
                 'annual_limit_per_member',
+                'annual_limit_per_family',
                 'monthly_household_income',
+                'currently_on_medical_aid',
+                'ambulance_coverage',
                 'in_hospital_benefit',
                 'out_hospital_benefit',
                 'chronic_medication_availability'
@@ -586,13 +599,16 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
         if obj.insurance_type == 'HEALTH':
             features = [
                 obj.annual_limit_per_member,
+                obj.annual_limit_per_family,
                 obj.monthly_household_income,
+                obj.currently_on_medical_aid,
+                obj.ambulance_coverage,
                 obj.in_hospital_benefit,
                 obj.out_hospital_benefit,
                 obj.chronic_medication_availability
             ]
             filled = sum(1 for f in features if f is not None)
-            return f"💊 {filled}/5 features"
+            return f"💊 {filled}/8 features"
         elif obj.insurance_type == 'FUNERAL':
             features = [
                 obj.cover_amount,
@@ -629,7 +645,10 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             # Check that health features are filled and funeral features are empty
             health_features = [
                 ('annual_limit_per_member', obj.annual_limit_per_member),
+                ('annual_limit_per_family', obj.annual_limit_per_family),
                 ('monthly_household_income', obj.monthly_household_income),
+                ('currently_on_medical_aid', obj.currently_on_medical_aid),
+                ('ambulance_coverage', obj.ambulance_coverage),
                 ('in_hospital_benefit', obj.in_hospital_benefit),
                 ('out_hospital_benefit', obj.out_hospital_benefit),
                 ('chronic_medication_availability', obj.chronic_medication_availability)
@@ -668,7 +687,10 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             # Check for incorrectly filled health features
             health_features = [
                 ('annual_limit_per_member', obj.annual_limit_per_member),
+                ('annual_limit_per_family', obj.annual_limit_per_family),
                 ('monthly_household_income', obj.monthly_household_income),
+                ('currently_on_medical_aid', obj.currently_on_medical_aid),
+                ('ambulance_coverage', obj.ambulance_coverage),
                 ('in_hospital_benefit', obj.in_hospital_benefit),
                 ('out_hospital_benefit', obj.out_hospital_benefit),
                 ('chronic_medication_availability', obj.chronic_medication_availability)
@@ -680,12 +702,12 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
         # Validate numeric values
         if obj.annual_limit_per_member is not None and obj.annual_limit_per_member <= 0:
             errors.append("Annual limit per member must be positive")
+        if obj.annual_limit_per_family is not None and obj.annual_limit_per_family <= 0:
+            errors.append("Annual limit per family must be positive")
         if obj.monthly_household_income is not None and obj.monthly_household_income <= 0:
             errors.append("Monthly household income must be positive")
         if obj.cover_amount is not None and obj.cover_amount <= 0:
             errors.append("Cover amount must be positive")
-        if obj.monthly_net_income is not None and obj.monthly_net_income <= 0:
-            errors.append("Monthly net income must be positive")
             
         return errors
     
@@ -734,7 +756,10 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             elif obj.insurance_type == 'FUNERAL':
                 # Clear health features
                 obj.annual_limit_per_member = None
+                obj.annual_limit_per_family = None
                 obj.monthly_household_income = None
+                obj.currently_on_medical_aid = None
+                obj.ambulance_coverage = None
                 obj.in_hospital_benefit = None
                 obj.out_hospital_benefit = None
                 obj.chronic_medication_availability = None
@@ -762,7 +787,10 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
                 defaults={
                     'insurance_type': template.insurance_type,
                     'annual_limit_per_member': template.annual_limit_per_member,
+                    'annual_limit_per_family': template.annual_limit_per_family,
                     'monthly_household_income': template.monthly_household_income,
+                    'currently_on_medical_aid': template.currently_on_medical_aid,
+                    'ambulance_coverage': template.ambulance_coverage,
                     'in_hospital_benefit': template.in_hospital_benefit,
                     'out_hospital_benefit': template.out_hospital_benefit,
                     'chronic_medication_availability': template.chronic_medication_availability,
@@ -778,6 +806,178 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
         self.message_user(request, f'Duplicated features to {duplicated_count} similar policies.')
 
 
+@admin.register(Rewards)
+class RewardsAdmin(admin.ModelAdmin):
+    list_display = [
+        'title',
+        'policy_name_display',
+        'reward_type_display',
+        'value_display',
+        'percentage_display',
+        'is_active',
+        'display_order',
+        'created_at'
+    ]
+    
+    list_filter = [
+        'reward_type',
+        'is_active',
+        'policy__category',
+        'policy__organization',
+        'created_at'
+    ]
+    
+    search_fields = [
+        'title',
+        'description',
+        'policy__name',
+        'policy__policy_number',
+        'policy__organization__name'
+    ]
+    
+    list_select_related = ['policy', 'policy__organization', 'policy__category']
+    readonly_fields = ['created_at', 'updated_at']
+    list_editable = ['is_active', 'display_order']
+    ordering = ['policy', 'display_order', 'title']
+    
+    fieldsets = (
+        (_('Basic Information'), {
+            'fields': ('policy', 'title', 'description', 'reward_type'),
+            'description': _('Basic reward information and type classification.')
+        }),
+        (_('Reward Value'), {
+            'fields': ('value', 'percentage'),
+            'description': _('Specify either monetary value or percentage. Not all reward types require values.')
+        }),
+        (_('Eligibility & Terms'), {
+            'fields': ('eligibility_criteria', 'terms_and_conditions'),
+            'description': _('Detailed criteria and terms for this reward.'),
+            'classes': ('collapse',)
+        }),
+        (_('Display Settings'), {
+            'fields': ('is_active', 'display_order'),
+            'description': _('Control visibility and ordering of rewards.')
+        }),
+        (_('Metadata'), {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    actions = [
+        'activate_rewards',
+        'deactivate_rewards',
+        'duplicate_to_similar_policies'
+    ]
+    
+    def policy_name_display(self, obj):
+        """Display policy name with link to policy admin"""
+        url = reverse('admin:policies_basepolicy_change', args=[obj.policy.pk])
+        return format_html(
+            '<a href="{}" style="text-decoration: none;">{}</a>',
+            url,
+            obj.policy.name
+        )
+    policy_name_display.short_description = _('Policy')
+    policy_name_display.admin_order_field = 'policy__name'
+    
+    def reward_type_display(self, obj):
+        """Display reward type with color coding"""
+        colors = {
+            'CASHBACK': '#28a745',
+            'DISCOUNT': '#17a2b8',
+            'BENEFIT': '#6f42c1',
+            'POINTS': '#fd7e14',
+            'OTHER': '#6c757d'
+        }
+        color = colors.get(obj.reward_type, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">{}</span>',
+            color,
+            obj.get_reward_type_display()
+        )
+    reward_type_display.short_description = _('Type')
+    reward_type_display.admin_order_field = 'reward_type'
+    
+    def value_display(self, obj):
+        """Display monetary value if available"""
+        if obj.value is not None:
+            return format_html(
+                '<strong>{} {:,.2f}</strong>',
+                obj.policy.currency if hasattr(obj.policy, 'currency') else 'R',
+                float(obj.value)
+            )
+        return "—"
+    value_display.short_description = _('Value')
+    value_display.admin_order_field = 'value'
+    
+    def percentage_display(self, obj):
+        """Display percentage value if available"""
+        if obj.percentage is not None:
+            return format_html(
+                '<strong>{}%</strong>',
+                float(obj.percentage)
+            )
+        return "—"
+    percentage_display.short_description = _('Percentage')
+    percentage_display.admin_order_field = 'percentage'
+    
+    def is_active_display(self, obj):
+        """Display active status with icons"""
+        return "✅ Active" if obj.is_active else "❌ Inactive"
+    is_active_display.short_description = _('Status')
+    is_active_display.admin_order_field = 'is_active'
+    
+    # Admin Actions
+    @admin.action(description=_('Activate selected rewards'))
+    def activate_rewards(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} rewards activated.')
+    
+    @admin.action(description=_('Deactivate selected rewards'))
+    def deactivate_rewards(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} rewards deactivated.')
+    
+    @admin.action(description=_('Duplicate rewards to similar policies'))
+    def duplicate_to_similar_policies(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(request, 'Please select exactly one reward to duplicate.', level='ERROR')
+            return
+        
+        template_reward = queryset.first()
+        similar_policies = BasePolicy.objects.filter(
+            category=template_reward.policy.category,
+            policy_type=template_reward.policy.policy_type
+        ).exclude(pk=template_reward.policy.pk)
+        
+        duplicated_count = 0
+        for policy in similar_policies:
+            # Check if a similar reward already exists
+            existing = Rewards.objects.filter(
+                policy=policy,
+                title=template_reward.title,
+                reward_type=template_reward.reward_type
+            ).exists()
+            
+            if not existing:
+                Rewards.objects.create(
+                    policy=policy,
+                    title=template_reward.title,
+                    description=template_reward.description,
+                    reward_type=template_reward.reward_type,
+                    value=template_reward.value,
+                    percentage=template_reward.percentage,
+                    eligibility_criteria=template_reward.eligibility_criteria,
+                    terms_and_conditions=template_reward.terms_and_conditions,
+                    is_active=template_reward.is_active,
+                    display_order=template_reward.display_order
+                )
+                duplicated_count += 1
+        
+        self.message_user(request, f'Duplicated reward to {duplicated_count} similar policies.')
+
+
 @admin.register(AdditionalFeatures)
 class AdditionalFeaturesAdmin(admin.ModelAdmin):
     form = AdditionalFeaturesAdminForm
@@ -785,6 +985,7 @@ class AdditionalFeaturesAdmin(admin.ModelAdmin):
         'title',
         'policy_name_display',
         'insurance_type_display',
+        'has_coverage_details',
         'is_highlighted_display',
         'display_order',
         'created_at'
@@ -799,6 +1000,7 @@ class AdditionalFeaturesAdmin(admin.ModelAdmin):
     search_fields = [
         'title',
         'description',
+        'coverage_details',
         'policy__name',
         'policy__organization__name'
     ]
@@ -810,6 +1012,10 @@ class AdditionalFeaturesAdmin(admin.ModelAdmin):
         (_('Basic Information'), {
             'fields': ('policy', 'title', 'description'),
             'description': _('Basic information about this additional feature.')
+        }),
+        (_('Coverage Details'), {
+            'fields': ('coverage_details',),
+            'description': _('Detailed coverage information and descriptions for this feature.')
         }),
         (_('Display Settings'), {
             'fields': ('icon', 'is_highlighted', 'display_order'),
@@ -866,6 +1072,14 @@ class AdditionalFeaturesAdmin(admin.ModelAdmin):
         return format_html('<span style="color: #6c757d;">{}</span>', '☆ Regular')
     is_highlighted_display.short_description = _('Highlight Status')
     is_highlighted_display.admin_order_field = 'is_highlighted'
+    
+    def has_coverage_details(self, obj):
+        """Display whether coverage details are provided"""
+        if obj.coverage_details and obj.coverage_details.strip():
+            return format_html('<span style="color: #28a745;">{}</span>', '✓ Details')
+        return format_html('<span style="color: #6c757d;">{}</span>', '— No Details')
+    has_coverage_details.short_description = _('Coverage Details')
+    has_coverage_details.admin_order_field = 'coverage_details'
     
     def get_queryset(self, request):
         """Optimize queryset with related objects"""

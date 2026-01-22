@@ -13,7 +13,7 @@ class SimpleSurveyAdmin(admin.ModelAdmin):
         'full_name', 'insurance_type', 'date_of_birth', 'email', 'phone',
         'is_complete_display', 'created_at'
     ]
-    list_filter = ['insurance_type', 'created_at', 'date_of_birth']
+    list_filter = ['insurance_type', 'created_at', 'date_of_birth', 'currently_on_medical_aid', 'wants_ambulance_coverage']
     search_fields = ['first_name', 'last_name', 'email', 'phone']
     ordering = ['-created_at']
     
@@ -26,14 +26,15 @@ class SimpleSurveyAdmin(admin.ModelAdmin):
         }),
         ('Health Policy Preferences', {
             'fields': (
-                'preferred_annual_limit', 'household_income', 'wants_in_hospital_benefit',
+                'preferred_annual_limit', 'preferred_annual_limit_per_family', 'household_income', 'currently_on_medical_aid',
+                'wants_ambulance_coverage', 'wants_in_hospital_benefit',
                 'wants_out_hospital_benefit', 'needs_chronic_medication'
             ),
             'classes': ('collapse',)
         }),
         ('Funeral Policy Preferences', {
             'fields': (
-                'preferred_cover_amount', 'marital_status', 'gender', 'net_income'
+                'preferred_cover_amount', 'marital_status', 'gender'
             ),
             'classes': ('collapse',)
         }),

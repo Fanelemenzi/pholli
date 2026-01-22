@@ -270,13 +270,13 @@
                     
                     <div class="row">
                         <div class="col-md-6">
-                            <label for="{{ form.preferred_annual_limit.id_for_label }}" class="form-label">
-                                {{ form.preferred_annual_limit.label }} <span class="required">*</span>
+                            <label for="{{ form.preferred_annual_limit_per_family.id_for_label }}" class="form-label">
+                                {{ form.preferred_annual_limit_per_family.label }} <span class="required">*</span>
                             </label>
-                            {{ form.preferred_annual_limit }}
-                            <div class="form-text">Enter your preferred annual coverage limit per family member in Emalangeni (E)</div>
-                            {% if form.preferred_annual_limit.errors %}
-                                <div class="text-danger">{{ form.preferred_annual_limit.errors.0 }}</div>
+                            {{ form.preferred_annual_limit_per_family }}
+                            <div class="form-text">Enter your preferred annual coverage limit per family in Emalangeni (E)</div>
+                            {% if form.preferred_annual_limit_per_family.errors %}
+                                <div class="text-danger">{{ form.preferred_annual_limit_per_family.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
@@ -287,6 +287,29 @@
                             <div class="form-text">Enter your monthly household income in Emalangeni (E)</div>
                             {% if form.household_income.errors %}
                                 <div class="text-danger">{{ form.household_income.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.currently_on_medical_aid.id_for_label }}" class="form-label">
+                                {{ form.currently_on_medical_aid.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.currently_on_medical_aid }}
+                            <div class="form-text">Are you currently covered by any medical aid scheme?</div>
+                            {% if form.currently_on_medical_aid.errors %}
+                                <div class="text-danger">{{ form.currently_on_medical_aid.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.wants_ambulance_coverage.id_for_label }}" class="form-label">
+                                {{ form.wants_ambulance_coverage.label }} <span class="required">*</span>
+                            </label>
+                            {{ form.wants_ambulance_coverage }}
+                            <div class="form-text">Do you want ambulance services included in your coverage?</div>
+                            {% if form.wants_ambulance_coverage.errors %}
+                                <div class="text-danger">{{ form.wants_ambulance_coverage.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -329,7 +352,7 @@
                     <h3 class="section-title">Funeral Insurance Preferences</h3>
                     
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label for="{{ form.preferred_cover_amount.id_for_label }}" class="form-label">
                                 {{ form.preferred_cover_amount.label }} <span class="required">*</span>
                             </label>
@@ -337,16 +360,6 @@
                             <div class="form-text">Enter your preferred coverage amount in Emalangeni (E)</div>
                             {% if form.preferred_cover_amount.errors %}
                                 <div class="text-danger">{{ form.preferred_cover_amount.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="{{ form.net_income.id_for_label }}" class="form-label">
-                                {{ form.net_income.label }} <span class="required">*</span>
-                            </label>
-                            {{ form.net_income }}
-                            <div class="form-text">Enter your monthly net income in Emalangeni (E)</div>
-                            {% if form.net_income.errors %}
-                                <div class="text-danger">{{ form.net_income.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>

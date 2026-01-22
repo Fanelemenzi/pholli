@@ -1,0 +1,274 @@
+<!-- Benefits Modal Template -->
+<div class="modal fade" id="benefitsModal" tabindex="-1" aria-labelledby="benefitsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #269523, #f1d925); color: #000000;">
+                <h5 class="modal-title" id="benefitsModalLabel">
+                    <i class="bi bi-shield-check me-2"></i>Benefits Covered
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="benefitsModalBody">
+                <!-- Loading state -->
+                <div class="text-center" id="benefitsLoading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading benefits information...</p>
+                </div>
+                
+                <!-- Error state -->
+                <div class="alert alert-danger d-none" id="benefitsError">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="benefitsErrorMessage">Unable to load benefits information.</span>
+                </div>
+                
+                <!-- Benefits content -->
+                <div class="d-none" id="benefitsContent">
+                    <!-- Policy Information -->
+                    <div class="policy-info mb-4">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="policy-name mb-1"></h6>
+                                <p class="policy-organization text-muted mb-0"></p>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <div class="policy-premium"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Core Features Section -->
+                    <div class="benefits-section mb-4" id="coreFeaturesSection">
+                        <h6 class="section-title">
+                            <i class="bi bi-star-fill text-warning me-2"></i>Core Features
+                        </h6>
+                        <div class="features-list" id="coreFeaturesList">
+                            <!-- Core features will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Features Section -->
+                    <div class="benefits-section mb-4" id="additionalFeaturesSection">
+                        <h6 class="section-title">
+                            <i class="bi bi-plus-circle text-success me-2"></i>Additional Benefits
+                        </h6>
+                        <div class="additional-features-list" id="additionalFeaturesList">
+                            <!-- Additional features will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Rewards Section -->
+                    <div class="benefits-section mb-4" id="rewardsSection">
+                        <h6 class="section-title">
+                            <i class="bi bi-gift text-primary me-2"></i>Available Rewards
+                        </h6>
+                        <div class="rewards-list" id="rewardsList">
+                            <!-- Rewards will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- No benefits message -->
+                    <div class="text-center text-muted d-none" id="noBenefitsMessage">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No additional benefits information available for this policy.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="getQuoteFromModal">
+                    <i class="bi bi-telephone me-2"></i>Get This Quote
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Benefits Modal Styles */
+.benefits-section {
+    border-left: 4px solid #269523;
+    padding-left: 15px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    color: #269523;
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.feature-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-left: 3px solid #269523;
+    transition: all 0.2s ease;
+}
+
+.feature-item:hover {
+    background: #e8f5e8;
+    transform: translateX(2px);
+}
+
+.feature-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.feature-value {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.additional-feature-item {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.2s ease;
+}
+
+.additional-feature-item:hover {
+    box-shadow: 0 4px 12px rgba(38, 149, 35, 0.1);
+    border-color: #269523;
+}
+
+.additional-feature-title {
+    font-weight: 700;
+    color: #269523;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.additional-feature-description {
+    color: #666;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.additional-feature-coverage {
+    background: #f1f9f1;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 0.9rem;
+    color: #2d5a2d;
+    border-left: 3px solid #269523;
+}
+
+.reward-item {
+    background: linear-gradient(135deg, #fff9e6, #f0f8e8);
+    border: 1px solid #f1d925;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.reward-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f1d925, #269523);
+}
+
+.reward-title {
+    font-weight: 700;
+    color: #1a4a1a;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.reward-value {
+    background: #269523;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.reward-description {
+    color: #2d5a2d;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.reward-criteria {
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+}
+
+.policy-info {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.policy-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #269523;
+}
+
+.policy-organization {
+    font-size: 0.95rem;
+}
+
+.policy-premium {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #269523;
+}
+
+.modal-header {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+}
+
+#benefitsModal .btn-primary {
+    background: linear-gradient(135deg, #269523, #f1d925);
+    border: none;
+    color: #000000;
+    font-weight: 700;
+}
+
+#benefitsModal .btn-primary:hover {
+    background: linear-gradient(135deg, #1e7a1e, #d4c020);
+    color: #000000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 10px;
+    }
+    
+    .feature-item,
+    .additional-feature-item,
+    .reward-item {
+        padding: 10px;
+    }
+    
+    .policy-info {
+        padding: 15px;
+    }
+}
+</style>

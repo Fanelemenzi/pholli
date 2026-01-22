@@ -372,12 +372,29 @@ class SimpleSurvey(models.Model):
         blank=True,
         help_text="Preferred overall annual limit per member per family"
     )
+    preferred_annual_limit_per_family = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Preferred annual limit per family (replaces per member limit)"
+    )
     household_income = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
         help_text="Monthly household income"
+    )
+    currently_on_medical_aid = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Are you currently on medical aid?"
+    )
+    wants_ambulance_coverage = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Do you want ambulance coverage?"
     )
     wants_in_hospital_benefit = models.BooleanField(
         null=True,
@@ -415,13 +432,6 @@ class SimpleSurvey(models.Model):
         blank=True,
         help_text="Gender"
     )
-    net_income = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="Monthly net income"
-    )
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -445,15 +455,21 @@ class SimpleSurvey(models.Model):
         
         # Validate health policy fields
         if self.insurance_type == self.InsuranceType.HEALTH:
-            if self.preferred_annual_limit is None:
-                errors['preferred_annual_limit'] = 'Annual limit preference is required for health policies'
-            elif self.preferred_annual_limit <= 0:
-                errors['preferred_annual_limit'] = 'Annual limit must be greater than 0'
+            if self.preferred_annual_limit_per_family is None:
+                errors['preferred_annual_limit_per_family'] = 'Annual limit per family preference is required for health policies'
+            elif self.preferred_annual_limit_per_family <= 0:
+                errors['preferred_annual_limit_per_family'] = 'Annual limit per family must be greater than 0'
                 
             if self.household_income is None:
                 errors['household_income'] = 'Household income is required for health policies'
             elif self.household_income <= 0:
                 errors['household_income'] = 'Household income must be greater than 0'
+                
+            if self.currently_on_medical_aid is None:
+                errors['currently_on_medical_aid'] = 'Medical aid status is required for health policies'
+                
+            if self.wants_ambulance_coverage is None:
+                errors['wants_ambulance_coverage'] = 'Ambulance coverage preference is required for health policies'
                 
             if self.wants_in_hospital_benefit is None:
                 errors['wants_in_hospital_benefit'] = 'In-hospital benefit preference is required for health policies'
@@ -476,11 +492,6 @@ class SimpleSurvey(models.Model):
                 
             if not self.gender:
                 errors['gender'] = 'Gender is required for funeral policies'
-                
-            if self.net_income is None:
-                errors['net_income'] = 'Net income is required for funeral policies'
-            elif self.net_income <= 0:
-                errors['net_income'] = 'Net income must be greater than 0'
         
         if errors:
             raise ValidationError(errors)
@@ -489,8 +500,10 @@ class SimpleSurvey(models.Model):
         """Get user preferences as dictionary for matching."""
         if self.insurance_type == self.InsuranceType.HEALTH:
             return {
-                'annual_limit_per_member': self.preferred_annual_limit,
+                'annual_limit_per_family': self.preferred_annual_limit_per_family,
                 'monthly_household_income': self.household_income,
+                'currently_on_medical_aid': self.currently_on_medical_aid,
+                'ambulance_coverage': self.wants_ambulance_coverage,
                 'in_hospital_benefit': self.wants_in_hospital_benefit,
                 'out_hospital_benefit': self.wants_out_hospital_benefit,
                 'chronic_medication_availability': self.needs_chronic_medication,
@@ -500,7 +513,6 @@ class SimpleSurvey(models.Model):
                 'cover_amount': self.preferred_cover_amount,
                 'marital_status_requirement': self.marital_status,
                 'gender_requirement': self.gender,
-                'monthly_net_income': self.net_income,
             }
         return {}
     

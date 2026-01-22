@@ -611,3 +611,109 @@ def session_error_view(request):
     }
     
     return render(request, 'surveys/simple_survey_form.html', context)
+
+
+@require_http_methods(["GET"])
+def policy_benefits_ajax(request, policy_id):
+    """
+    AJAX endpoint to get comprehensive benefits data for a specific policy.
+    Returns PolicyFeatures, AdditionalFeatures, and Rewards data.
+    """
+    try:
+        # Import policy models
+        from policies.models import BasePolicy, PolicyFeatures, AdditionalFeatures, Rewards
+        
+        # Get the policy
+        policy = get_object_or_404(BasePolicy, id=policy_id, is_active=True)
+        
+        # Increment view count
+        policy.increment_views()
+        
+        # Get policy features
+        policy_features = None
+        features_data = {}
+        try:
+            policy_features = policy.policy_features
+            features_data = policy_features.get_all_features_dict()
+        except PolicyFeatures.DoesNotExist:
+            pass
+        
+        # Get additional features
+        additional_features = policy.additional_features.all().order_by('display_order', 'title')
+        additional_features_data = []
+        for feature in additional_features:
+            additional_features_data.append({
+                'title': feature.title,
+                'description': feature.description,
+                'coverage_details': feature.coverage_details,
+                'icon': feature.icon,
+                'is_highlighted': feature.is_highlighted,
+            })
+        
+        # Get rewards
+        rewards = policy.rewards.filter(is_active=True).order_by('display_order', 'title')
+        rewards_data = []
+        for reward in rewards:
+            rewards_data.append({
+                'title': reward.title,
+                'description': reward.description,
+                'reward_type': reward.get_reward_type_display(),
+                'display_value': reward.get_display_value(),
+                'eligibility_criteria': reward.eligibility_criteria,
+                'terms_and_conditions': reward.terms_and_conditions,
+            })
+        
+        # Format policy features for display
+        formatted_features = {}
+        if policy_features:
+            if policy_features.insurance_type == 'HEALTH':
+                if features_data.get('annual_limit_per_family'):
+                    formatted_features['Annual Limit per Family'] = f"R{features_data['annual_limit_per_family']:,.2f}"
+                if features_data.get('annual_limit_per_member'):
+                    formatted_features['Annual Limit per Member'] = f"R{features_data['annual_limit_per_member']:,.2f}"
+                if features_data.get('monthly_household_income'):
+                    formatted_features['Monthly Household Income Requirement'] = f"R{features_data['monthly_household_income']:,.2f}"
+                if features_data.get('currently_on_medical_aid') is not None:
+                    formatted_features['Currently on Medical Aid'] = 'Yes' if features_data['currently_on_medical_aid'] else 'No'
+                if features_data.get('ambulance_coverage') is not None:
+                    formatted_features['Ambulance Coverage'] = 'Included' if features_data['ambulance_coverage'] else 'Not Included'
+                if features_data.get('in_hospital_benefit') is not None:
+                    formatted_features['In-Hospital Benefit'] = 'Included' if features_data['in_hospital_benefit'] else 'Not Included'
+                if features_data.get('out_hospital_benefit') is not None:
+                    formatted_features['Out-of-Hospital Benefit'] = 'Included' if features_data['out_hospital_benefit'] else 'Not Included'
+                if features_data.get('chronic_medication_availability') is not None:
+                    formatted_features['Chronic Medication'] = 'Available' if features_data['chronic_medication_availability'] else 'Not Available'
+            
+            elif policy_features.insurance_type == 'FUNERAL':
+                if features_data.get('cover_amount'):
+                    formatted_features['Cover Amount'] = f"R{features_data['cover_amount']:,.2f}"
+                if features_data.get('marital_status_requirement'):
+                    formatted_features['Marital Status Requirement'] = features_data['marital_status_requirement']
+                if features_data.get('gender_requirement'):
+                    formatted_features['Gender Requirement'] = features_data['gender_requirement']
+        
+        # Prepare response data
+        response_data = {
+            'success': True,
+            'policy': {
+                'id': policy.id,
+                'name': policy.name,
+                'organization': policy.organization.name,
+                'category': policy.category.name,
+                'base_premium': float(policy.base_premium),
+                'coverage_amount': float(policy.coverage_amount),
+                'description': policy.description,
+            },
+            'features': formatted_features,
+            'additional_features': additional_features_data,
+            'rewards': rewards_data,
+        }
+        
+        return JsonResponse(response_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting policy benefits for policy {policy_id}: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Unable to load policy benefits. Please try again.'
+        }, status=500)

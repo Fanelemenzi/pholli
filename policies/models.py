@@ -320,7 +320,10 @@ class BasePolicy(models.Model):
         if policy_features.insurance_type == 'HEALTH':
             features.update({
                 'annual_limit_per_member': policy_features.annual_limit_per_member,
+                'annual_limit_per_family': policy_features.annual_limit_per_family,
                 'monthly_household_income': policy_features.monthly_household_income,
+                'currently_on_medical_aid': policy_features.currently_on_medical_aid,
+                'ambulance_coverage': policy_features.ambulance_coverage,
                 'in_hospital_benefit': policy_features.in_hospital_benefit,
                 'out_hospital_benefit': policy_features.out_hospital_benefit,
                 'chronic_medication_availability': policy_features.chronic_medication_availability,
@@ -330,7 +333,6 @@ class BasePolicy(models.Model):
                 'cover_amount': policy_features.cover_amount,
                 'marital_status_requirement': policy_features.marital_status_requirement,
                 'gender_requirement': policy_features.gender_requirement,
-                'monthly_net_income': policy_features.monthly_net_income,
             })
         
         return {k: v for k, v in features.items() if v is not None}
@@ -391,12 +393,29 @@ class PolicyFeatures(models.Model):
         blank=True,
         help_text=_("Overall annual limit per member per family")
     )
+    annual_limit_per_family = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text=_("Annual limit per family (replaces per member limit)")
+    )
     monthly_household_income = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
         null=True, 
         blank=True,
         help_text=_("Monthly household income requirement")
+    )
+    currently_on_medical_aid = models.BooleanField(
+        null=True, 
+        blank=True,
+        help_text=_("Whether the applicant is currently on medical aid")
+    )
+    ambulance_coverage = models.BooleanField(
+        null=True, 
+        blank=True,
+        help_text=_("Whether ambulance coverage is included")
     )
     in_hospital_benefit = models.BooleanField(
         null=True, 
@@ -439,7 +458,7 @@ class PolicyFeatures(models.Model):
         decimal_places=2, 
         null=True, 
         blank=True,
-        help_text=_("Monthly net income requirement")
+        help_text=_("Monthly net income requirement for funeral policy")
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -455,6 +474,29 @@ class PolicyFeatures(models.Model):
     
     def __str__(self):
         return f"{self.policy.name} - {self.get_insurance_type_display()} Features"
+    
+    def get_all_features_dict(self):
+        """Get all feature values as a dictionary."""
+        features = {}
+        if self.insurance_type == 'HEALTH':
+            features.update({
+                'annual_limit_per_member': self.annual_limit_per_member,
+                'annual_limit_per_family': self.annual_limit_per_family,
+                'monthly_household_income': self.monthly_household_income,
+                'currently_on_medical_aid': self.currently_on_medical_aid,
+                'ambulance_coverage': self.ambulance_coverage,
+                'in_hospital_benefit': self.in_hospital_benefit,
+                'out_hospital_benefit': self.out_hospital_benefit,
+                'chronic_medication_availability': self.chronic_medication_availability,
+            })
+        elif self.insurance_type == 'FUNERAL':
+            features.update({
+                'cover_amount': self.cover_amount,
+                'marital_status_requirement': self.marital_status_requirement,
+                'gender_requirement': self.gender_requirement,
+            })
+        
+        return {k: v for k, v in features.items() if v is not None}
 
 
 class AdditionalFeatures(models.Model):
@@ -474,6 +516,11 @@ class AdditionalFeatures(models.Model):
     
     description = models.TextField(
         help_text=_("Detailed additional feature description")
+    )
+    
+    coverage_details = models.TextField(
+        blank=True,
+        help_text=_("Detailed coverage information and descriptions")
     )
     
     icon = models.CharField(
@@ -714,6 +761,126 @@ class PolicyPremiumCalculation(models.Model):
     def calculate_premium(self, base_premium):
         """Calculate the adjusted premium based on this rule."""
         return (base_premium * self.multiplier) + self.additional_amount
+
+
+class Rewards(models.Model):
+    """
+    Model for managing rewards and incentives associated with policies.
+    Tracks cashback, discounts, benefits, and other reward programs.
+    """
+    
+    class RewardType(models.TextChoices):
+        CASHBACK = 'CASHBACK', _('Cashback')
+        DISCOUNT = 'DISCOUNT', _('Discount')
+        BENEFIT = 'BENEFIT', _('Additional Benefit')
+        POINTS = 'POINTS', _('Loyalty Points')
+        OTHER = 'OTHER', _('Other')
+    
+    policy = models.ForeignKey(
+        BasePolicy,
+        on_delete=models.CASCADE,
+        related_name='rewards',
+        help_text=_("Policy this reward is associated with")
+    )
+    
+    title = models.CharField(
+        max_length=255,
+        help_text=_("Reward title (e.g., 'Cashback Program', 'Loyalty Discount')")
+    )
+    
+    description = models.TextField(
+        help_text=_("Detailed description of the reward")
+    )
+    
+    reward_type = models.CharField(
+        max_length=50,
+        choices=RewardType.choices,
+        help_text=_("Type of reward offered")
+    )
+    
+    value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        help_text=_("Monetary value of reward (if applicable)")
+    )
+    
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text=_("Percentage value of reward (if applicable)")
+    )
+    
+    eligibility_criteria = models.TextField(
+        blank=True,
+        help_text=_("Criteria for earning this reward")
+    )
+    
+    terms_and_conditions = models.TextField(
+        blank=True,
+        help_text=_("Terms and conditions for the reward")
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        help_text=_("Whether this reward is currently active")
+    )
+    
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text=_("Order for displaying rewards")
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['policy', 'display_order', 'title']
+        verbose_name = _("Reward")
+        verbose_name_plural = _("Rewards")
+        indexes = [
+            models.Index(fields=['policy', 'is_active']),
+            models.Index(fields=['reward_type']),
+            models.Index(fields=['display_order']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.policy.name}"
+    
+    def clean(self):
+        """Validate that either value or percentage is provided for applicable reward types."""
+        from django.core.exceptions import ValidationError
+        
+        # For cashback and discount rewards, require either value or percentage
+        if self.reward_type in ['CASHBACK', 'DISCOUNT']:
+            if not self.value and not self.percentage:
+                raise ValidationError(
+                    _("Cashback and discount rewards must have either a monetary value or percentage.")
+                )
+        
+        # Ensure both value and percentage are not provided simultaneously
+        if self.value and self.percentage:
+            raise ValidationError(
+                _("Please provide either a monetary value OR a percentage, not both.")
+            )
+    
+    def get_display_value(self):
+        """Get formatted display value for the reward."""
+        if self.percentage:
+            return f"{self.percentage}%"
+        elif self.value:
+            return f"R{self.value}"
+        else:
+            return "See terms"
+    
+    def is_monetary_reward(self):
+        """Check if this is a monetary reward (has value or percentage)."""
+        return bool(self.value or self.percentage)
 
 
 class PolicyReview(models.Model):

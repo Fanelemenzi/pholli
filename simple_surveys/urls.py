@@ -36,6 +36,7 @@ urlpatterns = [
     # AJAX endpoints
     path('ajax/save-response/', views.save_response_ajax, name='save_response'),
     path('ajax/survey-status/<str:category>/', views.survey_status_ajax, name='survey_status'),
+    path('ajax/policy-benefits/<int:policy_id>/', views.policy_benefits_ajax, name='policy_benefits'),
     
     # Error handling
     path('session-expired/', views.session_expired_view, name='session_expired'),

@@ -273,6 +273,74 @@
             box-shadow: 0 8px 25px rgba(38, 149, 35, 0.3);
         }
 
+        .btn-view-benefits {
+            border: 2px solid #f1d925;
+            color: #f1d925;
+            background: transparent;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-view-benefits:hover {
+            background: #f1d925;
+            color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(241, 217, 37, 0.3);
+        }
+
+        /* Policy Features Summary Styling */
+        .policy-features-summary {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #269523;
+        }
+
+        .features-summary-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .feature-summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .feature-summary-label {
+            font-weight: 500;
+            color: #333333;
+            font-size: 0.85rem;
+        }
+
+        .feature-summary-value {
+            font-weight: 600;
+            color: #269523;
+            font-size: 0.85rem;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .feature-summary-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+            }
+            
+            .feature-summary-value {
+                text-align: left;
+            }
+        }
+
         .alert {
             border-radius: 15px;
             border: none;
@@ -420,6 +488,35 @@
                         </div>
                         {% endif %}
 
+                        <!-- Enhanced Policy Features Display -->
+                        {% if result.policy.policy_features %}
+                        <div class="policy-features-summary mb-3">
+                            <h6 class="mb-2" style="color: #269523; font-weight: 700;">
+                                <i class="bi bi-info-circle me-2"></i>Policy Features
+                            </h6>
+                            <div class="features-summary-grid">
+                                {% if result.policy.policy_features.annual_limit_per_family %}
+                                <div class="feature-summary-item">
+                                    <span class="feature-summary-label">Annual Family Limit:</span>
+                                    <span class="feature-summary-value">R{{ result.policy.policy_features.annual_limit_per_family|floatformat:0 }}</span>
+                                </div>
+                                {% endif %}
+                                {% if result.policy.policy_features.currently_on_medical_aid is not None %}
+                                <div class="feature-summary-item">
+                                    <span class="feature-summary-label">Medical Aid:</span>
+                                    <span class="feature-summary-value">{% if result.policy.policy_features.currently_on_medical_aid %}Required{% else %}Not Required{% endif %}</span>
+                                </div>
+                                {% endif %}
+                                {% if result.policy.policy_features.ambulance_coverage is not None %}
+                                <div class="feature-summary-item">
+                                    <span class="feature-summary-label">Ambulance:</span>
+                                    <span class="feature-summary-value">{% if result.policy.policy_features.ambulance_coverage %}Included{% else %}Not Included{% endif %}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <!-- Feature Mismatches -->
                         {% if result.mismatches %}
                         <div class="feature-matches">
@@ -441,6 +538,15 @@
                         <div class="d-grid mt-4">
                             <button class="btn btn-contact" onclick="contactProvider('{{ result.policy.organization.name }}', '{{ result.policy.name }}')">
                                 <i class="bi bi-telephone me-2"></i>Contact Provider
+                            </button>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button class="btn btn-view-benefits"
+                                data-policy-id="{{ result.policy.id }}"
+                                data-provider-name="{{ result.policy.organization.name }}"
+                                onclick="viewBenefits({{ result.policy.id }}, '{{ result.policy.organization.name }}')">
+                                <i class="bi bi-shield-check me-2"></i>View Benefits Covered
                             </button>
                         </div>
 
@@ -486,6 +592,9 @@
         </div>
     </main>
 
+    <!-- Include Benefits Modal -->
+    {% include 'surveys/benefits_modal.html' %}
+
     <!-- Vendor JS Files -->
     <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
@@ -504,6 +613,204 @@
             // 3. Open a modal with contact details
             // 4. Integrate with a CRM system
         }
+
+        function viewBenefits(policyId, providerName) {
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('benefitsModal'));
+            modal.show();
+            
+            // Reset modal state
+            resetBenefitsModal();
+            
+            // Store policy info for the "Get Quote" button
+            document.getElementById('getQuoteFromModal').setAttribute('data-policy-id', policyId);
+            document.getElementById('getQuoteFromModal').setAttribute('data-provider-name', providerName);
+            
+            // Load benefits data via AJAX
+            loadBenefitsData(policyId);
+        }
+
+        function resetBenefitsModal() {
+            // Show loading state
+            document.getElementById('benefitsLoading').classList.remove('d-none');
+            document.getElementById('benefitsError').classList.add('d-none');
+            document.getElementById('benefitsContent').classList.add('d-none');
+            
+            // Clear previous content
+            document.getElementById('coreFeaturesList').innerHTML = '';
+            document.getElementById('additionalFeaturesList').innerHTML = '';
+            document.getElementById('rewardsList').innerHTML = '';
+        }
+
+        function loadBenefitsData(policyId) {
+            fetch(`{% url 'simple_surveys:policy_benefits' 0 %}`.replace('0', policyId), {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayBenefitsData(data);
+                } else {
+                    showBenefitsError(data.error || 'Unable to load benefits information.');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading benefits:', error);
+                showBenefitsError('Network error occurred while loading benefits.');
+            });
+        }
+
+        function displayBenefitsData(data) {
+            // Hide loading state
+            document.getElementById('benefitsLoading').classList.add('d-none');
+            document.getElementById('benefitsContent').classList.remove('d-none');
+            
+            // Update policy information
+            document.querySelector('.policy-name').textContent = data.policy.name;
+            document.querySelector('.policy-organization').textContent = data.policy.organization;
+            document.querySelector('.policy-premium').textContent = `R${data.policy.base_premium.toFixed(0)} per month`;
+            
+            // Update modal title
+            document.getElementById('benefitsModalLabel').innerHTML = 
+                `<i class="bi bi-shield-check me-2"></i>Benefits Covered - ${data.policy.name}`;
+            
+            // Display core features
+            displayCoreFeatures(data.features);
+            
+            // Display additional features
+            displayAdditionalFeatures(data.additional_features);
+            
+            // Display rewards
+            displayRewards(data.rewards);
+            
+            // Show/hide sections based on available data
+            toggleSectionVisibility();
+        }
+
+        function displayCoreFeatures(features) {
+            const container = document.getElementById('coreFeaturesList');
+            
+            if (Object.keys(features).length === 0) {
+                container.innerHTML = '<p class="text-muted">No core features information available.</p>';
+                return;
+            }
+            
+            let html = '';
+            for (const [label, value] of Object.entries(features)) {
+                html += `
+                    <div class="feature-item">
+                        <div class="feature-label">${label}</div>
+                        <div class="feature-value">${value}</div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function displayAdditionalFeatures(features) {
+            const container = document.getElementById('additionalFeaturesList');
+            
+            if (features.length === 0) {
+                container.innerHTML = '<p class="text-muted">No additional features available.</p>';
+                return;
+            }
+            
+            let html = '';
+            features.forEach(feature => {
+                html += `
+                    <div class="additional-feature-item">
+                        <div class="additional-feature-title">
+                            ${feature.icon ? `<i class="${feature.icon} me-2"></i>` : ''}
+                            ${feature.title}
+                        </div>
+                        <div class="additional-feature-description">${feature.description}</div>
+                        ${feature.coverage_details ? `
+                            <div class="additional-feature-coverage">
+                                <strong>Coverage Details:</strong> ${feature.coverage_details}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function displayRewards(rewards) {
+            const container = document.getElementById('rewardsList');
+            
+            if (rewards.length === 0) {
+                container.innerHTML = '<p class="text-muted">No rewards available for this policy.</p>';
+                return;
+            }
+            
+            let html = '';
+            rewards.forEach(reward => {
+                html += `
+                    <div class="reward-item">
+                        <div class="reward-title">
+                            <span>${reward.title}</span>
+                            <span class="reward-value">${reward.display_value}</span>
+                        </div>
+                        <div class="reward-description">${reward.description}</div>
+                        ${reward.eligibility_criteria ? `
+                            <div class="reward-criteria">
+                                <strong>Eligibility:</strong> ${reward.eligibility_criteria}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleSectionVisibility() {
+            // Check if sections have content and show/hide accordingly
+            const coreFeatures = document.getElementById('coreFeaturesList').innerHTML.trim();
+            const additionalFeatures = document.getElementById('additionalFeaturesList').innerHTML.trim();
+            const rewards = document.getElementById('rewardsList').innerHTML.trim();
+            
+            // Show/hide sections
+            document.getElementById('coreFeaturesSection').style.display = 
+                coreFeatures && !coreFeatures.includes('No core features') ? 'block' : 'none';
+            
+            document.getElementById('additionalFeaturesSection').style.display = 
+                additionalFeatures && !additionalFeatures.includes('No additional features') ? 'block' : 'none';
+            
+            document.getElementById('rewardsSection').style.display = 
+                rewards && !rewards.includes('No rewards available') ? 'block' : 'none';
+            
+            // Show "no benefits" message if all sections are empty
+            const hasAnyContent = 
+                document.getElementById('coreFeaturesSection').style.display !== 'none' ||
+                document.getElementById('additionalFeaturesSection').style.display !== 'none' ||
+                document.getElementById('rewardsSection').style.display !== 'none';
+            
+            document.getElementById('noBenefitsMessage').classList.toggle('d-none', hasAnyContent);
+        }
+
+        function showBenefitsError(message) {
+            document.getElementById('benefitsLoading').classList.add('d-none');
+            document.getElementById('benefitsError').classList.remove('d-none');
+            document.getElementById('benefitsErrorMessage').textContent = message;
+        }
+
+        // Handle "Get Quote" button in modal
+        document.getElementById('getQuoteFromModal').addEventListener('click', function() {
+            const policyId = this.getAttribute('data-policy-id');
+            const providerName = this.getAttribute('data-provider-name');
+            
+            if (policyId && providerName) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('benefitsModal'));
+                modal.hide();
+                
+                // Call the existing contactProvider function
+                contactProvider(providerName, 'Policy');
+            }
+        });
     </script>
 </body>
 

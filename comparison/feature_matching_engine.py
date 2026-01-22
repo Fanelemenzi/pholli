@@ -117,7 +117,10 @@ class FeatureMatchingEngine:
         if self.insurance_type == 'HEALTH':
             return [
                 'annual_limit_per_member',
+                'annual_limit_per_family',  # New field
                 'monthly_household_income',
+                'currently_on_medical_aid',  # New field
+                'ambulance_coverage',  # New field
                 'in_hospital_benefit',
                 'out_hospital_benefit',
                 'chronic_medication_availability'
@@ -126,8 +129,7 @@ class FeatureMatchingEngine:
             return [
                 'cover_amount',
                 'marital_status_requirement',
-                'gender_requirement',
-                'monthly_net_income'
+                'gender_requirement'
             ]
         return []
     
@@ -184,7 +186,7 @@ class FeatureMatchingEngine:
         user_pref = float(user_preference)
         
         # Coverage amounts and limits - higher is generally better
-        if feature_name in ['annual_limit_per_member', 'cover_amount']:
+        if feature_name in ['annual_limit_per_member', 'annual_limit_per_family', 'cover_amount']:
             if policy_val >= user_pref:
                 # Policy meets or exceeds preference - excellent
                 return 1.0
@@ -308,8 +310,11 @@ class FeatureMatchingEngine:
         """
         if self.insurance_type == 'HEALTH':
             return {
-                'annual_limit_per_member': 2.0,  # Very important
+                'annual_limit_per_family': 2.2,  # Very important - new primary field
+                'annual_limit_per_member': 1.8,  # Important but secondary to family limit
                 'monthly_household_income': 1.8,  # Very important for eligibility
+                'currently_on_medical_aid': 1.6,  # Important for eligibility and compatibility
+                'ambulance_coverage': 1.4,  # Important safety feature
                 'in_hospital_benefit': 1.5,  # Important
                 'out_hospital_benefit': 1.5,  # Important
                 'chronic_medication_availability': 1.3  # Moderately important
@@ -317,7 +322,6 @@ class FeatureMatchingEngine:
         elif self.insurance_type == 'FUNERAL':
             return {
                 'cover_amount': 2.0,  # Very important
-                'monthly_net_income': 1.8,  # Very important for eligibility
                 'marital_status_requirement': 1.0,  # Standard importance
                 'gender_requirement': 1.0  # Standard importance
             }
@@ -387,7 +391,10 @@ class FeatureMatchingEngine:
         """
         display_names = {
             'annual_limit_per_member': 'Annual Limit per Member',
+            'annual_limit_per_family': 'Annual Limit per Family',
             'monthly_household_income': 'Monthly Household Income Requirement',
+            'currently_on_medical_aid': 'Current Medical Aid Status',
+            'ambulance_coverage': 'Ambulance Coverage',
             'in_hospital_benefit': 'In-Hospital Benefits',
             'out_hospital_benefit': 'Out-of-Hospital Benefits',
             'chronic_medication_availability': 'Chronic Medication Coverage',
@@ -413,7 +420,7 @@ class FeatureMatchingEngine:
         if isinstance(value, bool):
             return "Yes" if value else "No"
         elif isinstance(value, (int, float, Decimal)):
-            if feature_name in ['annual_limit_per_member', 'cover_amount', 'monthly_household_income', 'monthly_net_income']:
+            if feature_name in ['annual_limit_per_member', 'annual_limit_per_family', 'cover_amount', 'monthly_household_income', 'monthly_net_income']:
                 return f"R{value:,.2f}"
             else:
                 return str(value)

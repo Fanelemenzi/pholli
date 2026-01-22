@@ -82,13 +82,6 @@ class FeatureSynchronizationManager:
             'display_name': 'Gender',
             'data_type': 'string',
             'validation_rules': {}
-        },
-        'monthly_net_income': {
-            'policy_field': 'monthly_net_income',
-            'survey_field': 'net_income',
-            'display_name': 'Monthly Net Income',
-            'data_type': 'decimal',
-            'validation_rules': {'min': 0}
         }
     }
     
