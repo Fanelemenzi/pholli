@@ -139,7 +139,7 @@
       }
       
       /* Mobile Navigation Styles */
-      .navmenu {
+      .mobile-navmenu {
         position: fixed;
         top: 0;
         right: -100%;
@@ -154,22 +154,23 @@
         overflow-y: auto;
       }
       
-      .navmenu.mobile-nav-active {
+      /* Use body class for mobile nav state to match main.js */
+      body.mobile-nav-active .mobile-navmenu {
         right: 0;
       }
       
-      .navmenu ul {
+      .mobile-navmenu ul {
         flex-direction: column;
         padding: 20px;
         margin: 0;
         list-style: none;
       }
       
-      .navmenu ul li {
+      .mobile-navmenu ul li {
         margin-bottom: 10px;
       }
       
-      .navmenu ul li a {
+      .mobile-navmenu ul li a {
         display: block;
         padding: 15px 20px;
         color: #333;
@@ -181,12 +182,17 @@
         border: 2px solid transparent;
       }
       
-      .navmenu ul li a:hover,
-      .navmenu ul li a.active {
+      .mobile-navmenu ul li a:hover,
+      .mobile-navmenu ul li a.active {
         background-color: #269523;
         color: white !important;
         border-color: #269523;
         transform: translateX(5px);
+      }
+      
+      /* Hide mobile nav on desktop */
+      .mobile-navmenu {
+        display: block;
       }
       
       /* Mobile nav toggle button */
@@ -233,7 +239,8 @@
         transition: all 0.3s ease;
       }
       
-      .mobile-nav-overlay.active {
+      /* Show overlay when mobile nav is active */
+      body.mobile-nav-active .mobile-nav-overlay {
         opacity: 1;
         visibility: visible;
       }
@@ -255,13 +262,17 @@
       }
     }
     
-    /* Desktop navigation - hide mobile toggle */
+    /* Desktop navigation - hide mobile toggle and mobile nav */
     @media (min-width: 769px) {
       .mobile-nav-toggle {
         display: none !important;
       }
       
       .mobile-nav-overlay {
+        display: none !important;
+      }
+      
+      .mobile-navmenu {
         display: none !important;
       }
     }
@@ -288,7 +299,6 @@
 
         <div class="d-flex align-items-center">
           <div class="contact-info me-3">
-            <span class="phone"><i class="bi bi-telephone"></i> 0800-COMPARE</span>
           </div>
           <div class="social-links">
             <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
@@ -317,7 +327,21 @@
       </div>
     </div>
     
-    <!-- Mobile Navigation Toggle - Outside nav-wrap so it's always visible -->
+    <!-- Mobile Navigation Menu - Separate from desktop nav -->
+    <nav id="mobile-navmenu" class="mobile-navmenu">
+      <ul>
+        <li><a href="{% url 'home' %}" class="active">Home</a></li>
+        <li><a href="{% url 'health' %}">Health Insurance</a></li>
+        <li><a href="{% url 'funerals' %}">Funeral Cover</a></li>
+        <li><a href="#life-insurance">Life Insurance</a></li>
+        <li><a href="#vehicle-insurance">Vehicle Insurance</a></li>
+        <li><a href="#business-insurance">Business Insurance</a></li>
+        <li><a href="#about">About Us</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+    
+    <!-- Mobile Navigation Toggle -->
     <button class="mobile-nav-toggle" aria-label="Toggle navigation">
       <i class="bi bi-list"></i>
     </button>
@@ -414,160 +438,41 @@
   <!-- Mobile Navigation Script -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('Mobile nav script loaded');
-      
+      // Enhanced mobile navigation functionality
       const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
-      const navMenu = document.querySelector('.navmenu');
       const navOverlay = document.querySelector('.mobile-nav-overlay');
-      const navLinks = document.querySelectorAll('.navmenu ul li a');
-      const body = document.body;
+      const navLinks = document.querySelectorAll('.mobile-navmenu ul li a');
       
-      console.log('Mobile nav elements:', {
-        toggle: mobileNavToggle,
-        menu: navMenu,
-        overlay: navOverlay,
-        links: navLinks.length
-      });
-      
-      if (mobileNavToggle && navMenu && navOverlay) {
-        console.log('All mobile nav elements found, setting up event listeners');
-        
-        // Toggle mobile menu
-        mobileNavToggle.addEventListener('click', function(e) {
-          console.log('Mobile nav toggle clicked');
-          e.preventDefault();
-          e.stopPropagation();
-          
-          const isActive = navMenu.classList.contains('mobile-nav-active');
-          console.log('Menu is currently active:', isActive);
-          
-          if (isActive) {
-            closeMobileNav();
-          } else {
-            openMobileNav();
-          }
-        });
-        
+      if (navOverlay) {
         // Close menu when clicking overlay
         navOverlay.addEventListener('click', function(e) {
           e.preventDefault();
-          closeMobileNav();
-        });
-        
-        // Close menu when clicking on nav links
-        navLinks.forEach(link => {
-          link.addEventListener('click', function() {
-            // Add small delay to allow navigation to start
-            setTimeout(closeMobileNav, 100);
-          });
-        });
-        
-        // Close menu on escape key
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'Escape' && navMenu.classList.contains('mobile-nav-active')) {
-            closeMobileNav();
+          if (document.body.classList.contains('mobile-nav-active')) {
+            // Trigger the main.js toggle function
+            mobileNavToggle.click();
           }
-        });
-        
-        // Handle window resize
-        window.addEventListener('resize', function() {
-          if (window.innerWidth > 768 && navMenu.classList.contains('mobile-nav-active')) {
-            closeMobileNav();
-          }
-        });
-        
-        // Prevent clicks inside menu from closing it
-        navMenu.addEventListener('click', function(e) {
-          e.stopPropagation();
-        });
-        
-        function openMobileNav() {
-          console.log('Opening mobile nav');
-          navMenu.classList.add('mobile-nav-active');
-          navOverlay.classList.add('active');
-          body.classList.add('mobile-nav-open');
-          
-          const toggleIcon = mobileNavToggle.querySelector('i');
-          if (toggleIcon) {
-            toggleIcon.className = 'bi bi-x';
-          }
-          
-          mobileNavToggle.setAttribute('aria-expanded', 'true');
-          mobileNavToggle.setAttribute('aria-label', 'Close navigation menu');
-          
-          // Focus management for accessibility
-          navMenu.setAttribute('aria-hidden', 'false');
-          
-          // Trap focus within the menu
-          trapFocus(navMenu);
-        }
-        
-        function closeMobileNav() {
-          console.log('Closing mobile nav');
-          navMenu.classList.remove('mobile-nav-active');
-          navOverlay.classList.remove('active');
-          body.classList.remove('mobile-nav-open');
-          
-          const toggleIcon = mobileNavToggle.querySelector('i');
-          if (toggleIcon) {
-            toggleIcon.className = 'bi bi-list';
-          }
-          
-          mobileNavToggle.setAttribute('aria-expanded', 'false');
-          mobileNavToggle.setAttribute('aria-label', 'Open navigation menu');
-          
-          // Focus management for accessibility
-          navMenu.setAttribute('aria-hidden', 'true');
-          
-          // Return focus to toggle button
-          mobileNavToggle.focus();
-        }
-        
-        // Focus trap function for accessibility
-        function trapFocus(element) {
-          const focusableElements = element.querySelectorAll(
-            'a[href], button, textarea, input[type="text"], input[type="radio"], input[type="checkbox"], select'
-          );
-          const firstFocusableElement = focusableElements[0];
-          const lastFocusableElement = focusableElements[focusableElements.length - 1];
-          
-          element.addEventListener('keydown', function(e) {
-            if (e.key === 'Tab') {
-              if (e.shiftKey) {
-                if (document.activeElement === firstFocusableElement) {
-                  lastFocusableElement.focus();
-                  e.preventDefault();
-                }
-              } else {
-                if (document.activeElement === lastFocusableElement) {
-                  firstFocusableElement.focus();
-                  e.preventDefault();
-                }
-              }
-            }
-          });
-          
-          // Focus first element when menu opens
-          if (firstFocusableElement) {
-            setTimeout(() => firstFocusableElement.focus(), 100);
-          }
-        }
-        
-        // Initialize ARIA attributes
-        mobileNavToggle.setAttribute('aria-expanded', 'false');
-        mobileNavToggle.setAttribute('aria-label', 'Open navigation menu');
-        navMenu.setAttribute('aria-hidden', 'true');
-      } else {
-        console.error('Mobile nav elements not found:', {
-          toggle: !!mobileNavToggle,
-          menu: !!navMenu,
-          overlay: !!navOverlay
         });
       }
       
-      // Set active nav link based on current page
+      // Close menu on escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.body.classList.contains('mobile-nav-active')) {
+          mobileNavToggle.click();
+        }
+      });
+      
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && document.body.classList.contains('mobile-nav-active')) {
+          mobileNavToggle.click();
+        }
+      });
+      
+      // Set active nav link based on current page for both desktop and mobile
       const currentPath = window.location.pathname;
-      navLinks.forEach(link => {
+      const allNavLinks = document.querySelectorAll('.navmenu ul li a, .mobile-navmenu ul li a');
+      
+      allNavLinks.forEach(link => {
         link.classList.remove('active');
         const linkPath = link.getAttribute('href');
         

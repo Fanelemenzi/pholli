@@ -3,143 +3,101 @@
 
 {% block content%}
 <style>
-/* Custom color overrides */
-/* Change text color to #f1d925 (excluding black and white text) */
-.section-title h2,
-.section-title p,
-.insurance-card h3,
-.insurance-card p,
-.step-card h3,
-.step-card p,
-.content h2,
-.content p.lead,
-.feature-item h4,
-.feature-item p,
-.testimonial-card p,
-.customer-info h4,
-.customer-info span,
-.accordion-body,
-.call-to-action h3,
-.call-to-action p,
-.quote-card h2,
-.form-label,
-.trust-indicators span {
+  /* Custom color overrides */
+  /* Change text color to #f1d925 (excluding black and white text) */
+  .section-title h2,
+  .section-title p,
+  .insurance-card h3,
+  .insurance-card p,
+  .step-card h3,
+  .step-card p,
+  .content h2,
+  .content p.lead,
+  .feature-item h4,
+  .feature-item p,
+  .testimonial-card p,
+  .customer-info h4,
+  .customer-info span,
+  .accordion-body,
+  .call-to-action h3,
+  .call-to-action p,
+  .quote-card h2,
+  .form-label,
+  .trust-indicators span {
     color: #f1d925 !important;
-}
+  }
 
-/* Keep black and white text unchanged */
-.dark-background,
-.dark-background h1,
-.dark-background p,
-.hero h1,
-.hero p {
+  /* Keep black and white text unchanged */
+  .dark-background,
+  .dark-background h1,
+  .dark-background p,
+  .hero h1,
+  .hero p {
     color: #ffffff !important;
-}
+  }
 
-/* Button backgrounds to #269523 */
-.btn-primary,
-.insurance-card .btn-primary,
-.cta-wrapper .btn-primary,
-.call-to-action .btn-primary {
+  /* Button backgrounds to #269523 */
+  .btn-primary,
+  .insurance-card .btn-primary,
+  .cta-wrapper .btn-primary,
+  .call-to-action .btn-primary {
     background-color: #269523 !important;
     border-color: #269523 !important;
     color: #ffffff !important;
-}
+  }
 
-.btn-primary:hover,
-.insurance-card .btn-primary:hover,
-.cta-wrapper .btn-primary:hover,
-.call-to-action .btn-primary:hover {
+  .btn-primary:hover,
+  .insurance-card .btn-primary:hover,
+  .cta-wrapper .btn-primary:hover,
+  .call-to-action .btn-primary:hover {
     background-color: #1e7a1c !important;
     border-color: #1e7a1c !important;
-}
+  }
 
-/* Outline buttons */
-.btn-outline-primary {
+  /* Outline buttons */
+  .btn-outline-primary {
     color: #269523 !important;
     border-color: #269523 !important;
-}
+  }
 
-.btn-outline-primary:hover {
+  .btn-outline-primary:hover {
     background-color: #269523 !important;
     border-color: #269523 !important;
     color: #ffffff !important;
-}
+  }
 
-/* Accent color elements */
-.insurance-icon {
+  /* Accent color elements */
+  .insurance-icon {
     background: linear-gradient(135deg, #269523, #1e7a1c) !important;
-}
+  }
 
-.step-icon {
+  .step-icon {
     color: #269523 !important;
-}
+  }
 
-.insurance-features li i,
-.features-list .feature-item i {
+  .insurance-features li i,
+  .features-list .feature-item i {
     color: #269523 !important;
-}
+  }
 
-.section-title .subtitle {
+  .section-title .subtitle {
     color: #269523 !important;
-}
+  }
 
-.insurance-card.featured {
+  .insurance-card.featured {
     border-color: #269523 !important;
-}
+  }
 
-.stars i {
+  .stars i {
     color: #269523 !important;
-}
+  }
 
-.trust-indicators i {
+  .trust-indicators i {
     color: #269523 !important;
-}
+  }
 </style>
+
 <body class="index-page">
-
-  <header id="header" class="header fixed-top">
-    <div class="container-fluid container-xl position-relative">
-
-      <div class="top-row d-flex align-items-center justify-content-between">
-        <a href="{% url 'home' %}" class="logo d-flex align-items-center">
-          <img src="{% static 'assets/img/logo3.png' %}" alt="Compare & Save Logo">
-          <h1 class="sitename ms-2">Pholli</h1>
-        </a>
-
-        <div class="d-flex align-items-center">
-          <div class="contact-info me-3">
-            <span class="phone"><i class="bi bi-telephone"></i> 0800-COMPARE</span>
-          </div>
-          <div class="social-links">
-            <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
-            <a href="#" class="twitter"><i class="bi bi-twitter"></i></a>
-            <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="nav-wrap">
-      <div class="container d-flex justify-content-center position-relative">
-        <nav id="navmenu" class="navmenu">
-          <ul>
-            <li><a href="{% url 'home' %}" class="active">Home</a></li>
-            <li><a href="{% url 'health' %}">Health Insurance</a></li>
-            <li><a href="{% url 'funerals' %}">Funeral Cover</a></li>
-            <li><a href="#life-insurance">Life Insurance</a></li>
-            <li><a href="#vehicle-insurance">Vehicle Insurance</a></li>
-            <li><a href="#business-insurance">Business Insurance</a></li>
-            <li><a href="#about">About Us</a></li>
-            <li><a href="#contact">Contact</a></li>
-          </ul>
-          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-        </nav>
-      </div>
-    </div>
-
-  </header>
 
   <main class="main">
 
@@ -172,7 +130,7 @@
 
     </section><!-- /Hero Section -->
 
-    
+
     <!-- Insurance Types Section -->
     <section id="insurance-types" class="insurance-types section">
       <div class="container section-title" data-aos="fade-up">
@@ -450,7 +408,7 @@
 
           <div class="col-lg-6" data-aos="fade-left" data-aos-delay="300">
             <div class="image-wrapper">
-              <img src="{% static 'assets/img/why-choose-us.webp' %}" alt="Why Choose Us" class="img-fluid">
+              <img src="{% static 'assets/img/Services/services-3.webp' %}" alt="Why Choose Us" class="img-fluid">
               <div class="floating-stats">
                 <div class="stat-card">
                   <h3>R2.5M+</h3>
@@ -492,7 +450,7 @@
                 <p>"I saved over R800 per month on my health insurance by using Compare & Save. The process was so easy
                   and the customer service was excellent!"</p>
                 <div class="customer-info">
-                  <img src="{% static 'assets/img/testimonials/testimonial-1.jpg' %}" alt="Sarah M.">
+                  <img src="{% static 'assets/img/person/person-m-11.webp' %}" alt="Sarah M.">
                   <div>
                     <h4>Sarah M.</h4>
                     <span>Cape Town</span>

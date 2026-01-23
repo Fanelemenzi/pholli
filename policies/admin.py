@@ -27,11 +27,16 @@ class PolicyFeaturesInline(admin.StackedInline):
     extra = 0
     fields = [
         'insurance_type',
+        # Health Policy Features
         'annual_limit_per_member',
-        'monthly_household_income', 
+        'annual_limit_per_family',
+        'monthly_household_income',
+        'currently_on_medical_aid',
+        'ambulance_coverage',
         'in_hospital_benefit',
         'out_hospital_benefit',
         'chronic_medication_availability',
+        # Funeral Policy Features
         'cover_amount',
         'marital_status_requirement',
         'gender_requirement',
