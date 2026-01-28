@@ -677,6 +677,159 @@ class PolicyComparisonEngine:
         
         return factors[:5]  # Limit to top 5 factors
     
+    def _evaluate_benefit_level_criterion(
+        self,
+        policy: BasePolicy,
+        field_name: str,
+        user_value: Any
+    ) -> Decimal:
+        """
+        Evaluate benefit level fields with intelligent scoring based on coverage levels.
+        
+        Args:
+            policy: Policy to evaluate
+            field_name: Field name (in_hospital_benefit_level or out_hospital_benefit_level)
+            user_value: User's preferred benefit level
+            
+        Returns:
+            Score from 0 to 100
+        """
+        # Get policy features
+        try:
+            policy_features = policy.policy_features
+            policy_value = getattr(policy_features, field_name, None)
+        except:
+            policy_value = None
+        
+        if policy_value is None or user_value is None:
+            return Decimal('50')  # Neutral if no data
+        
+        # Define benefit level hierarchy (higher index = better coverage)
+        benefit_levels = [
+            'no_cover',
+            'basic' if 'hospital' in field_name else 'basic_visits',
+            'moderate' if 'hospital' in field_name else 'routine_care',
+            'extensive' if 'hospital' in field_name else 'extended_care',
+            'comprehensive' if 'hospital' in field_name else 'comprehensive_care'
+        ]
+        
+        try:
+            policy_level_index = benefit_levels.index(policy_value)
+            user_level_index = benefit_levels.index(user_value)
+        except ValueError:
+            return Decimal('50')  # Unknown level
+        
+        # Exact match gets full score
+        if policy_level_index == user_level_index:
+            return Decimal('100')
+        
+        # Higher coverage than requested gets good score
+        if policy_level_index > user_level_index:
+            # Bonus for exceeding requirements, but diminishing returns
+            excess = policy_level_index - user_level_index
+            return min(Decimal('100'), Decimal('90') + (excess * Decimal('5')))
+        
+        # Lower coverage than requested gets penalty
+        else:
+            deficit = user_level_index - policy_level_index
+            penalty = deficit * Decimal('25')  # 25 points per level below
+            return max(Decimal('0'), Decimal('100') - penalty)
+    
+    def _evaluate_annual_limit_range_criterion(
+        self,
+        policy: BasePolicy,
+        field_name: str,
+        user_value: Any
+    ) -> Decimal:
+        """
+        Evaluate annual limit range fields with intelligent range matching.
+        
+        Args:
+            policy: Policy to evaluate
+            field_name: Field name (annual_limit_family_range or annual_limit_member_range)
+            user_value: User's preferred range
+            
+        Returns:
+            Score from 0 to 100
+        """
+        # Get policy features
+        try:
+            policy_features = policy.policy_features
+            policy_value = getattr(policy_features, field_name, None)
+        except:
+            policy_value = None
+        
+        if policy_value is None or user_value is None:
+            return Decimal('50')  # Neutral if no data
+        
+        # Define range hierarchy with numeric values for comparison
+        range_values = {
+            '10k-25k': (10000, 25000),
+            '10k-50k': (10000, 50000),
+            '25k-50k': (25000, 50000),
+            '50k-100k': (50000, 100000),
+            '100k-200k': (100000, 200000),
+            '100k-250k': (100000, 250000),
+            '200k-500k': (200000, 500000),
+            '250k-500k': (250000, 500000),
+            '500k-1m': (500000, 1000000),
+            '1m-2m': (1000000, 2000000),
+            '2m-5m': (2000000, 5000000),
+            '2m-plus': (2000000, float('inf')),
+            '5m-plus': (5000000, float('inf')),
+            'not_sure': None  # Special case
+        }
+        
+        # Handle "not_sure" user preference
+        if user_value == 'not_sure':
+            return Decimal('75')  # Good score for any coverage when user is unsure
+        
+        policy_range = range_values.get(policy_value)
+        user_range = range_values.get(user_value)
+        
+        if policy_range is None or user_range is None:
+            return Decimal('50')  # Unknown range
+        
+        # Exact match gets full score
+        if policy_value == user_value:
+            return Decimal('100')
+        
+        # Calculate overlap between ranges
+        policy_min, policy_max = policy_range
+        user_min, user_max = user_range
+        
+        # Check for overlap
+        overlap_min = max(policy_min, user_min)
+        overlap_max = min(policy_max, user_max)
+        
+        if overlap_min <= overlap_max:
+            # There's overlap - calculate percentage
+            overlap_size = overlap_max - overlap_min
+            user_range_size = user_max - user_min
+            policy_range_size = policy_max - policy_min
+            
+            # Score based on how much of user's preferred range is covered
+            if user_range_size > 0:
+                coverage_percentage = overlap_size / user_range_size
+                base_score = Decimal(str(coverage_percentage * 80))  # Up to 80 points for overlap
+                
+                # Bonus if policy range is higher than user range
+                if policy_min >= user_min:
+                    base_score += Decimal('20')  # 20 point bonus for meeting or exceeding
+                
+                return min(base_score, Decimal('100'))
+        
+        # No overlap - check if policy is higher or lower
+        if policy_min > user_max:
+            # Policy offers more than user wants - good but not perfect
+            return Decimal('70')
+        elif policy_max < user_min:
+            # Policy offers less than user wants - penalty based on gap
+            gap_ratio = (user_min - policy_max) / user_min if user_min > 0 else 1
+            penalty = Decimal(str(gap_ratio * 60))  # Up to 60 point penalty
+            return max(Decimal('10'), Decimal('50') - penalty)
+        
+        return Decimal('50')  # Default neutral score
     def _evaluate_criterion(
         self,
         policy: BasePolicy,
@@ -685,11 +838,24 @@ class PolicyComparisonEngine:
     ) -> Decimal:
         """
         Evaluate a single criterion for a policy with intelligent scoring.
+        Handles new benefit level fields and range-based matching.
         
         Returns:
             Score from 0 to 100
         """
         criteria = self.criteria.get(field_name)
+        
+        # Handle benefit level fields (new implementation)
+        if field_name in ['in_hospital_benefit_level', 'out_hospital_benefit_level']:
+            return self._evaluate_benefit_level_criterion(policy, field_name, user_value)
+        
+        # Handle annual limit range fields (new implementation)
+        if field_name in ['annual_limit_family_range', 'annual_limit_member_range']:
+            return self._evaluate_annual_limit_range_criterion(policy, field_name, user_value)
+        
+        # Skip currently_on_medical_aid field (removed from comparison)
+        if field_name == 'currently_on_medical_aid':
+            return Decimal('50')  # Neutral score since this field is no longer used
         
         # Try to get value from policy
         policy_value = getattr(policy, field_name, None)
@@ -703,6 +869,14 @@ class PolicyComparisonEngine:
                 if obj is None:
                     break
             policy_value = obj
+        
+        # Try to get from policy features if not found on policy directly
+        if policy_value is None:
+            try:
+                policy_features = policy.policy_features
+                policy_value = getattr(policy_features, field_name, None)
+            except:
+                pass
         
         if policy_value is None:
             return Decimal('0')  # No data = no score

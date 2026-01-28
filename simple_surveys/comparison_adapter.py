@@ -16,6 +16,7 @@ from comparison.models import ComparisonSession, ComparisonCriteria
 from policies.models import BasePolicy, PolicyCategory
 from .models import SimpleSurveyResponse, QuotationSession
 from .engine import SimpleSurveyEngine
+from .response_migration import ResponseMigrationHandler
 import logging
 import uuid
 
@@ -167,6 +168,17 @@ class SimpleSurveyComparisonAdapter:
             # Add category-specific processing
             criteria = self._apply_category_specific_processing(criteria)
             
+            # Handle mixed old/new response scenarios using migration handler
+            migration_handler = ResponseMigrationHandler(self.category)
+            migration_result = migration_handler.handle_mixed_responses(session_key, criteria)
+            
+            if migration_result['success']:
+                criteria = migration_result['criteria']
+                if migration_result['fallback_applied']:
+                    logger.info(f"Applied fallback values for mixed responses in session {session_key}")
+            else:
+                logger.warning(f"Failed to handle mixed responses for session {session_key}: {migration_result['message']}")
+            
             logger.info(f"Converted {len(processed_responses)} survey responses to {len(criteria)} criteria")
             return criteria
             
@@ -191,14 +203,17 @@ class SimpleSurveyComparisonAdapter:
                 'coverage_priority': 'coverage_priority',
                 'monthly_budget': 'base_premium',
                 'preferred_deductible': 'deductible_amount',
-                # New health policy fields
+                # Updated health policy fields - benefit levels instead of boolean
                 'preferred_annual_limit_per_family': 'annual_limit_per_family',
                 'household_income': 'monthly_household_income',
-                'currently_on_medical_aid': 'currently_on_medical_aid',
                 'wants_ambulance_coverage': 'ambulance_coverage',
-                'wants_in_hospital_benefit': 'in_hospital_benefit',
-                'wants_out_hospital_benefit': 'out_hospital_benefit',
+                'in_hospital_benefit_level': 'in_hospital_benefit_level',
+                'out_hospital_benefit_level': 'out_hospital_benefit_level',
+                'annual_limit_family_range': 'annual_limit_family_range',
+                'annual_limit_member_range': 'annual_limit_member_range',
                 'needs_chronic_medication': 'chronic_medication_availability'
+                # Removed: currently_on_medical_aid (no longer used)
+                # Removed: wants_in_hospital_benefit, wants_out_hospital_benefit (replaced by benefit levels)
             }
         elif self.category == 'funeral':
             return {
@@ -242,14 +257,23 @@ class SimpleSurveyComparisonAdapter:
             except (ValueError, TypeError):
                 return 0.0
         
-        # Handle boolean conversions
-        if survey_field in ['currently_on_medical_aid', 'wants_ambulance_coverage', 'wants_in_hospital_benefit', 
-                           'wants_out_hospital_benefit', 'needs_chronic_medication']:
+        # Handle boolean conversions (for remaining boolean fields)
+        if survey_field in ['wants_ambulance_coverage', 'needs_chronic_medication']:
             if isinstance(response_value, bool):
                 return response_value
             elif isinstance(response_value, str):
                 return response_value.lower() in ['true', 'yes', '1', 'on']
             return bool(response_value)
+        
+        # Handle benefit level conversions (new choice fields)
+        if survey_field in ['in_hospital_benefit_level', 'out_hospital_benefit_level']:
+            # Convert benefit level to comparison criteria
+            return self._convert_benefit_level_to_criteria(survey_field, response_value)
+        
+        # Handle range conversions (new range fields)
+        if survey_field in ['annual_limit_family_range', 'annual_limit_member_range']:
+            # Convert range selection to min/max values for matching
+            return self._convert_range_to_criteria(survey_field, response_value)
         
         # Handle coverage amount conversions (remove 'R' and 'k' suffixes)
         if survey_field == 'coverage_amount_needed':
@@ -278,6 +302,85 @@ class SimpleSurveyComparisonAdapter:
         # Default: return as-is
         return response_value
     
+    def _convert_benefit_level_to_criteria(self, survey_field: str, benefit_level: str) -> Dict[str, Any]:
+        """
+        Convert benefit level selection to comparison criteria.
+        
+        Args:
+            survey_field: The benefit level field name
+            benefit_level: Selected benefit level (e.g., 'basic', 'comprehensive')
+            
+        Returns:
+            Dictionary with criteria for policy matching
+        """
+        if not benefit_level:
+            return {'level': 'no_cover', 'weight': 0}
+        
+        # Define benefit level weights for comparison scoring
+        level_weights = {
+            'no_cover': 0,
+            'basic': 25,
+            'basic_visits': 25,  # For out-of-hospital
+            'moderate': 50,
+            'routine_care': 50,  # For out-of-hospital
+            'extensive': 75,
+            'extended_care': 75,  # For out-of-hospital
+            'comprehensive': 100,
+            'comprehensive_care': 100  # For out-of-hospital
+        }
+        
+        return {
+            'level': benefit_level,
+            'weight': level_weights.get(benefit_level, 50),
+            'requires_coverage': benefit_level != 'no_cover'
+        }
+    
+    def _convert_range_to_criteria(self, survey_field: str, range_selection: str) -> Dict[str, Any]:
+        """
+        Convert range selection to min/max values for policy matching.
+        
+        Args:
+            survey_field: The range field name
+            range_selection: Selected range (e.g., '100k-250k')
+            
+        Returns:
+            Dictionary with min/max values and matching criteria
+        """
+        if not range_selection or range_selection == 'not_sure':
+            return {'min_value': 0, 'max_value': float('inf'), 'guidance_needed': True}
+        
+        # Define range mappings
+        range_mappings = {
+            # Family ranges
+            '10k-50k': {'min': 10000, 'max': 50000},
+            '50k-100k': {'min': 50001, 'max': 100000},
+            '100k-250k': {'min': 100001, 'max': 250000},
+            '250k-500k': {'min': 250001, 'max': 500000},
+            '500k-1m': {'min': 500001, 'max': 1000000},
+            '1m-2m': {'min': 1000001, 'max': 2000000},
+            '2m-5m': {'min': 2000001, 'max': 5000000},
+            '5m-plus': {'min': 5000001, 'max': float('inf')},
+            
+            # Member ranges
+            '10k-25k': {'min': 10000, 'max': 25000},
+            '25k-50k': {'min': 25001, 'max': 50000},
+            '50k-100k': {'min': 50001, 'max': 100000},
+            '100k-200k': {'min': 100001, 'max': 200000},
+            '200k-500k': {'min': 200001, 'max': 500000},
+            '500k-1m': {'min': 500001, 'max': 1000000},
+            '1m-2m': {'min': 1000001, 'max': 2000000},
+            '2m-plus': {'min': 2000001, 'max': float('inf')},
+        }
+        
+        range_data = range_mappings.get(range_selection, {'min': 0, 'max': float('inf')})
+        
+        return {
+            'min_value': range_data['min'],
+            'max_value': range_data['max'],
+            'range_selection': range_selection,
+            'guidance_needed': False
+        }
+    
     def _get_default_weights(self, criteria: Dict[str, Any]) -> Dict[str, int]:
         """
         Get default weights for comparison criteria.
@@ -293,16 +396,18 @@ class SimpleSurveyComparisonAdapter:
         if self.category == 'health':
             default_weights = {
                 'base_premium': 25,  # Budget is important
-                'annual_limit_per_family': 30,  # New primary coverage field - very important
+                'annual_limit_per_family': 30,  # Primary coverage field - very important
                 'monthly_household_income': 20,  # Income eligibility is important
-                'currently_on_medical_aid': 15,  # Medical aid status affects eligibility
                 'ambulance_coverage': 12,  # Important safety feature
                 'coverage_priority': 20,  # Coverage type matters
                 'health_status': 15,  # Health status affects eligibility
                 'chronic_medication_availability': 15,  # Important for chronic conditions
-                'in_hospital_benefit': 10,  # Hospital benefits
-                'out_hospital_benefit': 10,  # Hospital benefits
+                'in_hospital_benefit_level': 25,  # New benefit level field - important
+                'out_hospital_benefit_level': 20,  # New benefit level field - important
+                'annual_limit_family_range': 30,  # New range field - very important
+                'annual_limit_member_range': 25,  # New range field - important
                 'deductible_amount': 8   # Deductible preference
+                # Removed: currently_on_medical_aid (no longer used)
             }
         elif self.category == 'funeral':
             default_weights = {
@@ -490,15 +595,41 @@ class SimpleSurveyComparisonAdapter:
             policy_features = policy.policy_features
             
             if self.category == 'health':
-                # Add new health policy features
+                # Add health policy features based on new structure
                 if policy_features.annual_limit_per_family:
                     features.append(f'Annual Family Limit: R{policy_features.annual_limit_per_family:,.0f}')
+                if policy_features.annual_limit_per_member:
+                    features.append(f'Annual Member Limit: R{policy_features.annual_limit_per_member:,.0f}')
                 if policy_features.ambulance_coverage:
                     features.append('Ambulance Coverage')
-                if policy_features.in_hospital_benefit:
+                
+                # Handle benefit levels (these are now stored as levels, not boolean)
+                if hasattr(policy_features, 'in_hospital_benefit_level'):
+                    level = policy_features.in_hospital_benefit_level
+                    if level and level != 'no_cover':
+                        level_display = {
+                            'basic': 'Basic Hospital Care',
+                            'moderate': 'Moderate Hospital Care', 
+                            'extensive': 'Extensive Hospital Care',
+                            'comprehensive': 'Comprehensive Hospital Care'
+                        }.get(level, 'Hospital Benefits')
+                        features.append(level_display)
+                elif policy_features.in_hospital_benefit:  # Fallback to boolean field
                     features.append('In-Hospital Benefits')
-                if policy_features.out_hospital_benefit:
+                
+                if hasattr(policy_features, 'out_hospital_benefit_level'):
+                    level = policy_features.out_hospital_benefit_level
+                    if level and level != 'no_cover':
+                        level_display = {
+                            'basic_visits': 'Basic Clinic Visits',
+                            'routine_care': 'Routine Medical Care',
+                            'extended_care': 'Extended Medical Care',
+                            'comprehensive_care': 'Comprehensive Day-to-Day Care'
+                        }.get(level, 'Out-of-Hospital Benefits')
+                        features.append(level_display)
+                elif policy_features.out_hospital_benefit:  # Fallback to boolean field
                     features.append('Out-of-Hospital Benefits')
+                
                 if policy_features.chronic_medication_availability:
                     features.append('Chronic Medication')
             
@@ -575,7 +706,6 @@ class SimpleSurveyComparisonAdapter:
                 'annual_limit_per_family': policy_features.annual_limit_per_family,
                 'annual_limit_per_member': policy_features.annual_limit_per_member,
                 'monthly_household_income': policy_features.monthly_household_income,
-                'currently_on_medical_aid': policy_features.currently_on_medical_aid,
                 'ambulance_coverage': policy_features.ambulance_coverage,
                 'in_hospital_benefit': policy_features.in_hospital_benefit,
                 'out_hospital_benefit': policy_features.out_hospital_benefit,
@@ -584,6 +714,7 @@ class SimpleSurveyComparisonAdapter:
                 'marital_status_requirement': policy_features.marital_status_requirement,
                 'gender_requirement': policy_features.gender_requirement,
                 'insurance_type': policy_features.insurance_type,
+                # Removed: currently_on_medical_aid (no longer used)
             }
         except AttributeError:
             # Policy has no policy_features

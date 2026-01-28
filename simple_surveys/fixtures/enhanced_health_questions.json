@@ -1,0 +1,266 @@
+[
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 1,
+    "fields": {
+      "category": "health",
+      "question_text": "What is your age?",
+      "field_name": "age",
+      "input_type": "number",
+      "choices": [],
+      "is_required": true,
+      "display_order": 1,
+      "validation_rules": {
+        "min": 18,
+        "max": 80
+      },
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 2,
+    "fields": {
+      "category": "health",
+      "question_text": "Which province are you located in?",
+      "field_name": "location",
+      "input_type": "select",
+      "choices": [
+        ["gauteng", "Gauteng"],
+        ["western_cape", "Western Cape"],
+        ["kwazulu_natal", "KwaZulu-Natal"],
+        ["eastern_cape", "Eastern Cape"],
+        ["free_state", "Free State"],
+        ["limpopo", "Limpopo"],
+        ["mpumalanga", "Mpumalanga"],
+        ["north_west", "North West"],
+        ["northern_cape", "Northern Cape"]
+      ],
+      "is_required": true,
+      "display_order": 2,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 3,
+    "fields": {
+      "category": "health",
+      "question_text": "How many family members need coverage (including yourself)?",
+      "field_name": "family_size",
+      "input_type": "number",
+      "choices": [],
+      "is_required": true,
+      "display_order": 3,
+      "validation_rules": {
+        "min": 1,
+        "max": 10
+      },
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 4,
+    "fields": {
+      "category": "health",
+      "question_text": "How would you describe your current health status?",
+      "field_name": "health_status",
+      "input_type": "radio",
+      "choices": [
+        ["excellent", "Excellent"],
+        ["good", "Good"],
+        ["fair", "Fair"],
+        ["poor", "Poor"]
+      ],
+      "is_required": true,
+      "display_order": 4,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 5,
+    "fields": {
+      "category": "health",
+      "question_text": "Do you have any of the following chronic conditions? (Select all that apply)",
+      "field_name": "chronic_conditions",
+      "input_type": "checkbox",
+      "choices": [
+        ["diabetes", "Diabetes"],
+        ["hypertension", "High Blood Pressure"],
+        ["heart_disease", "Heart Disease"],
+        ["asthma", "Asthma"],
+        ["none", "None of the above"]
+      ],
+      "is_required": true,
+      "display_order": 5,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 20,
+    "fields": {
+      "category": "health",
+      "question_text": "What level of in-hospital cover do you need?",
+      "field_name": "in_hospital_benefit_level",
+      "input_type": "radio",
+      "choices": [
+        ["no_cover", "No hospital cover", "I do not need cover for hospital admission"],
+        ["basic", "Basic hospital care", "Covers admission and standard hospital treatment"],
+        ["moderate", "Moderate hospital care", "Covers admission, procedures, and specialist treatment"],
+        ["extensive", "Extensive hospital care", "Covers most hospital needs, including major procedures"],
+        ["comprehensive", "Comprehensive hospital care", "Covers all hospital-related treatment and services"]
+      ],
+      "is_required": true,
+      "display_order": 6,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 21,
+    "fields": {
+      "category": "health",
+      "question_text": "What level of out-of-hospital cover do you need?",
+      "field_name": "out_hospital_benefit_level",
+      "input_type": "radio",
+      "choices": [
+        ["no_cover", "No out-of-hospital cover", "No cover for day-to-day medical care"],
+        ["basic_visits", "Basic clinic visits", "Covers GP/clinic visits only"],
+        ["routine_care", "Routine medical care", "Covers GP visits and basic medication"],
+        ["extended_care", "Extended medical care", "Covers GP visits, specialists, and diagnostics"],
+        ["comprehensive_care", "Comprehensive day-to-day care", "Covers most medical needs outside hospital, including chronic care"]
+      ],
+      "is_required": true,
+      "display_order": 7,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 22,
+    "fields": {
+      "category": "health",
+      "question_text": "What annual limit per family would you prefer?",
+      "field_name": "annual_limit_family_range",
+      "input_type": "select",
+      "choices": [
+        ["10k-50k", "R10,000 - R50,000", "Basic family coverage for routine medical needs"],
+        ["50k-100k", "R50,001 - R100,000", "Standard family coverage for most medical situations"],
+        ["100k-250k", "R100,001 - R250,000", "Enhanced family coverage including specialist care"],
+        ["250k-500k", "R250,001 - R500,000", "Comprehensive family coverage for major medical needs"],
+        ["500k-1m", "R500,001 - R1,000,000", "Premium family coverage for extensive medical care"],
+        ["1m-2m", "R1,000,001 - R2,000,000", "High-end family coverage for complex medical needs"],
+        ["2m-5m", "R2,000,001 - R5,000,000", "Luxury family coverage for all medical scenarios"],
+        ["5m-plus", "R5,000,001+", "Unlimited family coverage preferred"],
+        ["not_sure", "Not sure / Need guidance", "Help me choose based on my situation"]
+      ],
+      "is_required": true,
+      "display_order": 8,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 23,
+    "fields": {
+      "category": "health",
+      "question_text": "What annual limit per member would you prefer?",
+      "field_name": "annual_limit_member_range",
+      "input_type": "select",
+      "choices": [
+        ["10k-25k", "R10,000 - R25,000", "Basic individual coverage for routine care"],
+        ["25k-50k", "R25,001 - R50,000", "Standard individual coverage for most needs"],
+        ["50k-100k", "R50,001 - R100,000", "Enhanced individual coverage including specialists"],
+        ["100k-200k", "R100,001 - R200,000", "Comprehensive individual coverage for major needs"],
+        ["200k-500k", "R200,001 - R500,000", "Premium individual coverage for extensive care"],
+        ["500k-1m", "R500,001 - R1,000,000", "High-end individual coverage for complex needs"],
+        ["1m-2m", "R1,000,001 - R2,000,000", "Luxury individual coverage for all scenarios"],
+        ["2m-plus", "R2,000,001+", "Unlimited individual coverage preferred"],
+        ["not_sure", "Not sure / Need guidance", "Help me choose based on my situation"]
+      ],
+      "is_required": true,
+      "display_order": 9,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 18,
+    "fields": {
+      "category": "health",
+      "question_text": "Do you want ambulance coverage included?",
+      "field_name": "wants_ambulance_coverage",
+      "input_type": "radio",
+      "choices": [
+        ["yes", "Yes, include ambulance coverage"],
+        ["no", "No, I don't need ambulance coverage"]
+      ],
+      "is_required": true,
+      "display_order": 10,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 24,
+    "fields": {
+      "category": "health",
+      "question_text": "Do you need chronic medication coverage?",
+      "field_name": "needs_chronic_medication",
+      "input_type": "radio",
+      "choices": [
+        ["yes", "Yes, I need chronic medication coverage"],
+        ["no", "No, I don't need chronic medication coverage"]
+      ],
+      "is_required": true,
+      "display_order": 11,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 19,
+    "fields": {
+      "category": "health",
+      "question_text": "What is your monthly household income?",
+      "field_name": "household_income",
+      "input_type": "select",
+      "choices": [
+        ["0-5000", "R0 - R5,000"],
+        ["5001-10000", "R5,001 - R10,000"],
+        ["10001-20000", "R10,001 - R20,000"],
+        ["20001-35000", "R20,001 - R35,000"],
+        ["35001-50000", "R35,001 - R50,000"],
+        ["50001+", "R50,001+"]
+      ],
+      "is_required": true,
+      "display_order": 12,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  }
+]

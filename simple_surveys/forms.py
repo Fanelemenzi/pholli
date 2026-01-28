@@ -3,6 +3,48 @@ from django.core.exceptions import ValidationError
 from .models import SimpleSurvey
 
 
+# Benefit level choices with descriptions (from requirements)
+HOSPITAL_BENEFIT_CHOICES = [
+    ('no_cover', 'No hospital cover - I do not need cover for hospital admission'),
+    ('basic', 'Basic hospital care - Covers admission and standard hospital treatment'),
+    ('moderate', 'Moderate hospital care - Covers admission, procedures, and specialist treatment'),
+    ('extensive', 'Extensive hospital care - Covers most hospital needs, including major procedures'),
+    ('comprehensive', 'Comprehensive hospital care - Covers all hospital-related treatment and services'),
+]
+
+OUT_HOSPITAL_BENEFIT_CHOICES = [
+    ('no_cover', 'No out-of-hospital cover - No cover for day-to-day medical care'),
+    ('basic_visits', 'Basic clinic visits - Covers GP/clinic visits only'),
+    ('routine_care', 'Routine medical care - Covers GP visits and basic medication'),
+    ('extended_care', 'Extended medical care - Covers GP visits, specialists, and diagnostics'),
+    ('comprehensive_care', 'Comprehensive day-to-day care - Covers most medical needs outside hospital, including chronic care'),
+]
+
+ANNUAL_LIMIT_FAMILY_RANGES = [
+    ('10k-50k', 'R10,000 - R50,000 - Basic family coverage for routine medical needs'),
+    ('50k-100k', 'R50,001 - R100,000 - Standard family coverage for most medical situations'),
+    ('100k-250k', 'R100,001 - R250,000 - Enhanced family coverage including specialist care'),
+    ('250k-500k', 'R250,001 - R500,000 - Comprehensive family coverage for major medical needs'),
+    ('500k-1m', 'R500,001 - R1,000,000 - Premium family coverage for extensive medical care'),
+    ('1m-2m', 'R1,000,001 - R2,000,000 - High-end family coverage for complex medical needs'),
+    ('2m-5m', 'R2,000,001 - R5,000,000 - Luxury family coverage for all medical scenarios'),
+    ('5m-plus', 'R5,000,001+ - Unlimited family coverage preferred'),
+    ('not_sure', 'Not sure / Need guidance - Help me choose based on my situation'),
+]
+
+ANNUAL_LIMIT_MEMBER_RANGES = [
+    ('10k-25k', 'R10,000 - R25,000 - Basic individual coverage for routine care'),
+    ('25k-50k', 'R25,001 - R50,000 - Standard individual coverage for most needs'),
+    ('50k-100k', 'R50,001 - R100,000 - Enhanced individual coverage including specialists'),
+    ('100k-200k', 'R100,001 - R200,000 - Comprehensive individual coverage for major needs'),
+    ('200k-500k', 'R200,001 - R500,000 - Premium individual coverage for extensive care'),
+    ('500k-1m', 'R500,001 - R1,000,000 - High-end individual coverage for complex needs'),
+    ('1m-2m', 'R1,000,001 - R2,000,000 - Luxury individual coverage for all scenarios'),
+    ('2m-plus', 'R2,000,001+ - Unlimited individual coverage preferred'),
+    ('not_sure', 'Not sure / Need guidance - Help me choose based on my situation'),
+]
+
+
 class SimpleSurveyForm(forms.ModelForm):
     """
     Form for SimpleSurvey model with dynamic field display based on insurance type.
@@ -14,9 +56,10 @@ class SimpleSurveyForm(forms.ModelForm):
             'first_name', 'last_name', 'date_of_birth', 'email', 'phone',
             'insurance_type',
             # Health fields
-            'preferred_annual_limit_per_family', 'household_income', 'currently_on_medical_aid',
-            'wants_ambulance_coverage', 'wants_in_hospital_benefit',
-            'wants_out_hospital_benefit', 'needs_chronic_medication',
+            'preferred_annual_limit_per_family', 'household_income',
+            'wants_ambulance_coverage', 'in_hospital_benefit_level',
+            'out_hospital_benefit_level', 'needs_chronic_medication',
+            'annual_limit_family_range', 'annual_limit_member_range',
             # Funeral fields
             'preferred_cover_amount', 'marital_status', 'gender'
         ]
@@ -58,25 +101,41 @@ class SimpleSurveyForm(forms.ModelForm):
                 'step': '0.01',
                 'min': '0'
             }),
-            'currently_on_medical_aid': forms.Select(
-                choices=[(None, 'Select an option'), (True, 'Yes'), (False, 'No')],
-                attrs={'class': 'form-control health-field'}
-            ),
             'wants_ambulance_coverage': forms.Select(
                 choices=[(None, 'Select an option'), (True, 'Yes'), (False, 'No')],
                 attrs={'class': 'form-control health-field'}
             ),
-            'wants_in_hospital_benefit': forms.Select(
-                choices=[(None, 'Select an option'), (True, 'Yes'), (False, 'No')],
-                attrs={'class': 'form-control health-field'}
+            'in_hospital_benefit_level': forms.RadioSelect(
+                choices=HOSPITAL_BENEFIT_CHOICES,
+                attrs={
+                    'class': 'form-check-input health-field benefit-level-radio',
+                    'data-field': 'in_hospital_benefit_level'
+                }
             ),
-            'wants_out_hospital_benefit': forms.Select(
-                choices=[(None, 'Select an option'), (True, 'Yes'), (False, 'No')],
-                attrs={'class': 'form-control health-field'}
+            'out_hospital_benefit_level': forms.RadioSelect(
+                choices=OUT_HOSPITAL_BENEFIT_CHOICES,
+                attrs={
+                    'class': 'form-check-input health-field benefit-level-radio',
+                    'data-field': 'out_hospital_benefit_level'
+                }
             ),
             'needs_chronic_medication': forms.Select(
                 choices=[(None, 'Select an option'), (True, 'Yes'), (False, 'No')],
                 attrs={'class': 'form-control health-field'}
+            ),
+            'annual_limit_family_range': forms.Select(
+                choices=[('', 'Select a range')] + ANNUAL_LIMIT_FAMILY_RANGES,
+                attrs={
+                    'class': 'form-control health-field range-select',
+                    'data-field': 'annual_limit_family_range'
+                }
+            ),
+            'annual_limit_member_range': forms.Select(
+                choices=[('', 'Select a range')] + ANNUAL_LIMIT_MEMBER_RANGES,
+                attrs={
+                    'class': 'form-control health-field range-select',
+                    'data-field': 'annual_limit_member_range'
+                }
             ),
             # Funeral fields
             'preferred_cover_amount': forms.NumberInput(attrs={
@@ -120,11 +179,12 @@ class SimpleSurveyForm(forms.ModelForm):
             # Health field labels
             'preferred_annual_limit_per_family': 'Preferred Annual Limit per Family',
             'household_income': 'Monthly Household Income',
-            'currently_on_medical_aid': 'Are you currently on medical aid?',
             'wants_ambulance_coverage': 'Do you want ambulance coverage?',
-            'wants_in_hospital_benefit': 'Do you want in-hospital benefits?',
-            'wants_out_hospital_benefit': 'Do you want out-of-hospital benefits?',
+            'in_hospital_benefit_level': 'What level of in-hospital cover do you need?',
+            'out_hospital_benefit_level': 'What level of out-of-hospital cover do you need?',
             'needs_chronic_medication': 'Do you need chronic medication coverage?',
+            'annual_limit_family_range': 'What annual limit range per family would you prefer?',
+            'annual_limit_member_range': 'What annual limit range per member would you prefer?',
             # Funeral field labels
             'preferred_cover_amount': 'Preferred Cover Amount',
             'marital_status': 'Marital Status',
@@ -134,6 +194,20 @@ class SimpleSurveyForm(forms.ModelForm):
         for field_name, label in field_labels.items():
             if field_name in self.fields:
                 self.fields[field_name].label = label
+        
+        # Add help text for benefit level fields
+        if 'in_hospital_benefit_level' in self.fields:
+            self.fields['in_hospital_benefit_level'].help_text = 'Select the level of hospital coverage that best matches your needs.'
+        
+        if 'out_hospital_benefit_level' in self.fields:
+            self.fields['out_hospital_benefit_level'].help_text = 'Select the level of day-to-day medical coverage that best matches your needs.'
+        
+        # Add help text for range fields
+        if 'annual_limit_family_range' in self.fields:
+            self.fields['annual_limit_family_range'].help_text = 'Choose a range that represents how much annual coverage your family might need.'
+        
+        if 'annual_limit_member_range' in self.fields:
+            self.fields['annual_limit_member_range'].help_text = 'Choose a range that represents how much annual coverage each family member might need.'
     
     def clean(self):
         """Custom validation based on insurance type."""
@@ -157,20 +231,27 @@ class SimpleSurveyForm(forms.ModelForm):
             elif cleaned_data.get('household_income') <= 0:
                 health_errors['household_income'] = 'Household income must be greater than 0.'
             
-            if cleaned_data.get('currently_on_medical_aid') is None:
-                health_errors['currently_on_medical_aid'] = 'This field is required for health policies.'
-            
             if cleaned_data.get('wants_ambulance_coverage') is None:
                 health_errors['wants_ambulance_coverage'] = 'This field is required for health policies.'
             
-            if cleaned_data.get('wants_in_hospital_benefit') is None:
-                health_errors['wants_in_hospital_benefit'] = 'This field is required for health policies.'
+            if not cleaned_data.get('in_hospital_benefit_level'):
+                health_errors['in_hospital_benefit_level'] = 'Please select your preferred in-hospital benefit level.'
             
-            if cleaned_data.get('wants_out_hospital_benefit') is None:
-                health_errors['wants_out_hospital_benefit'] = 'This field is required for health policies.'
+            if not cleaned_data.get('out_hospital_benefit_level'):
+                health_errors['out_hospital_benefit_level'] = 'Please select your preferred out-of-hospital benefit level.'
             
             if cleaned_data.get('needs_chronic_medication') is None:
                 health_errors['needs_chronic_medication'] = 'This field is required for health policies.'
+            
+            # Validate range selections (optional but helpful)
+            annual_limit_family_range = cleaned_data.get('annual_limit_family_range')
+            annual_limit_member_range = cleaned_data.get('annual_limit_member_range')
+            
+            if annual_limit_family_range and annual_limit_family_range not in [choice[0] for choice in SimpleSurvey._meta.get_field('annual_limit_family_range').choices]:
+                health_errors['annual_limit_family_range'] = 'Please select a valid family annual limit range.'
+            
+            if annual_limit_member_range and annual_limit_member_range not in [choice[0] for choice in SimpleSurvey._meta.get_field('annual_limit_member_range').choices]:
+                health_errors['annual_limit_member_range'] = 'Please select a valid member annual limit range.'
             
             if health_errors:
                 raise ValidationError(health_errors)
@@ -205,9 +286,10 @@ class HealthSurveyForm(SimpleSurveyForm):
         fields = [
             'first_name', 'last_name', 'date_of_birth', 'email', 'phone',
             'insurance_type',  # Include insurance_type field
-            'preferred_annual_limit_per_family', 'household_income', 'currently_on_medical_aid',
-            'wants_ambulance_coverage', 'wants_in_hospital_benefit',
-            'wants_out_hospital_benefit', 'needs_chronic_medication'
+            'preferred_annual_limit_per_family', 'household_income',
+            'wants_ambulance_coverage', 'in_hospital_benefit_level',
+            'out_hospital_benefit_level', 'needs_chronic_medication',
+            'annual_limit_family_range', 'annual_limit_member_range'
         ]
     
     def __init__(self, *args, **kwargs):
@@ -247,9 +329,10 @@ class FuneralSurveyForm(SimpleSurveyForm):
         
         # Remove health-specific fields that might be inherited
         health_fields = [
-            'preferred_annual_limit_per_family', 'household_income', 'currently_on_medical_aid',
-            'wants_ambulance_coverage', 'wants_in_hospital_benefit',
-            'wants_out_hospital_benefit', 'needs_chronic_medication'
+            'preferred_annual_limit_per_family', 'household_income',
+            'wants_ambulance_coverage', 'in_hospital_benefit_level',
+            'out_hospital_benefit_level', 'needs_chronic_medication',
+            'annual_limit_family_range', 'annual_limit_member_range'
         ]
         for field in health_fields:
             if field in self.fields:

@@ -321,11 +321,15 @@ class BasePolicy(models.Model):
             features.update({
                 'annual_limit_per_member': policy_features.annual_limit_per_member,
                 'annual_limit_per_family': policy_features.annual_limit_per_family,
+                'annual_limit_family_range': policy_features.annual_limit_family_range,
+                'annual_limit_member_range': policy_features.annual_limit_member_range,
                 'monthly_household_income': policy_features.monthly_household_income,
                 'currently_on_medical_aid': policy_features.currently_on_medical_aid,
                 'ambulance_coverage': policy_features.ambulance_coverage,
                 'in_hospital_benefit': policy_features.in_hospital_benefit,
+                'in_hospital_benefit_level': policy_features.in_hospital_benefit_level,
                 'out_hospital_benefit': policy_features.out_hospital_benefit,
+                'out_hospital_benefit_level': policy_features.out_hospital_benefit_level,
                 'chronic_medication_availability': policy_features.chronic_medication_availability,
             })
         elif policy_features.insurance_type == 'FUNERAL':
@@ -374,6 +378,47 @@ class PolicyFeatures(models.Model):
         HEALTH = 'HEALTH', _('Health Policies')
         FUNERAL = 'FUNERAL', _('Funeral Policies')
     
+    # Import benefit choices from simple_surveys
+    HOSPITAL_BENEFIT_CHOICES = [
+        ('no_cover', _('No hospital cover')),
+        ('basic', _('Basic hospital care')),
+        ('moderate', _('Moderate hospital care')),
+        ('extensive', _('Extensive hospital care')),
+        ('comprehensive', _('Comprehensive hospital care')),
+    ]
+
+    OUT_HOSPITAL_BENEFIT_CHOICES = [
+        ('no_cover', _('No out-of-hospital cover')),
+        ('basic_visits', _('Basic clinic visits')),
+        ('routine_care', _('Routine medical care')),
+        ('extended_care', _('Extended medical care')),
+        ('comprehensive_care', _('Comprehensive day-to-day care')),
+    ]
+
+    ANNUAL_LIMIT_FAMILY_RANGES = [
+        ('10k-50k', _('R10,000 - R50,000')),
+        ('50k-100k', _('R50,001 - R100,000')),
+        ('100k-250k', _('R100,001 - R250,000')),
+        ('250k-500k', _('R250,001 - R500,000')),
+        ('500k-1m', _('R500,001 - R1,000,000')),
+        ('1m-2m', _('R1,000,001 - R2,000,000')),
+        ('2m-5m', _('R2,000,001 - R5,000,000')),
+        ('5m-plus', _('R5,000,001+')),
+        ('not_sure', _('Not sure / Need guidance')),
+    ]
+
+    ANNUAL_LIMIT_MEMBER_RANGES = [
+        ('10k-25k', _('R10,000 - R25,000')),
+        ('25k-50k', _('R25,001 - R50,000')),
+        ('50k-100k', _('R50,001 - R100,000')),
+        ('100k-200k', _('R100,001 - R200,000')),
+        ('200k-500k', _('R200,001 - R500,000')),
+        ('500k-1m', _('R500,001 - R1,000,000')),
+        ('1m-2m', _('R1,000,001 - R2,000,000')),
+        ('2m-plus', _('R2,000,001+')),
+        ('not_sure', _('Not sure / Need guidance')),
+    ]
+    
     policy = models.OneToOneField(
         BasePolicy, 
         on_delete=models.CASCADE, 
@@ -400,6 +445,24 @@ class PolicyFeatures(models.Model):
         blank=True,
         help_text=_("Annual limit per family (replaces per member limit)")
     )
+    
+    # New range fields for annual limits
+    annual_limit_family_range = models.CharField(
+        max_length=50,
+        choices=ANNUAL_LIMIT_FAMILY_RANGES,
+        null=True,
+        blank=True,
+        help_text=_("Annual limit range per family for matching")
+    )
+    
+    annual_limit_member_range = models.CharField(
+        max_length=50,
+        choices=ANNUAL_LIMIT_MEMBER_RANGES,
+        null=True,
+        blank=True,
+        help_text=_("Annual limit range per member for matching")
+    )
+    
     monthly_household_income = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
@@ -417,16 +480,36 @@ class PolicyFeatures(models.Model):
         blank=True,
         help_text=_("Whether ambulance coverage is included")
     )
+    
+    # Updated benefit level fields (replacing boolean fields)
     in_hospital_benefit = models.BooleanField(
         null=True, 
         blank=True,
-        help_text=_("With or without in-hospital benefit")
+        help_text=_("With or without in-hospital benefit (legacy field)")
     )
+    
+    in_hospital_benefit_level = models.CharField(
+        max_length=50,
+        choices=HOSPITAL_BENEFIT_CHOICES,
+        null=True,
+        blank=True,
+        help_text=_("Level of in-hospital coverage provided")
+    )
+    
     out_hospital_benefit = models.BooleanField(
         null=True, 
         blank=True,
-        help_text=_("With or without out of hospital benefits")
+        help_text=_("With or without out of hospital benefits (legacy field)")
     )
+    
+    out_hospital_benefit_level = models.CharField(
+        max_length=50,
+        choices=OUT_HOSPITAL_BENEFIT_CHOICES,
+        null=True,
+        blank=True,
+        help_text=_("Level of out-of-hospital coverage provided")
+    )
+    
     chronic_medication_availability = models.BooleanField(
         null=True, 
         blank=True,
@@ -482,11 +565,15 @@ class PolicyFeatures(models.Model):
             features.update({
                 'annual_limit_per_member': self.annual_limit_per_member,
                 'annual_limit_per_family': self.annual_limit_per_family,
+                'annual_limit_family_range': self.annual_limit_family_range,
+                'annual_limit_member_range': self.annual_limit_member_range,
                 'monthly_household_income': self.monthly_household_income,
                 'currently_on_medical_aid': self.currently_on_medical_aid,
                 'ambulance_coverage': self.ambulance_coverage,
                 'in_hospital_benefit': self.in_hospital_benefit,
+                'in_hospital_benefit_level': self.in_hospital_benefit_level,
                 'out_hospital_benefit': self.out_hospital_benefit,
+                'out_hospital_benefit_level': self.out_hospital_benefit_level,
                 'chronic_medication_availability': self.chronic_medication_availability,
             })
         elif self.insurance_type == 'FUNERAL':

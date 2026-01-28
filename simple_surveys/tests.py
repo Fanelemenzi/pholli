@@ -1482,11 +1482,14 @@ class SimpleSurveyFormTest(TestCase):
             'email': 'john.doe@example.com',
             'phone': '+27123456789',
             'insurance_type': SimpleSurvey.InsuranceType.HEALTH,
-            'preferred_annual_limit': '50000.00',
+            'preferred_annual_limit_per_family': '50000.00',
             'household_income': '15000.00',
-            'wants_in_hospital_benefit': True,
-            'wants_out_hospital_benefit': True,
+            'wants_ambulance_coverage': True,
+            'in_hospital_benefit_level': 'basic',
+            'out_hospital_benefit_level': 'routine_care',
             'needs_chronic_medication': False,
+            'annual_limit_family_range': '50k-100k',
+            'annual_limit_member_range': '25k-50k',
         }
         
         self.funeral_form_data = {
@@ -1499,7 +1502,6 @@ class SimpleSurveyFormTest(TestCase):
             'preferred_cover_amount': '25000.00',
             'marital_status': 'married',
             'gender': 'female',
-            'net_income': '12000.00',
         }
     
     def test_health_survey_form_valid(self):
@@ -1511,7 +1513,7 @@ class SimpleSurveyFormTest(TestCase):
         
         survey = form.save()
         self.assertEqual(survey.insurance_type, SimpleSurvey.InsuranceType.HEALTH)
-        self.assertEqual(survey.preferred_annual_limit, 50000.00)
+        self.assertEqual(survey.preferred_annual_limit_per_family, 50000.00)
     
     def test_funeral_survey_form_valid(self):
         """Test valid funeral survey form"""
@@ -1529,13 +1531,13 @@ class SimpleSurveyFormTest(TestCase):
         from .forms import HealthSurveyForm
         
         incomplete_data = self.health_form_data.copy()
-        del incomplete_data['preferred_annual_limit']
-        del incomplete_data['wants_in_hospital_benefit']
+        del incomplete_data['preferred_annual_limit_per_family']
+        del incomplete_data['in_hospital_benefit_level']
         
         form = HealthSurveyForm(data=incomplete_data)
         self.assertFalse(form.is_valid())
-        self.assertIn('preferred_annual_limit', form.errors)
-        self.assertIn('wants_in_hospital_benefit', form.errors)
+        self.assertIn('preferred_annual_limit_per_family', form.errors)
+        self.assertIn('in_hospital_benefit_level', form.errors)
     
     def test_funeral_survey_form_invalid_missing_fields(self):
         """Test funeral survey form with missing required fields"""
@@ -1570,10 +1572,18 @@ class SimpleSurveyFormTest(TestCase):
         
         # Test CSS classes
         self.assertIn('form-control', form.fields['first_name'].widget.attrs['class'])
-        self.assertIn('health-field', form.fields['preferred_annual_limit'].widget.attrs['class'])
+        self.assertIn('health-field', form.fields['preferred_annual_limit_per_family'].widget.attrs['class'])
         self.assertIn('funeral-field', form.fields['preferred_cover_amount'].widget.attrs['class'])
         
         # Test input types
         self.assertEqual(form.fields['date_of_birth'].widget.attrs['type'], 'date')
-        self.assertEqual(form.fields['preferred_annual_limit'].widget.attrs['step'], '0.01')
-        self.assertEqual(form.fields['preferred_annual_limit'].widget.attrs['min'], '0')
+        self.assertEqual(form.fields['preferred_annual_limit_per_family'].widget.attrs['step'], '0.01')
+        self.assertEqual(form.fields['preferred_annual_limit_per_family'].widget.attrs['min'], '0')
+        
+        # Test new benefit level fields have radio widgets
+        self.assertTrue(hasattr(form.fields['in_hospital_benefit_level'].widget, 'choices'))
+        self.assertTrue(hasattr(form.fields['out_hospital_benefit_level'].widget, 'choices'))
+        
+        # Test range fields have select widgets with choices
+        self.assertIn('range-select', form.fields['annual_limit_family_range'].widget.attrs['class'])
+        self.assertIn('range-select', form.fields['annual_limit_member_range'].widget.attrs['class'])

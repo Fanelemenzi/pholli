@@ -15,6 +15,7 @@ from .forms import SimpleSurveyForm, HealthSurveyForm, FuneralSurveyForm
 from .engine import SimpleSurveyEngine
 from .comparison_adapter import SimpleSurveyComparisonAdapter
 from .session_manager import SessionManager, SessionValidationError
+from .response_migration import ResponseMigrationHandler
 
 logger = logging.getLogger(__name__)
 
@@ -31,30 +32,45 @@ class FeatureSurveyView(View):
         if category not in ['health', 'funeral']:
             raise Http404("Invalid survey category")
         
-        # Get or create survey instance from session
-        survey_id = request.session.get(f'survey_{category}_id')
-        survey = None
-        
-        if survey_id:
-            try:
-                survey = SimpleSurvey.objects.get(id=survey_id)
-            except SimpleSurvey.DoesNotExist:
-                survey = None
-        
-        # Create appropriate form based on category
-        if category == 'health':
-            form = HealthSurveyForm(instance=survey)
-        else:
-            form = FuneralSurveyForm(instance=survey)
-        
-        context = {
-            'category': category,
-            'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-            'form': form,
-            'survey': survey,
-        }
-        
-        return render(request, 'surveys/feature_survey_form.html', context)
+        try:
+            # Create or get session using SessionManager
+            quotation_session, created = SessionManager.create_or_get_session(request, category)
+            session_key = quotation_session.session_key
+            
+            # Initialize survey engine to get enhanced questions
+            engine = SimpleSurveyEngine(category)
+            questions = engine.get_questions()
+            
+            # Get existing responses for this session/category
+            existing_responses = {}
+            responses = SimpleSurveyResponse.objects.for_session_category(session_key, category)
+            for response in responses:
+                existing_responses[response.question.field_name] = response.response_value
+            
+            # Get completion status
+            completion_status = engine.get_completion_status(session_key)
+            
+            context = {
+                'category': category,
+                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
+                'questions': questions,
+                'existing_responses': existing_responses,
+                'completion_status': completion_status,
+                'session_key': session_key,
+                'session_created': created,
+            }
+            
+            return render(request, 'surveys/simple_survey_form.html', context)
+            
+        except ValueError as e:
+            logger.error(f"Invalid category for feature survey: {e}")
+            raise Http404("Invalid survey category")
+        except Exception as e:
+            logger.error(f"Error displaying feature survey for category {category}: {e}")
+            return render(request, 'surveys/simple_survey_form.html', {
+                'error_message': 'Unable to load survey questions. Please try again.',
+                'category': category
+            })
     
     def post(self, request, category):
         """Process feature-based survey form submission"""
@@ -62,41 +78,78 @@ class FeatureSurveyView(View):
         if category not in ['health', 'funeral']:
             raise Http404("Invalid survey category")
         
-        # Get existing survey instance if available
-        survey_id = request.session.get(f'survey_{category}_id')
-        survey = None
+        # Validate session
+        session_key = request.session.session_key
+        if not session_key:
+            return JsonResponse({
+                'success': False,
+                'error': 'No active session'
+            }, status=400)
         
-        if survey_id:
-            try:
-                survey = SimpleSurvey.objects.get(id=survey_id)
-            except SimpleSurvey.DoesNotExist:
-                survey = None
+        validation_result = SessionManager.validate_session(session_key, category)
+        if not validation_result['valid']:
+            return JsonResponse({
+                'success': False,
+                'error': f'Session validation failed: {validation_result["error"]}'
+            }, status=400)
         
-        # Create appropriate form based on category
-        if category == 'health':
-            form = HealthSurveyForm(request.POST, instance=survey)
-        else:
-            form = FuneralSurveyForm(request.POST, instance=survey)
-        
-        if form.is_valid():
-            # Save the survey
-            survey = form.save()
+        try:
+            # Initialize survey engine
+            engine = SimpleSurveyEngine(category)
             
-            # Store survey ID in session
-            request.session[f'survey_{category}_id'] = survey.id
+            # Check if survey is complete
+            if not engine.is_survey_complete(session_key):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Survey is not complete. Please answer all required questions.'
+                }, status=400)
             
-            # Redirect to results processing
-            return redirect('simple_surveys:feature_results', category=category)
-        
-        # Form has errors, redisplay with errors
-        context = {
-            'category': category,
-            'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-            'form': form,
-            'survey': survey,
-        }
-        
-        return render(request, 'surveys/feature_survey_form.html', context)
+            # Process responses to quotation criteria
+            criteria = engine.process_responses(session_key)
+            
+            # Update quotation session with criteria
+            quotation_session = validation_result['session']
+            quotation_session.update_criteria(criteria)
+            
+            # Generate quotations using comparison adapter
+            adapter = SimpleSurveyComparisonAdapter(category)
+            quotation_result = adapter.generate_quotations(session_key)
+            
+            # Check if quotation generation was successful
+            if not quotation_result.get('success'):
+                return JsonResponse({
+                    'success': False,
+                    'error': quotation_result.get('error', 'Unable to generate quotations')
+                }, status=500)
+            
+            # Extract policies from the result
+            quotations = quotation_result.get('policies', [])
+            
+            # Mark session as completed
+            quotation_session.mark_completed()
+            
+            # Store quotations in session for results page
+            request.session[f'quotations_{category}'] = quotations
+            request.session[f'criteria_{category}'] = criteria
+            request.session[f'quotation_metadata_{category}'] = {
+                'total_policies_evaluated': quotation_result.get('total_policies_evaluated', 0),
+                'best_match': quotation_result.get('best_match'),
+                'summary': quotation_result.get('summary', {}),
+                'generated_at': quotation_result.get('generated_at')
+            }
+            
+            return JsonResponse({
+                'success': True,
+                'quotations_count': len(quotations),
+                'redirect_url': f'/survey/{category}/results/'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error processing feature survey for category {category}: {e}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Unable to generate quotations. Please try again.'
+            }, status=500)
 
 
 class FeatureResultsView(View):
@@ -106,89 +159,62 @@ class FeatureResultsView(View):
     """
     
     def get(self, request, category):
-        """Process survey and display matching policies"""
+        """Display quotation results for the category"""
         # Validate category
         if category not in ['health', 'funeral']:
             raise Http404("Invalid survey category")
         
-        # Get survey from session
-        survey_id = request.session.get(f'survey_{category}_id')
-        if not survey_id:
-            return redirect('simple_surveys:feature_survey', category=category)
+        # Check for quotations in session
+        quotations_key = f'quotations_{category}'
+        criteria_key = f'criteria_{category}'
+        metadata_key = f'quotation_metadata_{category}'
+        
+        quotations = request.session.get(quotations_key)
+        criteria = request.session.get(criteria_key)
+        metadata = request.session.get(metadata_key, {})
+        
+        if not quotations:
+            # No quotations found, redirect to survey
+            return render(request, 'surveys/simple_survey_results.html', {
+                'category': category,
+                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
+                'message': 'No quotations found. Please complete the survey first.'
+            })
         
         try:
-            survey = SimpleSurvey.objects.get(id=survey_id)
-        except SimpleSurvey.DoesNotExist:
-            return redirect('simple_surveys:feature_survey', category=category)
-        
-        # Validate survey is complete
-        if not survey.is_complete():
-            return redirect('simple_surveys:feature_survey', category=category)
-        
-        try:
-            # Import comparison system
-            from comparison.feature_matching_engine import FeatureMatchingEngine
-            from comparison.models import FeatureComparisonResult
-            from policies.models import BasePolicy
+            # Get session information
+            session_key = request.session.session_key
+            quotation_session = None
             
-            # Get user preferences from survey
-            user_preferences = survey.get_preferences_dict()
-            
-            # Initialize matching engine
-            insurance_type = 'HEALTH' if category == 'health' else 'FUNERAL'
-            matching_engine = FeatureMatchingEngine(insurance_type)
-            
-            # Get policies of the appropriate type
-            policies = BasePolicy.objects.filter(
-                policy_features__insurance_type=insurance_type
-            ).select_related('policy_features', 'organization')
-            
-            # Calculate matches for each policy
-            policy_results = []
-            for policy in policies:
-                compatibility = matching_engine.calculate_policy_compatibility(policy, user_preferences)
-                
-                if compatibility['overall_score'] > 0:  # Only include policies with some compatibility
-                    policy_results.append({
-                        'policy': policy,
-                        'compatibility': compatibility,
-                        'overall_score': compatibility['overall_score'],
-                        'matches': compatibility['matches'],
-                        'mismatches': compatibility['mismatches'],
-                        'explanation': compatibility['explanation']
-                    })
-            
-            # Sort by compatibility score (highest first)
-            policy_results.sort(key=lambda x: x['overall_score'], reverse=True)
-            
-            # Store results in session for potential later use
-            request.session[f'results_{category}'] = {
-                'survey_id': survey.id,
-                'total_policies': len(policy_results),
-                'generated_at': timezone.now().isoformat()
-            }
+            if session_key:
+                try:
+                    quotation_session = QuotationSession.objects.get(
+                        session_key=session_key,
+                        category=category
+                    )
+                except QuotationSession.DoesNotExist:
+                    pass
             
             context = {
                 'category': category,
                 'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-                'survey': survey,
-                'user_preferences': user_preferences,
-                'policy_results': policy_results,
-                'total_results': len(policy_results),
-                'best_match': policy_results[0] if policy_results else None,
+                'quotations': quotations,
+                'criteria': criteria,
+                'quotation_session': quotation_session,
+                'total_quotations': len(quotations),
+                'metadata': metadata,
+                'best_match': metadata.get('best_match'),
+                'summary': metadata.get('summary', {})
             }
             
-            return render(request, 'surveys/feature_survey_results.html', context)
+            return render(request, 'surveys/simple_survey_results.html', context)
             
         except Exception as e:
-            logger.error(f"Error processing feature survey results for {category}: {e}")
-            context = {
-                'category': category,
-                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-                'error_message': 'Unable to process your survey results. Please try again.',
-                'survey': survey,
-            }
-            return render(request, 'surveys/feature_survey_results.html', context)
+            logger.error(f"Error displaying feature results for category {category}: {e}")
+            return render(request, 'surveys/simple_survey_form.html', {
+                'error_message': 'Unable to display results. Please try again.',
+                'category': category
+            })
 
 
 class SurveyView(View):

@@ -409,7 +409,16 @@
         <div class="results-container">
             <div class="results-header">
                 <h1>Your {{ category_display }} Quotes</h1>
-                <p class="lead">We found {{ total_quotations }} personalized quotes for you from top Eswatini providers.</p>
+                <p class="lead">We found {{ total_quotations }} personalized quotes for you from top Eswatini providers using our enhanced benefit-level matching system.</p>
+                <div class="alert alert-info" style="background: linear-gradient(135deg, #e3f2fd, #f0f8ff); border: 2px solid #2196f3; border-radius: 15px; margin-top: 20px;">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #2196f3;"></i>
+                        <div>
+                            <h6 class="mb-1" style="color: #1565c0; font-weight: 700;">Enhanced Matching Technology</h6>
+                            <p class="mb-0" style="color: #1976d2;">These quotes are matched using our new intelligent system that considers benefit levels and coverage ranges, not just simple yes/no criteria. This provides more accurate matches for your specific needs.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Feature Survey Promotion -->
@@ -441,13 +450,13 @@
                     <div class="col-md-3">
                         <div class="stat-item">
                             <span class="stat-number">{{ total_quotations }}</span>
-                            <span class="stat-label">Quotes Found</span>
+                            <span class="stat-label">Smart Matches</span>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-item">
                             <span class="stat-number">{{ metadata.total_policies_evaluated|default:0 }}</span>
-                            <span class="stat-label">Policies Evaluated</span>
+                            <span class="stat-label">Policies Analyzed</span>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -459,9 +468,17 @@
                     </div>
                     <div class="col-md-3">
                         <div class="stat-item">
-                            <span class="stat-number">100%</span>
-                            <span class="stat-label">Free Service</span>
+                            <span class="stat-number">5</span>
+                            <span class="stat-label">Benefit Levels</span>
                         </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12 text-center">
+                        <small style="color: rgba(0,0,0,0.8); font-weight: 500;">
+                            <i class="bi bi-cpu me-2"></i>
+                            Powered by intelligent benefit-level matching and range-based comparison algorithms
+                        </small>
                     </div>
                 </div>
             </div>
@@ -505,19 +522,51 @@
                         {% if quote.policy_features %}
                         <div class="policy-features mb-3">
                             <h6 class="mb-2" style="color: #269523; font-weight: 600;">
-                                <i class="bi bi-shield-check me-2"></i>Key Features
+                                <i class="bi bi-shield-check me-2"></i>Coverage Details
                             </h6>
                             <div class="features-grid">
-                                {% if quote.policy_features.annual_limit_per_family %}
+                                {% if quote.policy_features.annual_limit_family_range %}
+                                <div class="feature-item">
+                                    <span class="feature-label">Family Annual Limit Range:</span>
+                                    <span class="feature-value">{{ quote.policy_features.annual_limit_family_range|format_annual_limit_range }}</span>
+                                </div>
+                                {% elif quote.policy_features.annual_limit_per_family %}
                                 <div class="feature-item">
                                     <span class="feature-label">Annual Family Limit:</span>
                                     <span class="feature-value">R{{ quote.policy_features.annual_limit_per_family|floatformat:0 }}</span>
                                 </div>
                                 {% endif %}
-                                {% if quote.policy_features.currently_on_medical_aid is not None %}
+                                {% if quote.policy_features.annual_limit_member_range %}
                                 <div class="feature-item">
-                                    <span class="feature-label">Medical Aid Status:</span>
-                                    <span class="feature-value">{% if quote.policy_features.currently_on_medical_aid %}Currently on Medical Aid{% else %}Not on Medical Aid{% endif %}</span>
+                                    <span class="feature-label">Member Annual Limit Range:</span>
+                                    <span class="feature-value">{{ quote.policy_features.annual_limit_member_range|format_annual_limit_range }}</span>
+                                </div>
+                                {% elif quote.policy_features.annual_limit_per_member %}
+                                <div class="feature-item">
+                                    <span class="feature-label">Annual Member Limit:</span>
+                                    <span class="feature-value">R{{ quote.policy_features.annual_limit_per_member|floatformat:0 }}</span>
+                                </div>
+                                {% endif %}
+                                {% if quote.policy_features.in_hospital_benefit_level %}
+                                <div class="feature-item">
+                                    <span class="feature-label">In-Hospital Coverage:</span>
+                                    <span class="feature-value">{{ quote.policy_features.in_hospital_benefit_level|format_benefit_level }}</span>
+                                </div>
+                                {% elif quote.policy_features.in_hospital_benefit is not None %}
+                                <div class="feature-item">
+                                    <span class="feature-label">In-Hospital Benefit:</span>
+                                    <span class="feature-value">{% if quote.policy_features.in_hospital_benefit %}Included{% else %}Not Included{% endif %}</span>
+                                </div>
+                                {% endif %}
+                                {% if quote.policy_features.out_hospital_benefit_level %}
+                                <div class="feature-item">
+                                    <span class="feature-label">Out-of-Hospital Coverage:</span>
+                                    <span class="feature-value">{{ quote.policy_features.out_hospital_benefit_level|format_benefit_level }}</span>
+                                </div>
+                                {% elif quote.policy_features.out_hospital_benefit is not None %}
+                                <div class="feature-item">
+                                    <span class="feature-label">Out-of-Hospital Benefit:</span>
+                                    <span class="feature-value">{% if quote.policy_features.out_hospital_benefit %}Included{% else %}Not Included{% endif %}</span>
                                 </div>
                                 {% endif %}
                                 {% if quote.policy_features.ambulance_coverage is not None %}
@@ -526,16 +575,10 @@
                                     <span class="feature-value">{% if quote.policy_features.ambulance_coverage %}Included{% else %}Not Included{% endif %}</span>
                                 </div>
                                 {% endif %}
-                                {% if quote.policy_features.in_hospital_benefit is not None %}
+                                {% if quote.policy_features.chronic_medication_availability is not None %}
                                 <div class="feature-item">
-                                    <span class="feature-label">In-Hospital Benefit:</span>
-                                    <span class="feature-value">{% if quote.policy_features.in_hospital_benefit %}Included{% else %}Not Included{% endif %}</span>
-                                </div>
-                                {% endif %}
-                                {% if quote.policy_features.out_hospital_benefit is not None %}
-                                <div class="feature-item">
-                                    <span class="feature-label">Out-of-Hospital Benefit:</span>
-                                    <span class="feature-value">{% if quote.policy_features.out_hospital_benefit %}Included{% else %}Not Included{% endif %}</span>
+                                    <span class="feature-label">Chronic Medication:</span>
+                                    <span class="feature-value">{% if quote.policy_features.chronic_medication_availability %}Available{% else %}Not Available{% endif %}</span>
                                 </div>
                                 {% endif %}
                             </div>
@@ -560,7 +603,7 @@
 
                         {% if quote.match_score %}
                         <div class="text-center mt-2">
-                            <small class="text-muted">{{ quote.match_score }}% match</small>
+                            <small class="text-muted">{{ quote.match_score }}% match based on benefit levels & ranges</small>
                         </div>
                         {% endif %}
                     </div>
@@ -572,9 +615,25 @@
             <div class="text-center mt-5">
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
-                        <h3>Need Help Choosing?</h3>
-                        <p>Our insurance experts are standing by to help you understand your options and choose the best
-                            policy for your needs.</p>
+                        <h3>Need Help Understanding Your Matches?</h3>
+                        <p>Our insurance experts can explain how our enhanced benefit-level matching works and help you understand why these policies are recommended for your specific coverage needs and budget ranges.</p>
+                        <div class="alert alert-light" style="border: 2px solid #269523; border-radius: 15px; margin-bottom: 30px;">
+                            <div class="row align-items-center">
+                                <div class="col-md-8 text-md-start">
+                                    <h6 style="color: #269523; font-weight: 700; margin-bottom: 5px;">
+                                        <i class="bi bi-lightbulb me-2"></i>How Our Enhanced Matching Works
+                                    </h6>
+                                    <p class="mb-0" style="font-size: 0.95rem;">
+                                        Instead of simple yes/no questions, we now match policies based on 5 benefit levels (from Basic to Comprehensive) and specific coverage ranges, giving you more precise recommendations.
+                                    </p>
+                                </div>
+                                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                    <a href="{% url 'simple_surveys:feature_survey' category=category %}" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrow-right me-2"></i>Try Feature Survey
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                         <a href="tel:0800266727" class="btn btn-primary btn-lg me-3">
                             <i class="bi bi-telephone me-2"></i>Call 0800-COMPARE
                         </a>

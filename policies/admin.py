@@ -30,11 +30,15 @@ class PolicyFeaturesInline(admin.StackedInline):
         # Health Policy Features
         'annual_limit_per_member',
         'annual_limit_per_family',
+        'annual_limit_family_range',
+        'annual_limit_member_range',
         'monthly_household_income',
         'currently_on_medical_aid',
         'ambulance_coverage',
         'in_hospital_benefit',
+        'in_hospital_benefit_level',
         'out_hospital_benefit',
+        'out_hospital_benefit_level',
         'chronic_medication_availability',
         # Funeral Policy Features
         'cover_amount',
@@ -541,11 +545,15 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             'fields': (
                 'annual_limit_per_member',
                 'annual_limit_per_family',
+                'annual_limit_family_range',
+                'annual_limit_member_range',
                 'monthly_household_income',
                 'currently_on_medical_aid',
                 'ambulance_coverage',
                 'in_hospital_benefit',
+                'in_hospital_benefit_level',
                 'out_hospital_benefit',
+                'out_hospital_benefit_level',
                 'chronic_medication_availability'
             ),
             'description': _('Features specific to health/medical insurance policies. Only fill these if insurance type is Health.'),
@@ -605,15 +613,19 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             features = [
                 obj.annual_limit_per_member,
                 obj.annual_limit_per_family,
+                obj.annual_limit_family_range,
+                obj.annual_limit_member_range,
                 obj.monthly_household_income,
                 obj.currently_on_medical_aid,
                 obj.ambulance_coverage,
                 obj.in_hospital_benefit,
+                obj.in_hospital_benefit_level,
                 obj.out_hospital_benefit,
+                obj.out_hospital_benefit_level,
                 obj.chronic_medication_availability
             ]
             filled = sum(1 for f in features if f is not None)
-            return f"💊 {filled}/8 features"
+            return f"💊 {filled}/12 features"
         elif obj.insurance_type == 'FUNERAL':
             features = [
                 obj.cover_amount,
@@ -651,11 +663,15 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             health_features = [
                 ('annual_limit_per_member', obj.annual_limit_per_member),
                 ('annual_limit_per_family', obj.annual_limit_per_family),
+                ('annual_limit_family_range', obj.annual_limit_family_range),
+                ('annual_limit_member_range', obj.annual_limit_member_range),
                 ('monthly_household_income', obj.monthly_household_income),
                 ('currently_on_medical_aid', obj.currently_on_medical_aid),
                 ('ambulance_coverage', obj.ambulance_coverage),
                 ('in_hospital_benefit', obj.in_hospital_benefit),
+                ('in_hospital_benefit_level', obj.in_hospital_benefit_level),
                 ('out_hospital_benefit', obj.out_hospital_benefit),
+                ('out_hospital_benefit_level', obj.out_hospital_benefit_level),
                 ('chronic_medication_availability', obj.chronic_medication_availability)
             ]
             
@@ -693,11 +709,15 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             health_features = [
                 ('annual_limit_per_member', obj.annual_limit_per_member),
                 ('annual_limit_per_family', obj.annual_limit_per_family),
+                ('annual_limit_family_range', obj.annual_limit_family_range),
+                ('annual_limit_member_range', obj.annual_limit_member_range),
                 ('monthly_household_income', obj.monthly_household_income),
                 ('currently_on_medical_aid', obj.currently_on_medical_aid),
                 ('ambulance_coverage', obj.ambulance_coverage),
                 ('in_hospital_benefit', obj.in_hospital_benefit),
+                ('in_hospital_benefit_level', obj.in_hospital_benefit_level),
                 ('out_hospital_benefit', obj.out_hospital_benefit),
+                ('out_hospital_benefit_level', obj.out_hospital_benefit_level),
                 ('chronic_medication_availability', obj.chronic_medication_availability)
             ]
             filled_health = [name for name, value in health_features if value is not None]
@@ -762,11 +782,15 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
                 # Clear health features
                 obj.annual_limit_per_member = None
                 obj.annual_limit_per_family = None
+                obj.annual_limit_family_range = None
+                obj.annual_limit_member_range = None
                 obj.monthly_household_income = None
                 obj.currently_on_medical_aid = None
                 obj.ambulance_coverage = None
                 obj.in_hospital_benefit = None
+                obj.in_hospital_benefit_level = None
                 obj.out_hospital_benefit = None
+                obj.out_hospital_benefit_level = None
                 obj.chronic_medication_availability = None
                 obj.save()
                 updated_count += 1
@@ -793,11 +817,15 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
                     'insurance_type': template.insurance_type,
                     'annual_limit_per_member': template.annual_limit_per_member,
                     'annual_limit_per_family': template.annual_limit_per_family,
+                    'annual_limit_family_range': template.annual_limit_family_range,
+                    'annual_limit_member_range': template.annual_limit_member_range,
                     'monthly_household_income': template.monthly_household_income,
                     'currently_on_medical_aid': template.currently_on_medical_aid,
                     'ambulance_coverage': template.ambulance_coverage,
                     'in_hospital_benefit': template.in_hospital_benefit,
+                    'in_hospital_benefit_level': template.in_hospital_benefit_level,
                     'out_hospital_benefit': template.out_hospital_benefit,
+                    'out_hospital_benefit_level': template.out_hospital_benefit_level,
                     'chronic_medication_availability': template.chronic_medication_availability,
                     'cover_amount': template.cover_amount,
                     'marital_status_requirement': template.marital_status_requirement,

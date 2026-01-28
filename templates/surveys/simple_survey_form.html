@@ -458,11 +458,18 @@
                             <option value="">Select an option...</option>
                             {% for choice in question.choices %}
                                 <option value="{{ choice.0 }}" 
-                                        {% if existing_responses|get_item:question.field_name == choice.0 %}selected{% endif %}>
+                                        {% if existing_responses|get_item:question.field_name == choice.0 %}selected{% endif %}
+                                        {% if choice.2 %}title="{{ choice.2 }}"{% endif %}>
                                     {{ choice.1 }}
                                 </option>
                             {% endfor %}
                         </select>
+                        {% if question.field_name == 'annual_limit_family_range' or question.field_name == 'annual_limit_member_range' %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Choose a range that matches your expected medical expenses. If unsure, select "Not sure / Need guidance" for personalized recommendations.
+                            </div>
+                        {% endif %}
                     
                     {% elif question.input_type == 'radio' %}
                         <div class="radio-group">
@@ -476,7 +483,10 @@
                                            {% if existing_responses|get_item:question.field_name == choice.0 %}checked{% endif %}
                                            {% if question.is_required %}required{% endif %}>
                                     <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
-                                        {{ choice.1 }}
+                                        <strong>{{ choice.1 }}</strong>
+                                        {% if choice.2 %}
+                                            <br><small class="text-muted">{{ choice.2 }}</small>
+                                        {% endif %}
                                     </label>
                                 </div>
                             {% endfor %}

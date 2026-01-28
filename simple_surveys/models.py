@@ -5,6 +5,49 @@ from datetime import timedelta
 import json
 
 
+# Benefit Level Configuration Constants
+
+HOSPITAL_BENEFIT_CHOICES = [
+    ('no_cover', 'No hospital cover', 'I do not need cover for hospital admission'),
+    ('basic', 'Basic hospital care', 'Covers admission and standard hospital treatment'),
+    ('moderate', 'Moderate hospital care', 'Covers admission, procedures, and specialist treatment'),
+    ('extensive', 'Extensive hospital care', 'Covers most hospital needs, including major procedures'),
+    ('comprehensive', 'Comprehensive hospital care', 'Covers all hospital-related treatment and services'),
+]
+
+OUT_HOSPITAL_BENEFIT_CHOICES = [
+    ('no_cover', 'No out-of-hospital cover', 'No cover for day-to-day medical care'),
+    ('basic_visits', 'Basic clinic visits', 'Covers GP/clinic visits only'),
+    ('routine_care', 'Routine medical care', 'Covers GP visits and basic medication'),
+    ('extended_care', 'Extended medical care', 'Covers GP visits, specialists, and diagnostics'),
+    ('comprehensive_care', 'Comprehensive day-to-day care', 'Covers most medical needs outside hospital, including chronic care'),
+]
+
+ANNUAL_LIMIT_FAMILY_RANGES = [
+    ('10k-50k', 'R10,000 - R50,000', 'Basic family coverage for routine medical needs'),
+    ('50k-100k', 'R50,001 - R100,000', 'Standard family coverage for most medical situations'),
+    ('100k-250k', 'R100,001 - R250,000', 'Enhanced family coverage including specialist care'),
+    ('250k-500k', 'R250,001 - R500,000', 'Comprehensive family coverage for major medical needs'),
+    ('500k-1m', 'R500,001 - R1,000,000', 'Premium family coverage for extensive medical care'),
+    ('1m-2m', 'R1,000,001 - R2,000,000', 'High-end family coverage for complex medical needs'),
+    ('2m-5m', 'R2,000,001 - R5,000,000', 'Luxury family coverage for all medical scenarios'),
+    ('5m-plus', 'R5,000,001+', 'Unlimited family coverage preferred'),
+    ('not_sure', 'Not sure / Need guidance', 'Help me choose based on my situation'),
+]
+
+ANNUAL_LIMIT_MEMBER_RANGES = [
+    ('10k-25k', 'R10,000 - R25,000', 'Basic individual coverage for routine care'),
+    ('25k-50k', 'R25,001 - R50,000', 'Standard individual coverage for most needs'),
+    ('50k-100k', 'R50,001 - R100,000', 'Enhanced individual coverage including specialists'),
+    ('100k-200k', 'R100,001 - R200,000', 'Comprehensive individual coverage for major needs'),
+    ('200k-500k', 'R200,001 - R500,000', 'Premium individual coverage for extensive care'),
+    ('500k-1m', 'R500,001 - R1,000,000', 'High-end individual coverage for complex needs'),
+    ('1m-2m', 'R1,000,001 - R2,000,000', 'Luxury individual coverage for all scenarios'),
+    ('2m-plus', 'R2,000,001+', 'Unlimited individual coverage preferred'),
+    ('not_sure', 'Not sure / Need guidance', 'Help me choose based on my situation'),
+]
+
+
 class SimpleSurveyQuestionManager(models.Manager):
     """Manager for SimpleSurveyQuestion with common queries"""
     
@@ -386,30 +429,49 @@ class SimpleSurvey(models.Model):
         blank=True,
         help_text="Monthly household income"
     )
-    currently_on_medical_aid = models.BooleanField(
-        null=True,
-        blank=True,
-        help_text="Are you currently on medical aid?"
-    )
     wants_ambulance_coverage = models.BooleanField(
         null=True,
         blank=True,
         help_text="Do you want ambulance coverage?"
     )
-    wants_in_hospital_benefit = models.BooleanField(
-        null=True,
-        blank=True,
-        help_text="Do you want in-hospital benefits?"
-    )
-    wants_out_hospital_benefit = models.BooleanField(
-        null=True,
-        blank=True,
-        help_text="Do you want out-of-hospital benefits?"
-    )
     needs_chronic_medication = models.BooleanField(
         null=True,
         blank=True,
         help_text="Do you need chronic medication coverage?"
+    )
+    
+    # New benefit level fields (replacing boolean fields)
+    in_hospital_benefit_level = models.CharField(
+        max_length=50,
+        choices=[(choice[0], choice[1]) for choice in HOSPITAL_BENEFIT_CHOICES],
+        null=True,
+        blank=True,
+        help_text="Level of in-hospital coverage needed"
+    )
+    
+    out_hospital_benefit_level = models.CharField(
+        max_length=50,
+        choices=[(choice[0], choice[1]) for choice in OUT_HOSPITAL_BENEFIT_CHOICES],
+        null=True,
+        blank=True,
+        help_text="Level of out-of-hospital coverage needed"
+    )
+    
+    # New range fields for annual limits
+    annual_limit_family_range = models.CharField(
+        max_length=50,
+        choices=[(choice[0], choice[1]) for choice in ANNUAL_LIMIT_FAMILY_RANGES],
+        null=True,
+        blank=True,
+        help_text="Preferred annual limit range per family"
+    )
+    
+    annual_limit_member_range = models.CharField(
+        max_length=50,
+        choices=[(choice[0], choice[1]) for choice in ANNUAL_LIMIT_MEMBER_RANGES],
+        null=True,
+        blank=True,
+        help_text="Preferred annual limit range per member"
     )
     
     # Funeral Policy Preferences (from Docs/features.md)
@@ -455,27 +517,45 @@ class SimpleSurvey(models.Model):
         
         # Validate health policy fields
         if self.insurance_type == self.InsuranceType.HEALTH:
-            if self.preferred_annual_limit_per_family is None:
-                errors['preferred_annual_limit_per_family'] = 'Annual limit per family preference is required for health policies'
-            elif self.preferred_annual_limit_per_family <= 0:
-                errors['preferred_annual_limit_per_family'] = 'Annual limit per family must be greater than 0'
-                
             if self.household_income is None:
                 errors['household_income'] = 'Household income is required for health policies'
             elif self.household_income <= 0:
                 errors['household_income'] = 'Household income must be greater than 0'
                 
-            if self.currently_on_medical_aid is None:
-                errors['currently_on_medical_aid'] = 'Medical aid status is required for health policies'
-                
             if self.wants_ambulance_coverage is None:
                 errors['wants_ambulance_coverage'] = 'Ambulance coverage preference is required for health policies'
                 
-            if self.wants_in_hospital_benefit is None:
-                errors['wants_in_hospital_benefit'] = 'In-hospital benefit preference is required for health policies'
+            if self.in_hospital_benefit_level is None:
+                errors['in_hospital_benefit_level'] = 'In-hospital benefit level is required for health policies'
+            else:
+                # Validate that the selected benefit level is a valid choice
+                valid_choices = [choice[0] for choice in HOSPITAL_BENEFIT_CHOICES]
+                if self.in_hospital_benefit_level not in valid_choices:
+                    errors['in_hospital_benefit_level'] = 'Please select a valid in-hospital benefit level'
                 
-            if self.wants_out_hospital_benefit is None:
-                errors['wants_out_hospital_benefit'] = 'Out-of-hospital benefit preference is required for health policies'
+            if self.out_hospital_benefit_level is None:
+                errors['out_hospital_benefit_level'] = 'Out-of-hospital benefit level is required for health policies'
+            else:
+                # Validate that the selected benefit level is a valid choice
+                valid_choices = [choice[0] for choice in OUT_HOSPITAL_BENEFIT_CHOICES]
+                if self.out_hospital_benefit_level not in valid_choices:
+                    errors['out_hospital_benefit_level'] = 'Please select a valid out-of-hospital benefit level'
+                
+            if self.annual_limit_family_range is None:
+                errors['annual_limit_family_range'] = 'Annual limit family range is required for health policies'
+            else:
+                # Validate that the selected range is a valid choice
+                valid_choices = [choice[0] for choice in ANNUAL_LIMIT_FAMILY_RANGES]
+                if self.annual_limit_family_range not in valid_choices:
+                    errors['annual_limit_family_range'] = 'Please select a valid annual limit family range'
+                
+            if self.annual_limit_member_range is None:
+                errors['annual_limit_member_range'] = 'Annual limit member range is required for health policies'
+            else:
+                # Validate that the selected range is a valid choice
+                valid_choices = [choice[0] for choice in ANNUAL_LIMIT_MEMBER_RANGES]
+                if self.annual_limit_member_range not in valid_choices:
+                    errors['annual_limit_member_range'] = 'Please select a valid annual limit member range'
                 
             if self.needs_chronic_medication is None:
                 errors['needs_chronic_medication'] = 'Chronic medication preference is required for health policies'
@@ -501,11 +581,12 @@ class SimpleSurvey(models.Model):
         if self.insurance_type == self.InsuranceType.HEALTH:
             return {
                 'annual_limit_per_family': self.preferred_annual_limit_per_family,
+                'annual_limit_family_range': self.annual_limit_family_range,
+                'annual_limit_member_range': self.annual_limit_member_range,
                 'monthly_household_income': self.household_income,
-                'currently_on_medical_aid': self.currently_on_medical_aid,
                 'ambulance_coverage': self.wants_ambulance_coverage,
-                'in_hospital_benefit': self.wants_in_hospital_benefit,
-                'out_hospital_benefit': self.wants_out_hospital_benefit,
+                'in_hospital_benefit_level': self.in_hospital_benefit_level,
+                'out_hospital_benefit_level': self.out_hospital_benefit_level,
                 'chronic_medication_availability': self.needs_chronic_medication,
             }
         elif self.insurance_type == self.InsuranceType.FUNERAL:
@@ -526,8 +607,42 @@ class SimpleSurvey(models.Model):
     
     def get_missing_fields(self):
         """Get list of missing required fields for the insurance type."""
-        try:
-            self.clean()
-            return []
-        except ValidationError as e:
-            return list(e.message_dict.keys()) if hasattr(e, 'message_dict') else []
+        missing_fields = []
+        
+        # Common required fields
+        if not self.first_name:
+            missing_fields.append('first_name')
+        if not self.last_name:
+            missing_fields.append('last_name')
+        if not self.date_of_birth:
+            missing_fields.append('date_of_birth')
+        if not self.insurance_type:
+            missing_fields.append('insurance_type')
+        
+        # Health policy required fields
+        if self.insurance_type == self.InsuranceType.HEALTH:
+            if self.household_income is None:
+                missing_fields.append('household_income')
+            if self.wants_ambulance_coverage is None:
+                missing_fields.append('wants_ambulance_coverage')
+            if self.in_hospital_benefit_level is None:
+                missing_fields.append('in_hospital_benefit_level')
+            if self.out_hospital_benefit_level is None:
+                missing_fields.append('out_hospital_benefit_level')
+            if self.annual_limit_family_range is None:
+                missing_fields.append('annual_limit_family_range')
+            if self.annual_limit_member_range is None:
+                missing_fields.append('annual_limit_member_range')
+            if self.needs_chronic_medication is None:
+                missing_fields.append('needs_chronic_medication')
+        
+        # Funeral policy required fields
+        elif self.insurance_type == self.InsuranceType.FUNERAL:
+            if self.preferred_cover_amount is None:
+                missing_fields.append('preferred_cover_amount')
+            if not self.marital_status:
+                missing_fields.append('marital_status')
+            if not self.gender:
+                missing_fields.append('gender')
+        
+        return missing_fields
