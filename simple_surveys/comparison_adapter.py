@@ -875,7 +875,7 @@ class SimplifiedPolicyComparisonEngine(PolicyComparisonEngine):
         # Use base policy model with minimal prefetching
         policies = BasePolicy.objects.filter(**base_query).select_related(
             'organization', 'category', 'policy_type'
-        ).prefetch_related('features')
+        ).prefetch_related('policy_features')
         
         return list(policies)
     

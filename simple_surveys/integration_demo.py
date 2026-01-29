@@ -33,7 +33,7 @@ def demonstrate_integration():
     # Simulate survey responses
     sample_health_responses = {
         'age': 35,
-        'location': 'gauteng',
+        'location': 'hhohho',
         'family_size': 3,
         'health_status': 'good',
         'chronic_conditions': ['none'],

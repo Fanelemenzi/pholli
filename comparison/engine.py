@@ -163,7 +163,6 @@ class PolicyComparisonEngine:
                 'health_benefits',
                 'hospital_networks',
                 'chronic_conditions',
-                'features',
                 'reviews'
             )
         # elif self.category_slug == 'life':
@@ -173,7 +172,6 @@ class PolicyComparisonEngine:
         #         'coverage_tiers',
         #         'critical_illnesses',
         #         'riders',
-        #         'features',
         #         'reviews'
         #     )
         elif self.category_slug == 'funeral':
@@ -183,14 +181,13 @@ class PolicyComparisonEngine:
                 'family_tiers',
                 'service_providers',
                 'additional_benefits',
-                'features',
                 'reviews'
             )
         else:
             # Fallback to base policies
             policies = BasePolicy.objects.filter(**base_query).select_related(
-                'organization', 'category', 'policy_type'
-            ).prefetch_related('features', 'reviews')
+                'organization', 'category', 'policy_type', 'policy_features'
+            ).prefetch_related('additional_features', 'reviews')
         
         return list(policies)
     

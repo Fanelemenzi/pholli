@@ -45,8 +45,8 @@ The system supports 5 input types for collecting user responses:
 ```html
 <select class="form-select" name="field_name" required>
     <option value="">Select an option...</option>
-    <option value="gauteng">Gauteng</option>
-    <option value="western_cape">Western Cape</option>
+    <option value="hhohho">Hhohho</option>
+    <option value="manzini">Manzini</option>
 </select>
 ```
 - Used for: Location selection, single-choice options

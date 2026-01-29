@@ -427,10 +427,10 @@ function processSurvey() {
 ### Location Processing
 
 ```python
-# Input: User selects "gauteng"
-# Validation: Check value is in province list
+# Input: User selects "hhohho"
+# Validation: Check value is in region list
 # Conversion: String remains as-is
-# Usage: Filter policies available in Gauteng
+# Usage: Filter policies available in Hhohho
 # Scoring:
 #   - Policy available in location: 100%
 #   - Policy not available: 0% (filtered out)

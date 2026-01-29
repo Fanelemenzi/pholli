@@ -21,19 +21,14 @@
     "pk": 2,
     "fields": {
       "category": "health",
-      "question_text": "Which province are you located in?",
+      "question_text": "Which region are you located in?",
       "field_name": "location",
       "input_type": "select",
       "choices": [
-        ["gauteng", "Gauteng"],
-        ["western_cape", "Western Cape"],
-        ["kwazulu_natal", "KwaZulu-Natal"],
-        ["eastern_cape", "Eastern Cape"],
-        ["free_state", "Free State"],
-        ["limpopo", "Limpopo"],
-        ["mpumalanga", "Mpumalanga"],
-        ["north_west", "North West"],
-        ["northern_cape", "Northern Cape"]
+        ["hhohho", "Hhohho"],
+        ["manzini", "Manzini"],
+        ["shiselweni", "Shiselweni"],
+        ["lubombo", "Lubombo"]
       ],
       "is_required": true,
       "display_order": 2,

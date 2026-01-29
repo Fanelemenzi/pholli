@@ -220,7 +220,7 @@ class ModelIntegrationTest(TestCase):
             input_type='select',
             display_order=2,
             is_required=True,
-            choices=['Western Cape', 'Gauteng', 'KwaZulu-Natal']
+            choices=['Hhohho', 'Manzini', 'Shiselweni', 'Lubombo']
         )
         
         # Create session
@@ -250,7 +250,7 @@ class ModelIntegrationTest(TestCase):
             session_key=self.session.session_key,
             category='health',
             question=self.location_question,
-            response_value='Western Cape'
+            response_value='Hhohho'
         )
         
         # Should be 100% complete
@@ -271,10 +271,10 @@ class ModelIntegrationTest(TestCase):
         self.assertGreater(len(invalid_errors), 0)
         
         # Test select question validation
-        valid_location_errors = self.location_question.validate_response('Western Cape')
+        valid_location_errors = self.location_question.validate_response('Hhohho')
         self.assertEqual(len(valid_location_errors), 0)
         
-        invalid_location_errors = self.location_question.validate_response('Invalid Province')
+        invalid_location_errors = self.location_question.validate_response('Invalid Region')
         self.assertGreater(len(invalid_location_errors), 0)
 
 
@@ -300,9 +300,10 @@ class QuestionValidationDetailedTest(TestCase):
             field_name='location',
             input_type='select',
             choices=[
-                ['gauteng', 'Gauteng'],
-                ['western_cape', 'Western Cape'],
-                ['kwazulu_natal', 'KwaZulu-Natal']
+                ['hhohho', 'Hhohho'],
+                ['manzini', 'Manzini'],
+                ['shiselweni', 'Shiselweni'],
+                ['lubombo', 'Lubombo']
             ],
             display_order=2
         )
@@ -373,11 +374,11 @@ class QuestionValidationDetailedTest(TestCase):
     def test_select_validation_comprehensive(self):
         """Test comprehensive select validation scenarios"""
         # Valid cases
-        self.assertEqual(self.location_question.validate_response('gauteng'), [])
-        self.assertEqual(self.location_question.validate_response('western_cape'), [])
+        self.assertEqual(self.location_question.validate_response('hhohho'), [])
+        self.assertEqual(self.location_question.validate_response('manzini'), [])
 
         # Invalid cases
-        errors = self.location_question.validate_response('invalid_province')
+        errors = self.location_question.validate_response('invalid_region')
         self.assertIn('Please select a valid option', errors)
         
         errors = self.location_question.validate_response('')
@@ -457,9 +458,10 @@ class QuestionValidationDetailedTest(TestCase):
         # List format (standard)
         choices = self.location_question.get_choices_list()
         expected = [
-            ['gauteng', 'Gauteng'],
-            ['western_cape', 'Western Cape'],
-            ['kwazulu_natal', 'KwaZulu-Natal']
+            ['hhohho', 'Hhohho'],
+            ['manzini', 'Manzini'],
+            ['shiselweni', 'Shiselweni'],
+            ['lubombo', 'Lubombo']
         ]
         self.assertEqual(choices, expected)
 
@@ -469,7 +471,7 @@ class QuestionValidationDetailedTest(TestCase):
         self.assertEqual(choices, [])
 
         # Dict format (should convert to list of items)
-        self.location_question.choices = {'gauteng': 'Gauteng', 'western_cape': 'Western Cape'}
+        self.location_question.choices = {'hhohho': 'Hhohho', 'manzini': 'Manzini'}
         choices = self.location_question.get_choices_list()
         self.assertIsInstance(choices, list)
         self.assertEqual(len(choices), 2)
@@ -557,9 +559,9 @@ class SimpleSurveyEngineTest(TestCase):
             display_order=2,
             is_required=True,
             choices=[
-                ['western_cape', 'Western Cape'],
-                ['gauteng', 'Gauteng'],
-                ['kwazulu_natal', 'KwaZulu-Natal']
+                ['hhohho', 'Hhohho'],
+                ['manzini', 'Manzini'],
+                ['shiselweni', 'Shiselweni']
             ]
         )
         
@@ -644,10 +646,10 @@ class SimpleSurveyEngineTest(TestCase):
         self.assertEqual(result['cleaned_value'], 25)
         
         # Valid select response
-        result = self.engine.validate_response(self.location_question.id, 'western_cape')
+        result = self.engine.validate_response(self.location_question.id, 'hhohho')
         self.assertTrue(result['is_valid'])
         self.assertEqual(result['errors'], [])
-        self.assertEqual(result['cleaned_value'], 'western_cape')
+        self.assertEqual(result['cleaned_value'], 'hhohho')
         
         # Valid checkbox response
         result = self.engine.validate_response(self.conditions_question.id, ['diabetes', 'hypertension'])
@@ -663,7 +665,7 @@ class SimpleSurveyEngineTest(TestCase):
         self.assertIn('Value must be at least 18', result['errors'])
         
         # Invalid select option
-        result = self.engine.validate_response(self.location_question.id, 'invalid_province')
+        result = self.engine.validate_response(self.location_question.id, 'invalid_region')
         self.assertFalse(result['is_valid'])
         self.assertIn('Please select a valid option', result['errors'])
         
@@ -712,8 +714,8 @@ class SimpleSurveyEngineTest(TestCase):
     def test_clean_response_value_text(self):
         """Test response value cleaning for text inputs"""
         # String with whitespace
-        cleaned = self.engine._clean_response_value(self.location_question, '  western_cape  ')
-        self.assertEqual(cleaned, 'western_cape')
+        cleaned = self.engine._clean_response_value(self.location_question, '  hhohho  ')
+        self.assertEqual(cleaned, 'hhohho')
     
     def test_save_response_success(self):
         """Test successful response saving"""
@@ -767,7 +769,7 @@ class SimpleSurveyEngineTest(TestCase):
         """Test retrieving session responses"""
         # Save some responses
         self.engine.save_response(self.session_key, self.age_question.id, 30)
-        self.engine.save_response(self.session_key, self.location_question.id, 'western_cape')
+        self.engine.save_response(self.session_key, self.location_question.id, 'hhohho')
         
         session_data = self.engine.get_session_responses(self.session_key)
         
@@ -780,20 +782,20 @@ class SimpleSurveyEngineTest(TestCase):
         self.assertIn('location', responses)
         
         self.assertEqual(responses['age']['value'], 30)
-        self.assertEqual(responses['location']['value'], 'western_cape')
+        self.assertEqual(responses['location']['value'], 'hhohho')
     
     def test_process_responses(self):
         """Test processing responses into quotation criteria"""
         # Save responses
         self.engine.save_response(self.session_key, self.age_question.id, 30)
-        self.engine.save_response(self.session_key, self.location_question.id, 'western_cape')
+        self.engine.save_response(self.session_key, self.location_question.id, 'hhohho')
         self.engine.save_response(self.session_key, self.conditions_question.id, ['diabetes'])
         
         criteria = self.engine.process_responses(self.session_key)
         
         # Check criteria content
         self.assertEqual(criteria['age'], 30)
-        self.assertEqual(criteria['location'], 'western_cape')
+        self.assertEqual(criteria['location'], 'hhohho')
         self.assertEqual(criteria['chronic_conditions'], ['diabetes'])
         
         # Check metadata
@@ -814,7 +816,7 @@ class SimpleSurveyEngineTest(TestCase):
         self.assertFalse(self.engine.is_survey_complete(self.session_key))
         
         # Answer second required question (now complete)
-        self.engine.save_response(self.session_key, self.location_question.id, 'western_cape')
+        self.engine.save_response(self.session_key, self.location_question.id, 'hhohho')
         self.assertTrue(self.engine.is_survey_complete(self.session_key))
         
         # Answer optional question (still complete)
@@ -845,7 +847,7 @@ class SimpleSurveyEngineTest(TestCase):
         self.assertFalse(status['is_complete'])
         
         # Answer second required question
-        self.engine.save_response(self.session_key, self.location_question.id, 'western_cape')
+        self.engine.save_response(self.session_key, self.location_question.id, 'hhohho')
         status = self.engine.get_completion_status(self.session_key)
         
         self.assertEqual(status['answered_total'], 2)
@@ -1110,7 +1112,7 @@ class SimpleSurveyEngineIntegrationTest(TestCase):
         # Simulate user completing survey
         responses = {
             'age': 35,
-            'location': 'western_cape',
+            'location': 'hhohho',
             'family_size': 2,
             'health_status': 'good',
             'chronic_conditions': ['none'],

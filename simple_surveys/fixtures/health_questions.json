@@ -21,19 +21,26 @@
     "pk": 2,
     "fields": {
       "category": "health",
-      "question_text": "Which province are you located in?",
+      "question_text": "Which region are you located in?",
       "field_name": "location",
       "input_type": "select",
       "choices": [
-        ["gauteng", "Gauteng"],
-        ["western_cape", "Western Cape"],
-        ["kwazulu_natal", "KwaZulu-Natal"],
-        ["eastern_cape", "Eastern Cape"],
-        ["free_state", "Free State"],
-        ["limpopo", "Limpopo"],
-        ["mpumalanga", "Mpumalanga"],
-        ["north_west", "North West"],
-        ["northern_cape", "Northern Cape"]
+        [
+          "hhohho",
+          "Hhohho"
+        ],
+        [
+          "manzini",
+          "Manzini"
+        ],
+        [
+          "shiselweni",
+          "Shiselweni"
+        ],
+        [
+          "lubombo",
+          "Lubombo"
+        ]
       ],
       "is_required": true,
       "display_order": 2,
@@ -66,10 +73,22 @@
       "field_name": "health_status",
       "input_type": "radio",
       "choices": [
-        ["excellent", "Excellent"],
-        ["good", "Good"],
-        ["fair", "Fair"],
-        ["poor", "Poor"]
+        [
+          "excellent",
+          "Excellent"
+        ],
+        [
+          "good",
+          "Good"
+        ],
+        [
+          "fair",
+          "Fair"
+        ],
+        [
+          "poor",
+          "Poor"
+        ]
       ],
       "is_required": true,
       "display_order": 4,
@@ -85,11 +104,26 @@
       "field_name": "chronic_conditions",
       "input_type": "checkbox",
       "choices": [
-        ["diabetes", "Diabetes"],
-        ["hypertension", "High Blood Pressure"],
-        ["heart_disease", "Heart Disease"],
-        ["asthma", "Asthma"],
-        ["none", "None of the above"]
+        [
+          "diabetes",
+          "Diabetes"
+        ],
+        [
+          "hypertension",
+          "High Blood Pressure"
+        ],
+        [
+          "heart_disease",
+          "Heart Disease"
+        ],
+        [
+          "asthma",
+          "Asthma"
+        ],
+        [
+          "none",
+          "None of the above"
+        ]
       ],
       "is_required": true,
       "display_order": 5,
@@ -105,9 +139,18 @@
       "field_name": "coverage_priority",
       "input_type": "radio",
       "choices": [
-        ["hospital", "Hospital Cover"],
-        ["day_to_day", "Day-to-day Medical Expenses"],
-        ["comprehensive", "Comprehensive Coverage"]
+        [
+          "hospital",
+          "Hospital Cover"
+        ],
+        [
+          "day_to_day",
+          "Day-to-day Medical Expenses"
+        ],
+        [
+          "comprehensive",
+          "Comprehensive Coverage"
+        ]
       ],
       "is_required": true,
       "display_order": 6,
@@ -140,10 +183,22 @@
       "field_name": "preferred_deductible",
       "input_type": "radio",
       "choices": [
-        ["none", "No Deductible"],
-        ["1000", "R1,000"],
-        ["2500", "R2,500"],
-        ["5000", "R5,000"]
+        [
+          "none",
+          "No Deductible"
+        ],
+        [
+          "1000",
+          "R1,000"
+        ],
+        [
+          "2500",
+          "R2,500"
+        ],
+        [
+          "5000",
+          "R5,000"
+        ]
       ],
       "is_required": true,
       "display_order": 8,

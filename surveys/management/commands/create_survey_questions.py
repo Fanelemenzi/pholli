@@ -72,19 +72,14 @@ class Command(BaseCommand):
             },
             {
                 'section': 'Personal Information',
-                'question_text': 'Which province do you live in?',
+                'question_text': 'Which region do you live in?',
                 'question_type': SurveyQuestion.QuestionType.CHOICE,
                 'field_name': 'location',
                 'choices': [
-                    {'value': 'gauteng', 'text': 'Gauteng'},
-                    {'value': 'western_cape', 'text': 'Western Cape'},
-                    {'value': 'kwazulu_natal', 'text': 'KwaZulu-Natal'},
-                    {'value': 'eastern_cape', 'text': 'Eastern Cape'},
-                    {'value': 'free_state', 'text': 'Free State'},
-                    {'value': 'limpopo', 'text': 'Limpopo'},
-                    {'value': 'mpumalanga', 'text': 'Mpumalanga'},
-                    {'value': 'north_west', 'text': 'North West'},
-                    {'value': 'northern_cape', 'text': 'Northern Cape'}
+                    {'value': 'hhohho', 'text': 'Hhohho'},
+                    {'value': 'manzini', 'text': 'Manzini'},
+                    {'value': 'shiselweni', 'text': 'Shiselweni'},
+                    {'value': 'lubombo', 'text': 'Lubombo'}
                 ],
                 'weight_impact': 1.0,
                 'help_text': 'Location affects policy availability and regional pricing.',
@@ -197,19 +192,14 @@ class Command(BaseCommand):
             },
             {
                 'section': 'Personal Information',
-                'question_text': 'Which province do you live in?',
+                'question_text': 'Which region do you live in?',
                 'question_type': SurveyQuestion.QuestionType.CHOICE,
                 'field_name': 'location',
                 'choices': [
-                    {'value': 'gauteng', 'text': 'Gauteng'},
-                    {'value': 'western_cape', 'text': 'Western Cape'},
-                    {'value': 'kwazulu_natal', 'text': 'KwaZulu-Natal'},
-                    {'value': 'eastern_cape', 'text': 'Eastern Cape'},
-                    {'value': 'free_state', 'text': 'Free State'},
-                    {'value': 'limpopo', 'text': 'Limpopo'},
-                    {'value': 'mpumalanga', 'text': 'Mpumalanga'},
-                    {'value': 'north_west', 'text': 'North West'},
-                    {'value': 'northern_cape', 'text': 'Northern Cape'}
+                    {'value': 'hhohho', 'text': 'Hhohho'},
+                    {'value': 'manzini', 'text': 'Manzini'},
+                    {'value': 'shiselweni', 'text': 'Shiselweni'},
+                    {'value': 'lubombo', 'text': 'Lubombo'}
                 ],
                 'weight_impact': 1.0,
                 'help_text': 'Location affects service provider availability and regional preferences.',

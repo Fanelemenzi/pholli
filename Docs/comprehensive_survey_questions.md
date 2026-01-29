@@ -28,15 +28,10 @@ The simple survey system collects user responses through targeted questions and 
 - **Type:** Dropdown select
 - **Field Name:** `location`
 - **Options:**
-  - Gauteng
-  - Western Cape
-  - KwaZulu-Natal
-  - Eastern Cape
-  - Free State
-  - Limpopo
-  - Mpumalanga
-  - North West
-  - Northern Cape
+  - Hhohho
+  - Manzini
+  - Shiselweni
+  - Lubombo
 - **Purpose:** Determines policy availability and regional pricing
 - **Impact:** Medium - affects provider networks and costs
 

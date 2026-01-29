@@ -115,8 +115,7 @@ class Command(BaseCommand):
                 'question_type': SurveyQuestion.QuestionType.CHOICE,
                 'field_name': 'province',
                 'choices': [
-                    'Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal',
-                    'Limpopo', 'Mpumalanga', 'Northern Cape', 'North West', 'Western Cape'
+                    'Hhohho', 'Manzini', 'Shiselweni', 'Lubombo'
                 ],
                 'validation_rules': {'required': True},
                 'weight_impact': 1.5,
