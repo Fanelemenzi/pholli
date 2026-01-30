@@ -1,207 +1,331 @@
 from django import forms
-from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from .models import PolicyFeatures, AdditionalFeatures
+from django.core.exceptions import ValidationError
+from .models import PolicyFeatures, AdditionalFeatures, BasePolicy
+
+
+class HealthPolicyFilterForm(forms.Form):
+    """
+    Filter form for health insurance policies.
+    """
+    min_annual_limit = forms.DecimalField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Minimum annual limit'
+        }),
+        label=_('Minimum Annual Limit')
+    )
+    
+    max_income_requirement = forms.DecimalField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Maximum income requirement'
+        }),
+        label=_('Maximum Income Requirement')
+    )
+    
+    in_hospital_benefit = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label=_('In-Hospital Benefit Required')
+    )
+    
+    out_hospital_benefit = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label=_('Out-of-Hospital Benefit Required')
+    )
+    
+    chronic_medication = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        label=_('Chronic Medication Coverage Required')
+    )
+
+
+class FuneralPolicyFilterForm(forms.Form):
+    """
+    Filter form for funeral insurance policies.
+    """
+    min_cover_amount = forms.DecimalField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Minimum cover amount'
+        }),
+        label=_('Minimum Cover Amount')
+    )
+    
+    max_income_requirement = forms.DecimalField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Maximum income requirement'
+        }),
+        label=_('Maximum Income Requirement')
+    )
+    
+    marital_status = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('', _('Any')),
+            ('single', _('Single')),
+            ('married', _('Married')),
+            ('divorced', _('Divorced')),
+            ('widowed', _('Widowed')),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label=_('Marital Status')
+    )
+    
+    gender = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('', _('Any')),
+            ('male', _('Male')),
+            ('female', _('Female')),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label=_('Gender')
+    )
+    
+    max_waiting_period = forms.IntegerField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Maximum waiting period (days)'
+        }),
+        label=_('Maximum Waiting Period (Days)')
+    )
 
 
 class PolicyFeaturesAdminForm(forms.ModelForm):
     """
-    Custom admin form for PolicyFeatures with enhanced validation.
+    Custom admin form for PolicyFeatures with dynamic field visibility
+    based on insurance type.
     """
     
     class Meta:
         model = PolicyFeatures
         fields = '__all__'
         widgets = {
-            'annual_limit_per_member': forms.NumberInput(attrs={
-                'step': '0.01',
-                'min': '0',
-                'placeholder': 'e.g., 50000.00'
+            'insurance_type': forms.Select(attrs={
+                'onchange': 'toggleFeatureFields(this.value)',
+                'class': 'insurance-type-selector'
             }),
-            'monthly_household_income': forms.NumberInput(attrs={
-                'step': '0.01',
-                'min': '0',
-                'placeholder': 'e.g., 5000.00'
-            }),
-            'cover_amount': forms.NumberInput(attrs={
-                'step': '0.01',
-                'min': '0',
-                'placeholder': 'e.g., 25000.00'
-            }),
-            'monthly_net_income': forms.NumberInput(attrs={
-                'step': '0.01',
-                'min': '0',
-                'placeholder': 'e.g., 3000.00'
-            }),
-            'marital_status_requirement': forms.Select(choices=[
-                ('', '--- Select ---'),
-                ('single', 'Single'),
-                ('married', 'Married'),
-                ('divorced', 'Divorced'),
-                ('widowed', 'Widowed'),
-                ('any', 'Any')
-            ]),
-            'gender_requirement': forms.Select(choices=[
-                ('', '--- Select ---'),
-                ('male', 'Male'),
-                ('female', 'Female'),
-                ('any', 'Any')
-            ])
-        }
-        help_texts = {
-            'insurance_type': _('Select the type of insurance. This determines which feature fields are relevant.'),
-            'annual_limit_per_member': _('Maximum annual coverage per family member (Health policies only)'),
-            'monthly_household_income': _('Required monthly household income (Health policies only)'),
-            'in_hospital_benefit': _('Whether in-hospital benefits are included (Health policies only)'),
-            'out_hospital_benefit': _('Whether out-of-hospital benefits are included (Health policies only)'),
-            'chronic_medication_availability': _('Whether chronic medication is covered (Health policies only)'),
-            'cover_amount': _('Total coverage amount for funeral expenses (Funeral policies only)'),
-            'marital_status_requirement': _('Required marital status (Funeral policies only)'),
-            'gender_requirement': _('Required gender (Funeral policies only)'),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Add CSS classes for better styling
-        for field_name, field in self.fields.items():
-            if isinstance(field.widget, forms.NumberInput):
-                field.widget.attrs['class'] = 'form-control'
-            elif isinstance(field.widget, forms.Select):
-                field.widget.attrs['class'] = 'form-control'
-            elif isinstance(field.widget, forms.CheckboxInput):
-                field.widget.attrs['class'] = 'form-check-input'
+        # Add CSS classes for field grouping
+        self._add_field_classes()
         
-        # Set initial insurance type based on policy category if available
-        if self.instance and self.instance.policy_id:
-            policy = self.instance.policy
-            if policy.category.name.lower() in ['health', 'medical']:
-                self.fields['insurance_type'].initial = 'HEALTH'
-            elif policy.category.name.lower() == 'funeral':
-                self.fields['insurance_type'].initial = 'FUNERAL'
+        # Set up field help texts
+        self._setup_help_texts()
+        
+        # If editing existing instance, set up initial visibility
+        if self.instance and self.instance.pk:
+            self._setup_field_visibility()
+    
+    def _add_field_classes(self):
+        """Add CSS classes to group fields by insurance type."""
+        
+        # Health insurance fields
+        health_fields = [
+            'annual_limit_per_member', 'annual_limit_per_family',
+            'annual_limit_family_range', 'annual_limit_member_range',
+            'monthly_household_income', 'currently_on_medical_aid',
+            'ambulance_coverage', 'in_hospital_benefit',
+            'in_hospital_benefit_level', 'out_hospital_benefit',
+            'out_hospital_benefit_level', 'chronic_medication_availability'
+        ]
+        
+        # Funeral insurance fields
+        funeral_fields = [
+            'cover_amount', 'cover_amount_range', 'funeral_service_type',
+            'family_coverage_type', 'max_family_members',
+            'waiting_period_natural_death', 'waiting_period_accidental_death',
+            'includes_coffin', 'includes_transport', 'includes_venue',
+            'includes_catering', 'includes_flowers', 'includes_memorial_service',
+            'repatriation_covered', 'grocery_benefit', 'grocery_benefit_amount',
+            'mourning_clothes_benefit', 'claim_payout_hours',
+            'marital_status_requirement', 'gender_requirement', 'monthly_net_income'
+        ]
+        
+        for field_name in health_fields:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    'class': 'health-field',
+                    'data-insurance-type': 'HEALTH'
+                })
+        
+        for field_name in funeral_fields:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    'class': 'funeral-field',
+                    'data-insurance-type': 'FUNERAL'
+                })
+    
+    def _setup_help_texts(self):
+        """Set up enhanced help texts for better user guidance."""
+        
+        help_texts = {
+            'insurance_type': _('Select the insurance type to show relevant fields. This determines which features are available for configuration.'),
+            
+            # Health fields
+            'annual_limit_family_range': _('Select the annual coverage limit range for the entire family. This is used for matching user preferences.'),
+            'in_hospital_benefit_level': _('Level of in-hospital coverage provided. Higher levels include more comprehensive hospital care.'),
+            'out_hospital_benefit_level': _('Level of out-of-hospital coverage. Includes GP visits, specialists, and day-to-day medical care.'),
+            
+            # Funeral fields
+            'cover_amount_range': _('Select the coverage amount range. This helps users find policies within their budget expectations.'),
+            'funeral_service_type': _('Type of funeral service provided. Basic = essential only, Standard = comprehensive, Premium = luxury service.'),
+            'family_coverage_type': _('Type of family coverage offered. Determines how many and which family members are covered.'),
+            'waiting_period_natural_death': _('Waiting period before natural death claims are covered. Shorter periods are more attractive to customers.'),
+            'includes_coffin': _('Check if a coffin/casket is included in the funeral service package.'),
+            'includes_catering': _('Check if catering for mourners is included in the service.'),
+        }
+        
+        for field_name, help_text in help_texts.items():
+            if field_name in self.fields:
+                self.fields[field_name].help_text = help_text
+    
+    def _setup_field_visibility(self):
+        """Set up field visibility based on current insurance type."""
+        if self.instance.insurance_type == 'HEALTH':
+            # Make health fields required
+            required_health_fields = [
+                'annual_limit_family_range', 'in_hospital_benefit_level',
+                'out_hospital_benefit_level'
+            ]
+            for field_name in required_health_fields:
+                if field_name in self.fields:
+                    self.fields[field_name].required = True
+        
+        elif self.instance.insurance_type == 'FUNERAL':
+            # Make funeral fields required
+            required_funeral_fields = [
+                'cover_amount_range', 'funeral_service_type',
+                'family_coverage_type', 'waiting_period_natural_death'
+            ]
+            for field_name in required_funeral_fields:
+                if field_name in self.fields:
+                    self.fields[field_name].required = True
     
     def clean(self):
-        """
-        Custom validation to ensure features match insurance type.
-        """
+        """Custom validation to ensure appropriate fields are filled based on insurance type."""
         cleaned_data = super().clean()
         insurance_type = cleaned_data.get('insurance_type')
         
         if not insurance_type:
             raise ValidationError(_('Insurance type is required.'))
         
+        if insurance_type == 'HEALTH':
+            self._validate_health_fields(cleaned_data)
+        elif insurance_type == 'FUNERAL':
+            self._validate_funeral_fields(cleaned_data)
+        
+        return cleaned_data
+    
+    def _validate_health_fields(self, cleaned_data):
+        """Validate health insurance specific fields."""
         errors = {}
         
-        if insurance_type == 'HEALTH':
-            # Validate health features
-            health_fields = [
-                'annual_limit_per_member',
-                'monthly_household_income',
-                'in_hospital_benefit',
-                'out_hospital_benefit',
-                'chronic_medication_availability'
-            ]
-            
-            # Check for missing required health features
-            missing_health = []
-            for field in health_fields:
-                if cleaned_data.get(field) is None:
-                    missing_health.append(field.replace('_', ' ').title())
-            
-            if missing_health:
-                errors['__all__'] = [
-                    _('Health policies require the following features: {}').format(
-                        ', '.join(missing_health)
-                    )
-                ]
-            
-            # Ensure funeral features are not filled
-            funeral_fields = [
-                'cover_amount',
-                'marital_status_requirement',
-                'gender_requirement',
-                'monthly_net_income'
-            ]
-            
-            filled_funeral = []
-            for field in funeral_fields:
-                if cleaned_data.get(field) is not None:
-                    filled_funeral.append(field.replace('_', ' ').title())
-                    # Clear the field
-                    cleaned_data[field] = None
-            
-            if filled_funeral:
-                if '__all__' not in errors:
-                    errors['__all__'] = []
-                errors['__all__'].append(
-                    _('Health policies should not have funeral features. Cleared: {}').format(
-                        ', '.join(filled_funeral)
-                    )
-                )
+        # Check required health fields
+        required_fields = {
+            'annual_limit_family_range': _('Annual limit family range is required for health policies.'),
+            'in_hospital_benefit_level': _('In-hospital benefit level is required for health policies.'),
+            'out_hospital_benefit_level': _('Out-of-hospital benefit level is required for health policies.'),
+        }
         
-        elif insurance_type == 'FUNERAL':
-            # Validate funeral features
-            funeral_fields = [
-                'cover_amount',
-                'marital_status_requirement',
-                'gender_requirement',
-                'monthly_net_income'
-            ]
-            
-            # Check for missing required funeral features
-            missing_funeral = []
-            for field in funeral_fields:
-                if cleaned_data.get(field) is None:
-                    missing_funeral.append(field.replace('_', ' ').title())
-            
-            if missing_funeral:
-                errors['__all__'] = [
-                    _('Funeral policies require the following features: {}').format(
-                        ', '.join(missing_funeral)
-                    )
-                ]
-            
-            # Ensure health features are not filled
-            health_fields = [
-                'annual_limit_per_member',
-                'monthly_household_income',
-                'in_hospital_benefit',
-                'out_hospital_benefit',
-                'chronic_medication_availability'
-            ]
-            
-            filled_health = []
-            for field in health_fields:
-                if cleaned_data.get(field) is not None:
-                    filled_health.append(field.replace('_', ' ').title())
-                    # Clear the field
-                    cleaned_data[field] = None
-            
-            if filled_health:
-                if '__all__' not in errors:
-                    errors['__all__'] = []
-                errors['__all__'].append(
-                    _('Funeral policies should not have health features. Cleared: {}').format(
-                        ', '.join(filled_health)
-                    )
-                )
+        for field_name, error_message in required_fields.items():
+            if not cleaned_data.get(field_name):
+                errors[field_name] = error_message
         
-        # Validate numeric values
-        numeric_fields = [
-            ('annual_limit_per_member', 'Annual limit per member'),
-            ('monthly_household_income', 'Monthly household income'),
-            ('cover_amount', 'Cover amount'),
+        # Check that funeral fields are not filled
+        funeral_fields = [
+            'cover_amount', 'cover_amount_range', 'funeral_service_type',
+            'family_coverage_type', 'waiting_period_natural_death'
         ]
         
-        for field_name, field_label in numeric_fields:
-            value = cleaned_data.get(field_name)
-            if value is not None and value <= 0:
-                errors[field_name] = [_('{}  must be a positive number.').format(field_label)]
+        filled_funeral_fields = [
+            field for field in funeral_fields 
+            if cleaned_data.get(field) is not None
+        ]
+        
+        if filled_funeral_fields:
+            errors['insurance_type'] = _(
+                f'Funeral fields should not be filled for health policies: {", ".join(filled_funeral_fields)}'
+            )
         
         if errors:
             raise ValidationError(errors)
+    
+    def _validate_funeral_fields(self, cleaned_data):
+        """Validate funeral insurance specific fields."""
+        errors = {}
         
-        return cleaned_data
+        # Check required funeral fields
+        required_fields = {
+            'cover_amount_range': _('Cover amount range is required for funeral policies.'),
+            'funeral_service_type': _('Funeral service type is required for funeral policies.'),
+            'family_coverage_type': _('Family coverage type is required for funeral policies.'),
+            'waiting_period_natural_death': _('Waiting period for natural death is required for funeral policies.'),
+        }
+        
+        for field_name, error_message in required_fields.items():
+            if not cleaned_data.get(field_name):
+                errors[field_name] = error_message
+        
+        # Check that health fields are not filled
+        health_fields = [
+            'annual_limit_per_member', 'annual_limit_per_family',
+            'annual_limit_family_range', 'annual_limit_member_range',
+            'in_hospital_benefit_level', 'out_hospital_benefit_level'
+        ]
+        
+        filled_health_fields = [
+            field for field in health_fields 
+            if cleaned_data.get(field) is not None
+        ]
+        
+        if filled_health_fields:
+            errors['insurance_type'] = _(
+                f'Health fields should not be filled for funeral policies: {", ".join(filled_health_fields)}'
+            )
+        
+        # Validate logical relationships
+        if cleaned_data.get('grocery_benefit') and not cleaned_data.get('grocery_benefit_amount'):
+            errors['grocery_benefit_amount'] = _(
+                'Grocery benefit amount is required when grocery benefit is enabled.'
+            )
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    class Media:
+        css = {
+            'all': ('admin/css/policy_features_admin.css',)
+        }
+        js = ('admin/js/policy_features_admin.js',)
 
 
 class AdditionalFeaturesAdminForm(forms.ModelForm):
@@ -213,263 +337,114 @@ class AdditionalFeaturesAdminForm(forms.ModelForm):
         model = AdditionalFeatures
         fields = '__all__'
         widgets = {
-            'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., 24/7 Customer Support'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 4,
-                'placeholder': 'Detailed description of this additional feature...'
-            }),
-            'coverage_details': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 6,
-                'placeholder': 'Comprehensive coverage information and specific details about what is covered...'
-            }),
-            'icon': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., fa-phone, icon-support'
-            }),
-            'display_order': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '0'
-            })
-        }
-        help_texts = {
-            'title': _('Short, descriptive title for this additional feature'),
-            'description': _('Detailed explanation of what this feature provides'),
-            'coverage_details': _('Comprehensive coverage information including specific terms, conditions, and what is covered'),
-            'icon': _('CSS class or icon name for visual representation'),
-            'is_highlighted': _('Check to make this feature stand out in listings'),
-            'display_order': _('Lower numbers appear first (0 = first)')
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'coverage_details': forms.Textarea(attrs={'rows': 4}),
         }
     
-    def clean_title(self):
-        """Validate title field"""
-        title = self.cleaned_data.get('title')
-        if title:
-            title = title.strip()
-            if len(title) < 3:
-                raise ValidationError(_('Title must be at least 3 characters long.'))
-            if len(title) > 255:
-                raise ValidationError(_('Title cannot exceed 255 characters.'))
-        return title
-    
-    def clean_description(self):
-        """Validate description field"""
-        description = self.cleaned_data.get('description')
-        if description:
-            description = description.strip()
-            if len(description) < 10:
-                raise ValidationError(_('Description must be at least 10 characters long.'))
-        return description
-    
-    def clean_coverage_details(self):
-        """Validate coverage details field"""
-        coverage_details = self.cleaned_data.get('coverage_details')
-        if coverage_details:
-            coverage_details = coverage_details.strip()
-            if len(coverage_details) < 20:
-                raise ValidationError(_('Coverage details must be at least 20 characters long for meaningful information.'))
-        return coverage_details
-    
-    def clean_display_order(self):
-        """Validate display order"""
-        display_order = self.cleaned_data.get('display_order')
-        if display_order is not None and display_order < 0:
-            raise ValidationError(_('Display order cannot be negative.'))
-        return display_order
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Add help texts
+        self.fields['title'].help_text = _('Brief, descriptive title for this additional feature.')
+        self.fields['description'].help_text = _('Detailed description of what this feature provides.')
+        self.fields['coverage_details'].help_text = _('Specific coverage information, limits, and conditions.')
+        self.fields['is_highlighted'].help_text = _('Highlighted features appear prominently in policy comparisons.')
     
     def clean(self):
-        """Additional validation"""
+        """Custom validation for additional features."""
         cleaned_data = super().clean()
         
-        # Check for duplicate titles within the same policy
-        title = cleaned_data.get('title')
-        policy = cleaned_data.get('policy')
-        
-        if title and policy:
-            existing = AdditionalFeatures.objects.filter(
-                policy=policy,
-                title__iexact=title
-            )
-            
-            # Exclude current instance if editing
-            if self.instance.pk:
-                existing = existing.exclude(pk=self.instance.pk)
-            
-            if existing.exists():
-                raise ValidationError({
-                    'title': _('A feature with this title already exists for this policy.')
-                })
+        # Ensure coverage details are provided for highlighted features
+        if cleaned_data.get('is_highlighted') and not cleaned_data.get('coverage_details'):
+            raise ValidationError({
+                'coverage_details': _('Coverage details are required for highlighted features.')
+            })
         
         return cleaned_data
 
 
-class HealthPolicyFilterForm(forms.Form):
+class BasePolicyAdminForm(forms.ModelForm):
     """
-    Filter form for health policy listings.
-    Implements requirements 8.1, 8.2, 8.3 for feature-based filtering.
-    """
-    
-    min_annual_limit = forms.DecimalField(
-        required=False,
-        min_value=0,
-        decimal_places=2,
-        max_digits=12,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Minimum annual limit',
-            'step': '1000'
-        }),
-        label=_('Minimum Annual Limit per Member')
-    )
-    
-    max_income_requirement = forms.DecimalField(
-        required=False,
-        min_value=0,
-        decimal_places=2,
-        max_digits=10,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Maximum income requirement',
-            'step': '500'
-        }),
-        label=_('Maximum Income Requirement')
-    )
-    
-    # Requirement 8.1: In-hospital benefit filtering
-    in_hospital_benefit = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        }),
-        label=_('Must include in-hospital benefits')
-    )
-    
-    # Requirement 8.2: Out-of-hospital benefit filtering
-    out_hospital_benefit = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        }),
-        label=_('Must include out-of-hospital benefits')
-    )
-    
-    # Requirement 8.3: Chronic medication filtering
-    chronic_medication = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        }),
-        label=_('Must include chronic medication coverage')
-    )
-    
-    def clean_min_annual_limit(self):
-        """Validate minimum annual limit"""
-        value = self.cleaned_data.get('min_annual_limit')
-        if value is not None and value <= 0:
-            raise ValidationError(_('Minimum annual limit must be positive.'))
-        return value
-    
-    def clean_max_income_requirement(self):
-        """Validate maximum income requirement"""
-        value = self.cleaned_data.get('max_income_requirement')
-        if value is not None and value <= 0:
-            raise ValidationError(_('Maximum income requirement must be positive.'))
-        return value
-
-
-class FuneralPolicyFilterForm(forms.Form):
-    """
-    Filter form for funeral policy listings.
-    Implements requirements 8.4, 8.5 for feature-based filtering.
+    Custom admin form for BasePolicy with enhanced validation and help.
     """
     
-    min_cover_amount = forms.DecimalField(
-        required=False,
-        min_value=0,
-        decimal_places=2,
-        max_digits=12,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Minimum cover amount',
-            'step': '1000'
-        }),
-        label=_('Minimum Cover Amount')
-    )
+    class Meta:
+        model = BasePolicy
+        fields = '__all__'
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+            'short_description': forms.Textarea(attrs={'rows': 2}),
+            'terms_and_conditions': forms.Textarea(attrs={'rows': 6}),
+        }
     
-    max_income_requirement = forms.DecimalField(
-        required=False,
-        min_value=0,
-        decimal_places=2,
-        max_digits=10,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Maximum income requirement',
-            'step': '500'
-        }),
-        label=_('Maximum Income Requirement')
-    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Add enhanced help texts
+        help_texts = {
+            'name': _('Clear, descriptive name for the policy (e.g., "Comprehensive Family Health Plan").'),
+            'short_description': _('Brief summary for policy listings and comparisons (max 500 characters).'),
+            'base_premium': _('Base monthly premium amount. Additional calculations can be added via Premium Calculation rules.'),
+            'coverage_amount': _('Maximum benefit/coverage amount provided by this policy.'),
+            'minimum_age': _('Minimum age for policy eligibility. Consider your target market.'),
+            'maximum_age': _('Maximum age for policy eligibility. Higher ages may require medical underwriting.'),
+            'waiting_period_days': _('Days before coverage begins. Shorter periods are more attractive to customers.'),
+            'is_featured': _('Featured policies appear prominently in search results and comparisons.'),
+        }
+        
+        for field_name, help_text in help_texts.items():
+            if field_name in self.fields:
+                self.fields[field_name].help_text = help_text
+        
+        # Set up category-based field requirements
+        if self.instance and self.instance.pk:
+            self._setup_category_requirements()
     
-    marital_status = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('', '--- Any ---'),
-            ('single', 'Single'),
-            ('married', 'Married'),
-            ('divorced', 'Divorced'),
-            ('widowed', 'Widowed'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'form-control'
-        }),
-        label=_('Marital Status')
-    )
+    def _setup_category_requirements(self):
+        """Set up field requirements based on policy category."""
+        if self.instance.category:
+            category_slug = self.instance.category.slug
+            
+            if category_slug == 'funeral':
+                # Funeral policies should have specific age ranges
+                self.fields['minimum_age'].help_text += _(' Funeral policies typically start from age 18.')
+                self.fields['maximum_age'].help_text += _(' Funeral policies often extend to age 75-85.')
+            
+            elif category_slug == 'health':
+                # Health policies have different considerations
+                self.fields['minimum_age'].help_text += _(' Health policies may start from birth or age 18.')
+                self.fields['maximum_age'].help_text += _(' Health policies may have no upper age limit.')
     
-    gender = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('', '--- Any ---'),
-            ('male', 'Male'),
-            ('female', 'Female'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'form-control'
-        }),
-        label=_('Gender')
-    )
-    
-    # Requirement 8.5: Waiting period filtering
-    max_waiting_period = forms.IntegerField(
-        required=False,
-        min_value=0,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Maximum waiting period (days)',
-            'step': '30'
-        }),
-        label=_('Maximum Waiting Period (days)')
-    )
-    
-    def clean_min_cover_amount(self):
-        """Validate minimum cover amount"""
-        value = self.cleaned_data.get('min_cover_amount')
-        if value is not None and value <= 0:
-            raise ValidationError(_('Minimum cover amount must be positive.'))
-        return value
-    
-    def clean_max_income_requirement(self):
-        """Validate maximum income requirement"""
-        value = self.cleaned_data.get('max_income_requirement')
-        if value is not None and value <= 0:
-            raise ValidationError(_('Maximum income requirement must be positive.'))
-        return value
-    
-    def clean_max_waiting_period(self):
-        """Validate maximum waiting period"""
-        value = self.cleaned_data.get('max_waiting_period')
-        if value is not None and value < 0:
-            raise ValidationError(_('Maximum waiting period cannot be negative.'))
-        return value
+    def clean(self):
+        """Custom validation for base policy."""
+        cleaned_data = super().clean()
+        
+        # Validate age ranges
+        min_age = cleaned_data.get('minimum_age')
+        max_age = cleaned_data.get('maximum_age')
+        
+        if min_age is not None and max_age is not None:
+            if min_age >= max_age:
+                raise ValidationError({
+                    'maximum_age': _('Maximum age must be greater than minimum age.')
+                })
+        
+        # Validate premium and coverage amounts
+        base_premium = cleaned_data.get('base_premium')
+        coverage_amount = cleaned_data.get('coverage_amount')
+        
+        if base_premium and coverage_amount:
+            # Basic sanity check - premium shouldn't be more than 10% of coverage per month
+            if base_premium > (coverage_amount * 0.1):
+                raise ValidationError({
+                    'base_premium': _('Premium seems unusually high compared to coverage amount. Please verify.')
+                })
+        
+        # Validate short description length
+        short_desc = cleaned_data.get('short_description', '')
+        if len(short_desc) > 500:
+            raise ValidationError({
+                'short_description': _('Short description must be 500 characters or less.')
+            })
+        
+        return cleaned_data

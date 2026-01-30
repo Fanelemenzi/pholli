@@ -244,11 +244,15 @@ class SimpleSurveyComparisonAdapter:
             Converted value for comparison engine
         """
         # Handle numeric conversions
-        if survey_field in ['age', 'family_size', 'family_members_to_cover', 'monthly_budget', 'household_income']:
+        if survey_field in ['age', 'family_size', 'family_members_to_cover', 'household_income']:
             try:
                 return int(response_value) if response_value else 0
             except (ValueError, TypeError):
                 return 0
+        
+        # Handle monthly budget range conversions
+        if survey_field == 'monthly_budget':
+            return self._convert_budget_range_to_value(response_value)
         
         # Handle decimal conversions for monetary amounts
         if survey_field in ['preferred_annual_limit_per_family', 'preferred_cover_amount']:
@@ -380,6 +384,30 @@ class SimpleSurveyComparisonAdapter:
             'range_selection': range_selection,
             'guidance_needed': False
         }
+    
+    def _convert_budget_range_to_value(self, range_selection: str) -> int:
+        """
+        Convert budget range selection to a single value for comparison.
+        
+        Args:
+            range_selection: Selected budget range (e.g., '101-200')
+            
+        Returns:
+            Integer value representing the budget for comparison (uses range midpoint)
+        """
+        if not range_selection:
+            return 200  # Default fallback
+        
+        # Define budget range mappings
+        budget_mappings = {
+            '50-100': 75,      # Midpoint of range
+            '101-200': 150,    # Midpoint of range
+            '201-350': 275,    # Midpoint of range
+            '351-500': 425,    # Midpoint of range
+            '500+': 600        # Reasonable value for unlimited budget
+        }
+        
+        return budget_mappings.get(range_selection, 200)  # Default to R200 if unknown range
     
     def _get_default_weights(self, criteria: Dict[str, Any]) -> Dict[str, int]:
         """

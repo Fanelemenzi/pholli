@@ -8,7 +8,7 @@ from django import forms
 from .models import (
     SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession, SimpleSurvey,
     HOSPITAL_BENEFIT_CHOICES, OUT_HOSPITAL_BENEFIT_CHOICES,
-    ANNUAL_LIMIT_FAMILY_RANGES, ANNUAL_LIMIT_MEMBER_RANGES
+    ANNUAL_LIMIT_FAMILY_RANGES, ANNUAL_LIMIT_MEMBER_RANGES, MONTHLY_BUDGET_RANGES
 )
 
 
@@ -416,6 +416,8 @@ class SimpleSurveyResponseAdmin(admin.ModelAdmin):
             return format_html('<span style="color: #0066cc; font-weight: bold;">Benefit Level</span>')
         elif 'annual_limit' in field_name and 'range' in field_name:
             return format_html('<span style="color: #28a745; font-weight: bold;">Annual Range</span>')
+        elif 'monthly_budget' in field_name:
+            return format_html('<span style="color: #ff6b35; font-weight: bold;">Budget Range</span>')
         else:
             return format_html('<span style="color: #6c757d;">{}</span>', obj.question.get_input_type_display())
     response_type_display.short_description = "Type"
@@ -449,6 +451,13 @@ class SimpleSurveyResponseAdmin(admin.ModelAdmin):
             
             display_value = choice_dict.get(response_value, response_value)
             return format_html('<span style="color: #28a745; font-weight: bold;" title="{}">{}</span>', 
+                             response_value, display_value)
+        
+        # Handle monthly budget range responses
+        elif 'monthly_budget' in field_name:
+            choice_dict = {choice[0]: choice[1] for choice in MONTHLY_BUDGET_RANGES}
+            display_value = choice_dict.get(response_value, response_value)
+            return format_html('<span style="color: #ff6b35; font-weight: bold;" title="{}">{}</span>', 
                              response_value, display_value)
         
         # Handle other response types
@@ -490,6 +499,16 @@ class SimpleSurveyResponseAdmin(admin.ModelAdmin):
                 return str(response_value)
             
             for choice in choices:
+                if choice[0] == response_value:
+                    return format_html(
+                        '<strong>Value:</strong> {}<br>'
+                        '<strong>Range:</strong> {}<br>'
+                        '<strong>Description:</strong> {}',
+                        choice[0], choice[1], choice[2]
+                    )
+        
+        elif 'monthly_budget' in field_name:
+            for choice in MONTHLY_BUDGET_RANGES:
                 if choice[0] == response_value:
                     return format_html(
                         '<strong>Value:</strong> {}<br>'

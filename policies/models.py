@@ -375,10 +375,10 @@ class PolicyFeatures(models.Model):
     """
     
     class InsuranceType(models.TextChoices):
-        HEALTH = 'HEALTH', _('Health Policies')
-        FUNERAL = 'FUNERAL', _('Funeral Policies')
+        HEALTH = 'HEALTH', _('Health/Medical Insurance')
+        FUNERAL = 'FUNERAL', _('Funeral Insurance')
     
-    # Import benefit choices from simple_surveys
+    # Health Insurance Benefit Choices
     HOSPITAL_BENEFIT_CHOICES = [
         ('no_cover', _('No hospital cover')),
         ('basic', _('Basic hospital care')),
@@ -417,6 +417,39 @@ class PolicyFeatures(models.Model):
         ('1m-2m', _('R1,000,001 - R2,000,000')),
         ('2m-plus', _('R2,000,001+')),
         ('not_sure', _('Not sure / Need guidance')),
+    ]
+    
+    # Funeral Insurance Specific Choices
+    FUNERAL_COVER_AMOUNT_RANGES = [
+        ('10k-25k', _('R10,000 - R25,000')),
+        ('25k-50k', _('R25,001 - R50,000')),
+        ('50k-75k', _('R50,001 - R75,000')),
+        ('75k-100k', _('R75,001 - R100,000')),
+        ('100k-150k', _('R100,001 - R150,000')),
+        ('150k-200k', _('R150,001 - R200,000')),
+        ('200k-plus', _('R200,001+')),
+    ]
+    
+    FUNERAL_SERVICE_TYPES = [
+        ('basic', _('Basic Service - Essential arrangements only')),
+        ('standard', _('Standard Service - Comprehensive package')),
+        ('premium', _('Premium Service - Full luxury service')),
+        ('cash_only', _('Cash Payout Only - No managed services')),
+    ]
+    
+    WAITING_PERIOD_CHOICES = [
+        ('none', _('No Waiting Period')),
+        ('1_month', _('1 Month')),
+        ('3_months', _('3 Months')),
+        ('6_months', _('6 Months')),
+        ('12_months', _('12 Months')),
+    ]
+    
+    FAMILY_COVERAGE_TYPES = [
+        ('individual', _('Individual Only')),
+        ('spouse', _('Main Member + Spouse')),
+        ('nuclear_family', _('Nuclear Family (Parents + Children)')),
+        ('extended_family', _('Extended Family (Up to 15 members)')),
     ]
     
     policy = models.OneToOneField(
@@ -516,7 +549,7 @@ class PolicyFeatures(models.Model):
         help_text=_("Chronic medication availability")
     )
     
-    # Funeral Policy Features (from Docs/features.md)
+    # Funeral Policy Features (Enhanced based on funeral_policies/models.py)
     cover_amount = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 
@@ -524,17 +557,135 @@ class PolicyFeatures(models.Model):
         blank=True,
         help_text=_("Cover amount for funeral policy")
     )
+    
+    cover_amount_range = models.CharField(
+        max_length=50,
+        choices=FUNERAL_COVER_AMOUNT_RANGES,
+        null=True,
+        blank=True,
+        help_text=_("Cover amount range for matching purposes")
+    )
+    
+    funeral_service_type = models.CharField(
+        max_length=50,
+        choices=FUNERAL_SERVICE_TYPES,
+        null=True,
+        blank=True,
+        help_text=_("Type of funeral service provided")
+    )
+    
+    family_coverage_type = models.CharField(
+        max_length=50,
+        choices=FAMILY_COVERAGE_TYPES,
+        null=True,
+        blank=True,
+        help_text=_("Type of family coverage offered")
+    )
+    
+    max_family_members = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Maximum number of family members covered")
+    )
+    
+    waiting_period_natural_death = models.CharField(
+        max_length=20,
+        choices=WAITING_PERIOD_CHOICES,
+        null=True,
+        blank=True,
+        help_text=_("Waiting period for natural death coverage")
+    )
+    
+    waiting_period_accidental_death = models.CharField(
+        max_length=20,
+        choices=WAITING_PERIOD_CHOICES,
+        null=True,
+        blank=True,
+        help_text=_("Waiting period for accidental death coverage")
+    )
+    
+    # Funeral Service Inclusions
+    includes_coffin = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether coffin is included in the service")
+    )
+    
+    includes_transport = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether transport/hearse is included")
+    )
+    
+    includes_venue = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether funeral venue is provided")
+    )
+    
+    includes_catering = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether catering for mourners is included")
+    )
+    
+    includes_flowers = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether flowers are provided")
+    )
+    
+    includes_memorial_service = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether memorial service is included")
+    )
+    
+    # Additional Funeral Benefits
+    repatriation_covered = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether repatriation is covered")
+    )
+    
+    grocery_benefit = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether grocery benefit is provided")
+    )
+    
+    grocery_benefit_amount = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text=_("Amount of grocery benefit")
+    )
+    
+    mourning_clothes_benefit = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text=_("Whether mourning clothes allowance is provided")
+    )
+    
+    claim_payout_hours = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=_("Number of hours for claim payout (e.g., 48 hours)")
+    )
+    
+    # Legacy fields for backward compatibility
     marital_status_requirement = models.CharField(
         max_length=50, 
         null=True, 
         blank=True,
-        help_text=_("Marital status requirement")
+        help_text=_("Marital status requirement (legacy field)")
     )
     gender_requirement = models.CharField(
         max_length=20, 
         null=True, 
         blank=True,
-        help_text=_("Gender requirement")
+        help_text=_("Gender requirement (legacy field)")
     )
     monthly_net_income = models.DecimalField(
         max_digits=10, 
@@ -579,11 +730,64 @@ class PolicyFeatures(models.Model):
         elif self.insurance_type == 'FUNERAL':
             features.update({
                 'cover_amount': self.cover_amount,
+                'cover_amount_range': self.cover_amount_range,
+                'funeral_service_type': self.funeral_service_type,
+                'family_coverage_type': self.family_coverage_type,
+                'max_family_members': self.max_family_members,
+                'waiting_period_natural_death': self.waiting_period_natural_death,
+                'waiting_period_accidental_death': self.waiting_period_accidental_death,
+                'includes_coffin': self.includes_coffin,
+                'includes_transport': self.includes_transport,
+                'includes_venue': self.includes_venue,
+                'includes_catering': self.includes_catering,
+                'includes_flowers': self.includes_flowers,
+                'includes_memorial_service': self.includes_memorial_service,
+                'repatriation_covered': self.repatriation_covered,
+                'grocery_benefit': self.grocery_benefit,
+                'grocery_benefit_amount': self.grocery_benefit_amount,
+                'mourning_clothes_benefit': self.mourning_clothes_benefit,
+                'claim_payout_hours': self.claim_payout_hours,
+                # Legacy fields
                 'marital_status_requirement': self.marital_status_requirement,
                 'gender_requirement': self.gender_requirement,
+                'monthly_net_income': self.monthly_net_income,
             })
         
         return {k: v for k, v in features.items() if v is not None}
+    
+    def get_health_features_summary(self):
+        """Get a summary of health features for display."""
+        if self.insurance_type != 'HEALTH':
+            return None
+        
+        summary = []
+        if self.annual_limit_family_range:
+            summary.append(f"Family Limit: {self.get_annual_limit_family_range_display()}")
+        if self.in_hospital_benefit_level:
+            summary.append(f"Hospital: {self.get_in_hospital_benefit_level_display()}")
+        if self.out_hospital_benefit_level:
+            summary.append(f"Out-Hospital: {self.get_out_hospital_benefit_level_display()}")
+        if self.chronic_medication_availability:
+            summary.append("Chronic Medication")
+        
+        return " | ".join(summary) if summary else "No features configured"
+    
+    def get_funeral_features_summary(self):
+        """Get a summary of funeral features for display."""
+        if self.insurance_type != 'FUNERAL':
+            return None
+        
+        summary = []
+        if self.cover_amount_range:
+            summary.append(f"Cover: {self.get_cover_amount_range_display()}")
+        if self.funeral_service_type:
+            summary.append(f"Service: {self.get_funeral_service_type_display()}")
+        if self.family_coverage_type:
+            summary.append(f"Family: {self.get_family_coverage_type_display()}")
+        if self.waiting_period_natural_death:
+            summary.append(f"Wait: {self.get_waiting_period_natural_death_display()}")
+        
+        return " | ".join(summary) if summary else "No features configured"
 
 
 class AdditionalFeatures(models.Model):

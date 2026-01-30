@@ -18,35 +18,80 @@ from .models import (
     PolicyReview,
     Rewards
 )
-from .forms import PolicyFeaturesAdminForm, AdditionalFeaturesAdminForm
+from .forms import PolicyFeaturesAdminForm, AdditionalFeaturesAdminForm, BasePolicyAdminForm
 
 
 # Inline Admin Classes
 class PolicyFeaturesInline(admin.StackedInline):
     model = PolicyFeatures
     extra = 0
-    fields = [
-        'insurance_type',
-        # Health Policy Features
-        'annual_limit_per_member',
-        'annual_limit_per_family',
-        'annual_limit_family_range',
-        'annual_limit_member_range',
-        'monthly_household_income',
-        'currently_on_medical_aid',
-        'ambulance_coverage',
-        'in_hospital_benefit',
-        'in_hospital_benefit_level',
-        'out_hospital_benefit',
-        'out_hospital_benefit_level',
-        'chronic_medication_availability',
-        # Funeral Policy Features
-        'cover_amount',
-        'marital_status_requirement',
-        'gender_requirement',
-        'monthly_net_income'
-    ]
+    fieldsets = (
+        (_('Insurance Type'), {
+            'fields': ('insurance_type',),
+            'description': _(
+                '<strong>Important:</strong> Select the insurance type first. This determines which feature fields below are relevant:<br>'
+                '• <strong>Health/Medical Insurance:</strong> Use the Health Policy Features section<br>'
+                '• <strong>Funeral Insurance:</strong> Use the Funeral Policy Features section<br>'
+                'Leave irrelevant fields empty based on your selection.'
+            )
+        }),
+        (_('Health Policy Features'), {
+            'fields': (
+                'annual_limit_per_member',
+                'annual_limit_per_family',
+                'annual_limit_family_range',
+                'annual_limit_member_range',
+                'monthly_household_income',
+                'currently_on_medical_aid',
+                'ambulance_coverage',
+                'in_hospital_benefit',
+                'in_hospital_benefit_level',
+                'out_hospital_benefit',
+                'out_hospital_benefit_level',
+                'chronic_medication_availability',
+            ),
+            'description': _(
+                '<strong>For Health/Medical Insurance only.</strong> Configure medical coverage limits, benefit levels, '
+                'and healthcare services. Leave these fields empty if this is a Funeral policy.'
+            ),
+            'classes': ('health-features',)
+        }),
+        (_('Funeral Policy Features'), {
+            'fields': (
+                'cover_amount',
+                'cover_amount_range',
+                'funeral_service_type',
+                'family_coverage_type',
+                'max_family_members',
+                'waiting_period_natural_death',
+                'waiting_period_accidental_death',
+            ),
+            'description': _(
+                '<strong>For Funeral Insurance only.</strong> Configure death benefit amounts, service types, '
+                'and family coverage options. Leave these fields empty if this is a Health policy.'
+            ),
+            'classes': ('funeral-features',)
+        }),
+        (_('Legacy Fields'), {
+            'fields': (
+                'marital_status_requirement',
+                'gender_requirement',
+                'monthly_net_income'
+            ),
+            'description': _(
+                'Legacy fields maintained for backward compatibility. These may be used for either insurance type '
+                'but are being phased out in favor of the more specific fields above.'
+            ),
+            'classes': ('collapse', 'legacy-fields')
+        })
+    )
     classes = ['collapse']
+    
+    class Media:
+        css = {
+            'all': ('admin/css/policy_features_inline.css',)
+        }
+        js = ('admin/js/policy_features_inline.js',)
 
 
 class AdditionalFeaturesInline(admin.TabularInline):
@@ -209,11 +254,13 @@ class PolicyTypeAdmin(admin.ModelAdmin):
 
 @admin.register(BasePolicy)
 class BasePolicyAdmin(admin.ModelAdmin):
+    form = BasePolicyAdminForm
     list_display = [
         'name',
         'organization',
         'category',
         'policy_type',
+        'insurance_type_display',
         'base_premium_display',
         'approval_status_display',
         'active_status',
@@ -261,6 +308,10 @@ class BasePolicyAdmin(admin.ModelAdmin):
                 'policy_number',
                 'short_description',
                 'description'
+            ),
+            'description': _(
+                'Basic policy information. The category determines what type of features can be configured. '
+                'After saving this policy, configure the specific insurance features in the "Policy Features" section below.'
             )
         }),
         (_('Pricing & Coverage'), {
@@ -268,18 +319,21 @@ class BasePolicyAdmin(admin.ModelAdmin):
                 'base_premium',
                 'currency',
                 'coverage_amount'
-            )
+            ),
+            'description': _('Base pricing and coverage amounts. Additional premium calculations can be configured separately.')
         }),
-        (_('Eligibility'), {
+        (_('Eligibility Requirements'), {
             'fields': (
                 'minimum_age',
                 'maximum_age',
                 'waiting_period_days'
-            )
+            ),
+            'description': _('Basic eligibility criteria. Age ranges should align with your target market and insurance type.')
         }),
         (_('Terms & Conditions'), {
             'fields': ('terms_and_conditions',),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
+            'description': _('Detailed terms and conditions for the policy.')
         }),
         (_('Status & Approval'), {
             'fields': (
@@ -288,30 +342,34 @@ class BasePolicyAdmin(admin.ModelAdmin):
                 'is_featured',
                 'approved_at',
                 'approved_by'
-            )
+            ),
+            'description': _('Policy status and approval workflow. Only approved policies can be activated.')
         }),
-        (_('Documents'), {
+        (_('Documents & Files'), {
             'fields': (
                 'brochure',
                 'application_form'
             ),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
+            'description': _('Upload policy documents and forms for customer access.')
         }),
         (_('Additional Settings'), {
             'fields': (
                 'tags',
                 'custom_fields'
             ),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
+            'description': _('Tags for categorization and custom fields for organization-specific data.')
         }),
-        (_('Metadata'), {
+        (_('Statistics & Metadata'), {
             'fields': (
                 'views_count',
                 'comparison_count',
                 'created_at',
                 'updated_at'
             ),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
+            'description': _('Policy performance statistics and metadata.')
         })
     )
     
@@ -338,6 +396,25 @@ class BasePolicyAdmin(admin.ModelAdmin):
     list_per_page = 25
     date_hierarchy = 'created_at'
     save_on_top = True
+    
+    def insurance_type_display(self, obj):
+        """Display insurance type from PolicyFeatures if available"""
+        try:
+            insurance_type = obj.policy_features.insurance_type
+            colors = {
+                'HEALTH': '#28a745',
+                'FUNERAL': '#6f42c1'
+            }
+            color = colors.get(insurance_type, '#6c757d')
+            display_name = obj.policy_features.get_insurance_type_display()
+            return format_html(
+                '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">{}</span>',
+                color,
+                display_name
+            )
+        except PolicyFeatures.DoesNotExist:
+            return format_html('<span style="color: #6c757d;">{}</span>', '❓ Not Set')
+    insurance_type_display.short_description = _('Insurance Type')
     
     def base_premium_display(self, obj):
         try:
@@ -537,37 +614,80 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at', 'validation_status_display']
     
     fieldsets = (
-        (_('Policy Association'), {
+        (_('Policy & Insurance Type'), {
             'fields': ('policy', 'insurance_type'),
-            'description': _('Select the policy and specify the insurance type. This determines which feature fields are relevant.')
+            'description': _(
+                'Select the policy and specify the insurance type. This determines which feature fields are relevant. '
+                'Health policies focus on medical coverage, while funeral policies focus on death benefits and services.'
+            )
         }),
-        (_('Health Policy Features'), {
+        (_('Health Insurance Features'), {
             'fields': (
-                'annual_limit_per_member',
-                'annual_limit_per_family',
-                'annual_limit_family_range',
-                'annual_limit_member_range',
+                ('annual_limit_per_member', 'annual_limit_per_family'),
+                ('annual_limit_family_range', 'annual_limit_member_range'),
                 'monthly_household_income',
                 'currently_on_medical_aid',
                 'ambulance_coverage',
-                'in_hospital_benefit',
-                'in_hospital_benefit_level',
-                'out_hospital_benefit',
-                'out_hospital_benefit_level',
+                ('in_hospital_benefit', 'in_hospital_benefit_level'),
+                ('out_hospital_benefit', 'out_hospital_benefit_level'),
                 'chronic_medication_availability'
             ),
-            'description': _('Features specific to health/medical insurance policies. Only fill these if insurance type is Health.'),
-            'classes': ('collapse',)
+            'description': _(
+                'Features specific to health/medical insurance policies. These fields are only relevant when '
+                'Insurance Type is set to "Health/Medical Insurance". Configure coverage limits, benefit levels, '
+                'and medical services included in the policy.'
+            ),
+            'classes': ('collapse', 'health-features')
         }),
-        (_('Funeral Policy Features'), {
+        (_('Funeral Insurance Features'), {
             'fields': (
-                'cover_amount',
+                ('cover_amount', 'cover_amount_range'),
+                ('funeral_service_type', 'family_coverage_type'),
+                'max_family_members',
+                ('waiting_period_natural_death', 'waiting_period_accidental_death'),
+            ),
+            'description': _(
+                'Core features for funeral insurance policies. These fields are only relevant when '
+                'Insurance Type is set to "Funeral Insurance". Configure coverage amounts, service types, '
+                'and family coverage options.'
+            ),
+            'classes': ('collapse', 'funeral-features')
+        }),
+        (_('Funeral Service Inclusions'), {
+            'fields': (
+                ('includes_coffin', 'includes_transport'),
+                ('includes_venue', 'includes_catering'),
+                ('includes_flowers', 'includes_memorial_service'),
+            ),
+            'description': _(
+                'Specify which funeral services are included in the policy package. These determine '
+                'the level of service provided (Basic, Standard, or Premium).'
+            ),
+            'classes': ('collapse', 'funeral-services')
+        }),
+        (_('Additional Funeral Benefits'), {
+            'fields': (
+                'repatriation_covered',
+                ('grocery_benefit', 'grocery_benefit_amount'),
+                'mourning_clothes_benefit',
+                'claim_payout_hours',
+            ),
+            'description': _(
+                'Additional benefits and services that enhance the funeral policy value proposition. '
+                'These help differentiate your policy from competitors.'
+            ),
+            'classes': ('collapse', 'funeral-benefits')
+        }),
+        (_('Legacy Fields'), {
+            'fields': (
                 'marital_status_requirement',
                 'gender_requirement',
                 'monthly_net_income'
             ),
-            'description': _('Features specific to funeral insurance policies. Only fill these if insurance type is Funeral.'),
-            'classes': ('collapse',)
+            'description': _(
+                'Legacy fields maintained for backward compatibility. These may be deprecated in future versions.'
+            ),
+            'classes': ('collapse', 'legacy-fields')
         }),
         (_('Validation & Metadata'), {
             'fields': ('validation_status_display', 'created_at', 'updated_at'),

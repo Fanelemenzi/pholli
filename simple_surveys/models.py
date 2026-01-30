@@ -47,6 +47,14 @@ ANNUAL_LIMIT_MEMBER_RANGES = [
     ('not_sure', 'Not sure / Need guidance', 'Help me choose based on my situation'),
 ]
 
+MONTHLY_BUDGET_RANGES = [
+    ('50-100', 'R50 - R100', 'Budget-friendly option for basic coverage'),
+    ('101-200', 'R101 - R200', 'Standard coverage with moderate premiums'),
+    ('201-350', 'R201 - R350', 'Comprehensive coverage with higher benefits'),
+    ('351-500', 'R351 - R500', 'Premium coverage with maximum benefits'),
+    ('500+', 'R500+', 'Unlimited budget for top-tier coverage'),
+]
+
 
 class SimpleSurveyQuestionManager(models.Manager):
     """Manager for SimpleSurveyQuestion with common queries"""

@@ -27,10 +27,22 @@
       "field_name": "location",
       "input_type": "select",
       "choices": [
-        ["hhohho", "Hhohho"],
-        ["manzini", "Manzini"],
-        ["shiselweni", "Shiselweni"],
-        ["lubombo", "Lubombo"]
+        [
+          "hhohho",
+          "Hhohho"
+        ],
+        [
+          "manzini",
+          "Manzini"
+        ],
+        [
+          "shiselweni",
+          "Shiselweni"
+        ],
+        [
+          "lubombo",
+          "Lubombo"
+        ]
       ],
       "is_required": true,
       "display_order": 2,
@@ -67,10 +79,22 @@
       "field_name": "coverage_amount",
       "input_type": "radio",
       "choices": [
-        ["25000", "R25,000"],
-        ["50000", "R50,000"],
-        ["100000", "R100,000"],
-        ["200000", "R200,000+"]
+        [
+          "25000",
+          "R25,000"
+        ],
+        [
+          "50000",
+          "R50,000"
+        ],
+        [
+          "100000",
+          "R100,000"
+        ],
+        [
+          "200000",
+          "R200,000+"
+        ]
       ],
       "is_required": true,
       "display_order": 4,
@@ -88,9 +112,21 @@
       "field_name": "service_preference",
       "input_type": "radio",
       "choices": [
-        ["basic", "Basic Service"],
-        ["standard", "Standard Service"],
-        ["premium", "Premium Service"]
+        [
+          "basic",
+          "Basic Service",
+          "Essential funeral arrangements including transport, basic coffin, and burial/cremation. Covers immediate family only. Most affordable option."
+        ],
+        [
+          "standard",
+          "Standard Service",
+          "Comprehensive funeral package with upgraded coffin, flowers, catering for 50 people, and extended family coverage. Balanced cost and benefits."
+        ],
+        [
+          "premium",
+          "Premium Service",
+          "Full-service funeral with premium coffin, extensive catering, memorial service, and coverage for extended family members. Highest level of service and benefits."
+        ]
       ],
       "is_required": true,
       "display_order": 5,
@@ -106,14 +142,37 @@
       "category": "funeral",
       "question_text": "What is your monthly budget for funeral insurance?",
       "field_name": "monthly_budget",
-      "input_type": "number",
-      "choices": [],
+      "input_type": "radio",
+      "choices": [
+        [
+          "50-100",
+          "R50 - R100",
+          "Budget-friendly option for basic coverage"
+        ],
+        [
+          "101-200",
+          "R101 - R200",
+          "Standard coverage with moderate premiums"
+        ],
+        [
+          "201-350",
+          "R201 - R350",
+          "Comprehensive coverage with higher benefits"
+        ],
+        [
+          "351-500",
+          "R351 - R500",
+          "Premium coverage with maximum benefits"
+        ],
+        [
+          "500+",
+          "R500+",
+          "Unlimited budget for top-tier coverage"
+        ]
+      ],
       "is_required": true,
       "display_order": 6,
-      "validation_rules": {
-        "min": 50,
-        "max": 500
-      },
+      "validation_rules": {},
       "created_at": "2024-01-01T00:00:00Z",
       "updated_at": "2024-01-01T00:00:00Z"
     }
@@ -127,10 +186,22 @@
       "field_name": "waiting_period",
       "input_type": "radio",
       "choices": [
-        ["none", "No Waiting Period"],
-        ["3_months", "3 Months"],
-        ["6_months", "6 Months"],
-        ["12_months", "12 Months"]
+        [
+          "none",
+          "No Waiting Period"
+        ],
+        [
+          "3_months",
+          "3 Months"
+        ],
+        [
+          "6_months",
+          "6 Months"
+        ],
+        [
+          "12_months",
+          "12 Months"
+        ]
       ],
       "is_required": true,
       "display_order": 7,
