@@ -342,7 +342,10 @@ class QuotationSession(models.Model):
     
     def update_criteria(self, criteria_dict):
         """Update user criteria from survey responses"""
-        self.user_criteria.update(criteria_dict)
+        # Import the serialization helper to handle Decimal objects
+        from .views import _serialize_for_session
+        serialized_criteria = _serialize_for_session(criteria_dict)
+        self.user_criteria.update(serialized_criteria)
         self.save(update_fields=['user_criteria'])
     
     def mark_completed(self):

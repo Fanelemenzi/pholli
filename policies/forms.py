@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
+from decimal import Decimal
 from .models import PolicyFeatures, AdditionalFeatures, BasePolicy
 
 
@@ -435,7 +436,7 @@ class BasePolicyAdminForm(forms.ModelForm):
         
         if base_premium and coverage_amount:
             # Basic sanity check - premium shouldn't be more than 10% of coverage per month
-            if base_premium > (coverage_amount * 0.1):
+            if base_premium > (coverage_amount * Decimal('0.1')):
                 raise ValidationError({
                     'base_premium': _('Premium seems unusually high compared to coverage amount. Please verify.')
                 })

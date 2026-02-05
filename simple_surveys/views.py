@@ -7,6 +7,7 @@ from django.views import View
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 import json
 import logging
 
@@ -18,6 +19,28 @@ from .session_manager import SessionManager, SessionValidationError
 from .response_migration import ResponseMigrationHandler
 
 logger = logging.getLogger(__name__)
+
+
+def _serialize_for_session(data):
+    """
+    Convert Decimal objects to float for JSON serialization in Django sessions.
+    
+    Args:
+        data: Any data structure that might contain Decimal objects
+        
+    Returns:
+        Data structure with Decimal objects converted to float
+    """
+    if isinstance(data, Decimal):
+        return float(data)
+    elif isinstance(data, dict):
+        return {key: _serialize_for_session(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [_serialize_for_session(item) for item in data]
+    elif isinstance(data, tuple):
+        return tuple(_serialize_for_session(item) for item in data)
+    else:
+        return data
 
 
 class FeatureSurveyView(View):
@@ -128,15 +151,15 @@ class FeatureSurveyView(View):
             # Mark session as completed
             quotation_session.mark_completed()
             
-            # Store quotations in session for results page
-            request.session[f'quotations_{category}'] = quotations
-            request.session[f'criteria_{category}'] = criteria
-            request.session[f'quotation_metadata_{category}'] = {
+            # Store quotations in session for results page (convert Decimal values to avoid JSON serialization errors)
+            request.session[f'quotations_{category}'] = _serialize_for_session(quotations)
+            request.session[f'criteria_{category}'] = _serialize_for_session(criteria)
+            request.session[f'quotation_metadata_{category}'] = _serialize_for_session({
                 'total_policies_evaluated': quotation_result.get('total_policies_evaluated', 0),
                 'best_match': quotation_result.get('best_match'),
                 'summary': quotation_result.get('summary', {}),
                 'generated_at': quotation_result.get('generated_at')
-            }
+            })
             
             return JsonResponse({
                 'success': True,
@@ -413,15 +436,15 @@ class ProcessSurveyView(View):
             # Mark session as completed
             quotation_session.mark_completed()
             
-            # Store quotations in session for results page
-            request.session[f'quotations_{category}'] = quotations
-            request.session[f'criteria_{category}'] = criteria
-            request.session[f'quotation_metadata_{category}'] = {
+            # Store quotations in session for results page (convert Decimal values to avoid JSON serialization errors)
+            request.session[f'quotations_{category}'] = _serialize_for_session(quotations)
+            request.session[f'criteria_{category}'] = _serialize_for_session(criteria)
+            request.session[f'quotation_metadata_{category}'] = _serialize_for_session({
                 'total_policies_evaluated': quotation_result.get('total_policies_evaluated', 0),
                 'best_match': quotation_result.get('best_match'),
                 'summary': quotation_result.get('summary', {}),
                 'generated_at': quotation_result.get('generated_at')
-            }
+            })
             
             return JsonResponse({
                 'success': True,
