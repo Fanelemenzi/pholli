@@ -386,8 +386,13 @@ def create_survey_session(request):
         if error_response:
             return error_response
         
-        # Generate unique session key
-        session_key = str(uuid.uuid4())
+        # Generate unique session key with short expiry
+        from surveys.session_key_manager import session_key_manager
+        session_key = session_key_manager.generate_new_session_key(
+            category_slug,
+            None,  # API views typically don't have user context
+            "api_session"
+        )
         
         # Create new comparison session
         session = ComparisonSession.objects.create(

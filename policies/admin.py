@@ -39,30 +39,37 @@ class PolicyFeaturesInline(admin.StackedInline):
         }),
         (_('Health Policy Features'), {
             'fields': (
-                'annual_limit_per_member',
-                'annual_limit_per_family',
+                ('annual_limit_per_member', 'annual_limit_per_family'),
+                ('annual_limit_family_range', 'annual_limit_member_range'),
                 'monthly_household_income',
                 'currently_on_medical_aid',
                 'ambulance_coverage',
-                'in_hospital_benefit',
-                'out_hospital_benefit',
+                ('in_hospital_benefit', 'in_hospital_benefit_level'),
+                ('out_hospital_benefit', 'out_hospital_benefit_level'),
                 'chronic_medication_availability',
             ),
             'description': _(
-                '<strong>For Health/Medical Insurance only.</strong> These 8 fields are used by the comparison engine '
-                'to match policies with user survey responses. Leave these fields empty if this is a Funeral policy.'
+                '<strong>For Health/Medical Insurance only.</strong> These fields are used by the comparison engine '
+                'to match policies with user survey responses. The benefit level fields (in_hospital_benefit_level, '
+                'out_hospital_benefit_level) and range fields (annual_limit_family_range, annual_limit_member_range) '
+                'are the new preferred fields. Leave these fields empty if this is a Funeral policy.'
             ),
             'classes': ('health-features',)
         }),
         (_('Funeral Policy Features'), {
             'fields': (
                 'cover_amount',
-                'marital_status_requirement',
-                'gender_requirement',
+                'cover_amount_range',
+                ('marital_status_requirement', 'gender_requirement'),
+                'funeral_service_type',
+                'family_coverage_type',
+                'max_family_members',
+                ('waiting_period_natural_death', 'waiting_period_accidental_death'),
             ),
             'description': _(
-                '<strong>For Funeral Insurance only.</strong> These 3 fields are used by the comparison engine '
-                'to match policies with user survey responses. Leave these fields empty if this is a Health policy.'
+                '<strong>For Funeral Insurance only.</strong> These fields are used by the comparison engine '
+                'to match policies with user survey responses. The cover_amount and cover_amount_range fields '
+                'work together for flexible matching. Leave these fields empty if this is a Health policy.'
             ),
             'classes': ('funeral-features',)
         }),
@@ -610,26 +617,35 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
         (_('Health Insurance Features'), {
             'fields': (
                 ('annual_limit_per_member', 'annual_limit_per_family'),
+                ('annual_limit_family_range', 'annual_limit_member_range'),
                 'monthly_household_income',
                 'currently_on_medical_aid',
                 'ambulance_coverage',
-                ('in_hospital_benefit', 'out_hospital_benefit'),
+                ('in_hospital_benefit', 'in_hospital_benefit_level'),
+                ('out_hospital_benefit', 'out_hospital_benefit_level'),
                 'chronic_medication_availability'
             ),
             'description': _(
-                'Features specific to health/medical insurance policies. These 8 fields are used by the comparison engine '
-                'to match policies with user survey responses. Only fill these when Insurance Type is "Health/Medical Insurance".'
+                'Features specific to health/medical insurance policies. These fields are used by the comparison engine '
+                'to match policies with user survey responses. The benefit level fields and range fields are the new '
+                'preferred approach. Only fill these when Insurance Type is "Health/Medical Insurance".'
             ),
             'classes': ('collapse', 'health-features')
         }),
         (_('Funeral Insurance Features'), {
             'fields': (
                 'cover_amount',
+                'cover_amount_range',
                 ('marital_status_requirement', 'gender_requirement'),
+                'funeral_service_type',
+                'family_coverage_type',
+                'max_family_members',
+                ('waiting_period_natural_death', 'waiting_period_accidental_death'),
             ),
             'description': _(
-                'Core features for funeral insurance policies. These 3 fields are used by the comparison engine '
-                'to match policies with user survey responses. Only fill these when Insurance Type is "Funeral Insurance".'
+                'Core features for funeral insurance policies. These fields are used by the comparison engine '
+                'to match policies with user survey responses. The cover_amount and cover_amount_range work together '
+                'for flexible matching. Only fill these when Insurance Type is "Funeral Insurance".'
             ),
             'classes': ('collapse', 'funeral-features')
         }),
@@ -686,23 +702,33 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             features = [
                 obj.annual_limit_per_member,
                 obj.annual_limit_per_family,
+                obj.annual_limit_family_range,
+                obj.annual_limit_member_range,
                 obj.monthly_household_income,
                 obj.currently_on_medical_aid,
                 obj.ambulance_coverage,
                 obj.in_hospital_benefit,
+                obj.in_hospital_benefit_level,
                 obj.out_hospital_benefit,
+                obj.out_hospital_benefit_level,
                 obj.chronic_medication_availability
             ]
             filled = sum(1 for f in features if f is not None)
-            return f"💊 {filled}/8 features"
+            return f"💊 {filled}/12 features"
         elif obj.insurance_type == 'FUNERAL':
             features = [
                 obj.cover_amount,
+                obj.cover_amount_range,
                 obj.marital_status_requirement,
-                obj.gender_requirement
+                obj.gender_requirement,
+                obj.funeral_service_type,
+                obj.family_coverage_type,
+                obj.max_family_members,
+                obj.waiting_period_natural_death,
+                obj.waiting_period_accidental_death
             ]
             filled = sum(1 for f in features if f is not None)
-            return f"⚱️ {filled}/3 features"
+            return f"⚱️ {filled}/9 features"
         return "❓ Unknown type"
     feature_summary.short_description = _('Features Filled')
     
@@ -731,24 +757,39 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             health_features = [
                 ('annual_limit_per_member', obj.annual_limit_per_member),
                 ('annual_limit_per_family', obj.annual_limit_per_family),
+                ('annual_limit_family_range', obj.annual_limit_family_range),
+                ('annual_limit_member_range', obj.annual_limit_member_range),
                 ('monthly_household_income', obj.monthly_household_income),
                 ('currently_on_medical_aid', obj.currently_on_medical_aid),
                 ('ambulance_coverage', obj.ambulance_coverage),
                 ('in_hospital_benefit', obj.in_hospital_benefit),
+                ('in_hospital_benefit_level', obj.in_hospital_benefit_level),
                 ('out_hospital_benefit', obj.out_hospital_benefit),
+                ('out_hospital_benefit_level', obj.out_hospital_benefit_level),
                 ('chronic_medication_availability', obj.chronic_medication_availability)
             ]
             
-            # Check for missing required health features
-            missing_health = [name for name, value in health_features if value is None]
-            if missing_health:
-                errors.append(f"Missing health features: {', '.join(missing_health)}")
+            # Check for missing core health features (at least some should be filled)
+            core_health_features = [
+                ('monthly_household_income', obj.monthly_household_income),
+                ('ambulance_coverage', obj.ambulance_coverage),
+                ('chronic_medication_availability', obj.chronic_medication_availability)
+            ]
+            missing_core = [name for name, value in core_health_features if value is None]
+            if len(missing_core) == len(core_health_features):
+                errors.append("At least some core health features should be filled: monthly_household_income, ambulance_coverage, or chronic_medication_availability")
             
             # Check for incorrectly filled funeral features
             funeral_features = [
                 ('cover_amount', obj.cover_amount),
+                ('cover_amount_range', obj.cover_amount_range),
                 ('marital_status_requirement', obj.marital_status_requirement),
-                ('gender_requirement', obj.gender_requirement)
+                ('gender_requirement', obj.gender_requirement),
+                ('funeral_service_type', obj.funeral_service_type),
+                ('family_coverage_type', obj.family_coverage_type),
+                ('max_family_members', obj.max_family_members),
+                ('waiting_period_natural_death', obj.waiting_period_natural_death),
+                ('waiting_period_accidental_death', obj.waiting_period_accidental_death)
             ]
             filled_funeral = [name for name, value in funeral_features if value is not None]
             if filled_funeral:
@@ -758,24 +799,39 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             # Check that funeral features are filled and health features are empty
             funeral_features = [
                 ('cover_amount', obj.cover_amount),
+                ('cover_amount_range', obj.cover_amount_range),
+                ('marital_status_requirement', obj.marital_status_requirement),
+                ('gender_requirement', obj.gender_requirement),
+                ('funeral_service_type', obj.funeral_service_type),
+                ('family_coverage_type', obj.family_coverage_type),
+                ('max_family_members', obj.max_family_members),
+                ('waiting_period_natural_death', obj.waiting_period_natural_death),
+                ('waiting_period_accidental_death', obj.waiting_period_accidental_death)
+            ]
+            
+            # Check for missing core funeral features
+            core_funeral_features = [
+                ('cover_amount', obj.cover_amount),
                 ('marital_status_requirement', obj.marital_status_requirement),
                 ('gender_requirement', obj.gender_requirement)
             ]
-            
-            # Check for missing required funeral features
-            missing_funeral = [name for name, value in funeral_features if value is None]
-            if missing_funeral:
-                errors.append(f"Missing funeral features: {', '.join(missing_funeral)}")
+            missing_core = [name for name, value in core_funeral_features if value is None]
+            if len(missing_core) == len(core_funeral_features):
+                errors.append("At least some core funeral features should be filled: cover_amount, marital_status_requirement, or gender_requirement")
             
             # Check for incorrectly filled health features
             health_features = [
                 ('annual_limit_per_member', obj.annual_limit_per_member),
                 ('annual_limit_per_family', obj.annual_limit_per_family),
+                ('annual_limit_family_range', obj.annual_limit_family_range),
+                ('annual_limit_member_range', obj.annual_limit_member_range),
                 ('monthly_household_income', obj.monthly_household_income),
                 ('currently_on_medical_aid', obj.currently_on_medical_aid),
                 ('ambulance_coverage', obj.ambulance_coverage),
                 ('in_hospital_benefit', obj.in_hospital_benefit),
+                ('in_hospital_benefit_level', obj.in_hospital_benefit_level),
                 ('out_hospital_benefit', obj.out_hospital_benefit),
+                ('out_hospital_benefit_level', obj.out_hospital_benefit_level),
                 ('chronic_medication_availability', obj.chronic_medication_availability)
             ]
             filled_health = [name for name, value in health_features if value is not None]
@@ -791,6 +847,8 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             errors.append("Monthly household income must be positive")
         if obj.cover_amount is not None and obj.cover_amount <= 0:
             errors.append("Cover amount must be positive")
+        if obj.max_family_members is not None and obj.max_family_members <= 0:
+            errors.append("Max family members must be positive")
             
         return errors
     
@@ -831,19 +889,29 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
             if obj.insurance_type == 'HEALTH':
                 # Clear funeral features
                 obj.cover_amount = None
+                obj.cover_amount_range = None
                 obj.marital_status_requirement = None
                 obj.gender_requirement = None
+                obj.funeral_service_type = None
+                obj.family_coverage_type = None
+                obj.max_family_members = None
+                obj.waiting_period_natural_death = None
+                obj.waiting_period_accidental_death = None
                 obj.save()
                 updated_count += 1
             elif obj.insurance_type == 'FUNERAL':
                 # Clear health features
                 obj.annual_limit_per_member = None
                 obj.annual_limit_per_family = None
+                obj.annual_limit_family_range = None
+                obj.annual_limit_member_range = None
                 obj.monthly_household_income = None
                 obj.currently_on_medical_aid = None
                 obj.ambulance_coverage = None
                 obj.in_hospital_benefit = None
+                obj.in_hospital_benefit_level = None
                 obj.out_hospital_benefit = None
+                obj.out_hospital_benefit_level = None
                 obj.chronic_medication_availability = None
                 obj.save()
                 updated_count += 1
@@ -868,17 +936,30 @@ class PolicyFeaturesAdmin(admin.ModelAdmin):
                 policy=policy,
                 defaults={
                     'insurance_type': template.insurance_type,
+                    # Health features
                     'annual_limit_per_member': template.annual_limit_per_member,
                     'annual_limit_per_family': template.annual_limit_per_family,
+                    'annual_limit_family_range': template.annual_limit_family_range,
+                    'annual_limit_member_range': template.annual_limit_member_range,
                     'monthly_household_income': template.monthly_household_income,
                     'currently_on_medical_aid': template.currently_on_medical_aid,
                     'ambulance_coverage': template.ambulance_coverage,
                     'in_hospital_benefit': template.in_hospital_benefit,
+                    'in_hospital_benefit_level': template.in_hospital_benefit_level,
                     'out_hospital_benefit': template.out_hospital_benefit,
+                    'out_hospital_benefit_level': template.out_hospital_benefit_level,
                     'chronic_medication_availability': template.chronic_medication_availability,
+                    # Funeral features
                     'cover_amount': template.cover_amount,
+                    'cover_amount_range': template.cover_amount_range,
                     'marital_status_requirement': template.marital_status_requirement,
                     'gender_requirement': template.gender_requirement,
+                    'funeral_service_type': template.funeral_service_type,
+                    'family_coverage_type': template.family_coverage_type,
+                    'max_family_members': template.max_family_members,
+                    'waiting_period_natural_death': template.waiting_period_natural_death,
+                    'waiting_period_accidental_death': template.waiting_period_accidental_death,
+                    # Legacy fields
                     'monthly_net_income': template.monthly_net_income,
                 }
             )

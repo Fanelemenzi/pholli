@@ -1,5 +1,5 @@
 """
-Management command to load enhanced survey questions with benefit levels and ranges.
+Management command to load complete survey questions with all available fields and options.
 """
 
 from django.core.management.base import BaseCommand
@@ -9,7 +9,7 @@ import os
 
 
 class Command(BaseCommand):
-    help = 'Load enhanced survey questions with benefit levels and annual limit ranges'
+    help = 'Load complete survey questions with all available fields and options'
     
     def add_arguments(self, parser):
         parser.add_argument(
@@ -25,7 +25,7 @@ class Command(BaseCommand):
         )
     
     def handle(self, *args, **options):
-        """Load enhanced survey questions"""
+        """Load complete survey questions"""
         
         if options['replace']:
             self.stdout.write('Removing existing survey questions...')
@@ -36,28 +36,28 @@ class Command(BaseCommand):
                 SimpleSurveyQuestion.objects.all().delete()
                 self.stdout.write('Removed all existing questions')
         
-        # Load enhanced health questions
+        # Load complete health questions
         if not options['category'] or options['category'] == 'health':
-            self.stdout.write('Loading enhanced health questions...')
+            self.stdout.write('Loading complete health questions...')
             try:
-                call_command('loaddata', 'simple_surveys/fixtures/enhanced_health_questions.json')
+                call_command('loaddata', 'simple_surveys/fixtures/complete_health_questions.json')
                 self.stdout.write(
-                    self.style.SUCCESS('Successfully loaded enhanced health questions')
+                    self.style.SUCCESS('Successfully loaded complete health questions')
                 )
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(f'Error loading health questions: {e}')
                 )
         
-        # Load funeral questions (if they exist)
+        # Load complete funeral questions
         if not options['category'] or options['category'] == 'funeral':
-            funeral_fixture = 'simple_surveys/fixtures/funeral_questions.json'
+            funeral_fixture = 'simple_surveys/fixtures/complete_funeral_questions.json'
             if os.path.exists(funeral_fixture):
-                self.stdout.write('Loading funeral questions...')
+                self.stdout.write('Loading complete funeral questions...')
                 try:
                     call_command('loaddata', funeral_fixture)
                     self.stdout.write(
-                        self.style.SUCCESS('Successfully loaded funeral questions')
+                        self.style.SUCCESS('Successfully loaded complete funeral questions')
                     )
                 except Exception as e:
                     self.stdout.write(
@@ -65,7 +65,7 @@ class Command(BaseCommand):
                     )
             else:
                 self.stdout.write(
-                    self.style.WARNING('Funeral questions fixture not found, skipping...')
+                    self.style.WARNING('Complete funeral questions fixture not found, skipping...')
                 )
         
         # Display summary
@@ -73,25 +73,28 @@ class Command(BaseCommand):
         funeral_count = SimpleSurveyQuestion.objects.filter(category='funeral').count()
         
         self.stdout.write('\n' + '='*50)
-        self.stdout.write('SURVEY QUESTIONS SUMMARY')
+        self.stdout.write('COMPLETE SURVEY QUESTIONS SUMMARY')
         self.stdout.write('='*50)
         self.stdout.write(f'Health questions: {health_count}')
         self.stdout.write(f'Funeral questions: {funeral_count}')
         self.stdout.write(f'Total questions: {health_count + funeral_count}')
         
-        # Show new benefit level questions
-        benefit_questions = SimpleSurveyQuestion.objects.filter(
+        # Show key question types
+        key_questions = SimpleSurveyQuestion.objects.filter(
             field_name__in=[
                 'in_hospital_benefit_level',
                 'out_hospital_benefit_level',
                 'annual_limit_family_range',
-                'annual_limit_member_range'
+                'annual_limit_member_range',
+                'preferred_cover_amount',
+                'marital_status',
+                'gender'
             ]
         )
         
-        if benefit_questions.exists():
-            self.stdout.write('\nNew benefit level and range questions:')
-            for question in benefit_questions:
+        if key_questions.exists():
+            self.stdout.write('\nKey question types loaded:')
+            for question in key_questions:
                 self.stdout.write(f'  - {question.question_text} ({question.field_name})')
         
-        self.stdout.write('\n' + self.style.SUCCESS('Enhanced survey questions loaded successfully!'))
+        self.stdout.write('\n' + self.style.SUCCESS('Complete survey questions loaded successfully!'))

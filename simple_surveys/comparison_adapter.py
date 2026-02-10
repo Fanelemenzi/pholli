@@ -920,7 +920,12 @@ class SimplifiedPolicyComparisonEngine(PolicyComparisonEngine):
         import uuid
         
         if not session_key:
-            session_key = str(uuid.uuid4())
+            from surveys.session_key_manager import session_key_manager
+            session_key = session_key_manager.generate_new_session_key(
+                self.category,
+                None,  # No user context in adapter
+                "comparison_adapter"
+            )
         
         # Import here to avoid circular imports
         from comparison.models import ComparisonSession

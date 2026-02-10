@@ -15,7 +15,7 @@ from .models import SimpleSurvey, SimpleSurveyQuestion, SimpleSurveyResponse, Qu
 from .forms import SimpleSurveyForm, HealthSurveyForm, FuneralSurveyForm
 from .engine import SimpleSurveyEngine
 from .comparison_adapter import SimpleSurveyComparisonAdapter
-from .session_manager import SessionManager, SessionValidationError
+from .simple_session_manager import SimpleSessionManager, with_survey_session
 from .response_migration import ResponseMigrationHandler
 
 logger = logging.getLogger(__name__)
@@ -56,8 +56,8 @@ class FeatureSurveyView(View):
             raise Http404("Invalid survey category")
         
         try:
-            # Create or get session using SessionManager
-            quotation_session, created = SessionManager.create_or_get_session(request, category)
+            # Handle session management directly
+            quotation_session = SimpleSessionManager.get_or_create_session(request, category)
             session_key = quotation_session.session_key
             
             # Initialize survey engine to get enhanced questions
@@ -80,17 +80,13 @@ class FeatureSurveyView(View):
                 'existing_responses': existing_responses,
                 'completion_status': completion_status,
                 'session_key': session_key,
-                'session_created': created,
             }
             
-            return render(request, 'surveys/simple_survey_form.html', context)
+            return render(request, 'surveys/simple_survey_form_fixed.html', context)
             
-        except ValueError as e:
-            logger.error(f"Invalid category for feature survey: {e}")
-            raise Http404("Invalid survey category")
         except Exception as e:
             logger.error(f"Error displaying feature survey for category {category}: {e}")
-            return render(request, 'surveys/simple_survey_form.html', {
+            return render(request, 'surveys/simple_survey_form_fixed.html', {
                 'error_message': 'Unable to load survey questions. Please try again.',
                 'category': category
             })
@@ -101,22 +97,11 @@ class FeatureSurveyView(View):
         if category not in ['health', 'funeral']:
             raise Http404("Invalid survey category")
         
-        # Validate session
-        session_key = request.session.session_key
-        if not session_key:
-            return JsonResponse({
-                'success': False,
-                'error': 'No active session'
-            }, status=400)
-        
-        validation_result = SessionManager.validate_session(session_key, category)
-        if not validation_result['valid']:
-            return JsonResponse({
-                'success': False,
-                'error': f'Session validation failed: {validation_result["error"]}'
-            }, status=400)
-        
         try:
+            # Get fresh session for results (invalidates old session if needed)
+            quotation_session = SimpleSessionManager.ensure_fresh_session_for_results(request, category)
+            session_key = quotation_session.session_key
+            
             # Initialize survey engine
             engine = SimpleSurveyEngine(category)
             
@@ -131,7 +116,6 @@ class FeatureSurveyView(View):
             criteria = engine.process_responses(session_key)
             
             # Update quotation session with criteria
-            quotation_session = validation_result['session']
             quotation_session.update_criteria(criteria)
             
             # Generate quotations using comparison adapter
@@ -234,7 +218,7 @@ class FeatureResultsView(View):
             
         except Exception as e:
             logger.error(f"Error displaying feature results for category {category}: {e}")
-            return render(request, 'surveys/simple_survey_form.html', {
+            return render(request, 'surveys/simple_survey_form_fixed.html', {
                 'error_message': 'Unable to display results. Please try again.',
                 'category': category
             })
@@ -280,14 +264,14 @@ class SurveyView(View):
                 'session_created': created,
             }
             
-            return render(request, 'surveys/simple_survey_form.html', context)
+            return render(request, 'surveys/simple_survey_form_fixed.html', context)
             
         except ValueError as e:
             logger.error(f"Invalid category for survey: {e}")
             raise Http404("Invalid survey category")
         except Exception as e:
             logger.error(f"Error displaying survey for category {category}: {e}")
-            return render(request, 'surveys/simple_survey_form.html', {
+            return render(request, 'surveys/simple_survey_form_fixed.html', {
                 'error_message': 'Unable to load survey questions. Please try again.',
                 'category': category
             })
@@ -386,22 +370,11 @@ class ProcessSurveyView(View):
         if category not in ['health', 'funeral']:
             raise Http404("Invalid survey category")
         
-        # Validate session
-        session_key = request.session.session_key
-        if not session_key:
-            return JsonResponse({
-                'success': False,
-                'error': 'No active session'
-            }, status=400)
-        
-        validation_result = SessionManager.validate_session(session_key, category)
-        if not validation_result['valid']:
-            return JsonResponse({
-                'success': False,
-                'error': f'Session validation failed: {validation_result["error"]}'
-            }, status=400)
-        
         try:
+            # Get fresh session for results (invalidates old session if needed)
+            quotation_session = SimpleSessionManager.ensure_fresh_session_for_results(request, category)
+            session_key = quotation_session.session_key
+            
             # Initialize survey engine
             engine = SimpleSurveyEngine(category)
             
@@ -416,7 +389,6 @@ class ProcessSurveyView(View):
             criteria = engine.process_responses(session_key)
             
             # Update quotation session with criteria
-            quotation_session = validation_result['session']
             quotation_session.update_criteria(criteria)
             
             # Generate quotations using comparison adapter
@@ -461,7 +433,7 @@ class ProcessSurveyView(View):
     
     def get(self, request, category):
         """Redirect GET requests to survey form"""
-        return render(request, 'surveys/simple_survey_form.html', {
+        return render(request, 'surveys/simple_survey_form_fixed.html', {
             'category': category,
             'error_message': 'Please complete the survey first.'
         })
@@ -526,10 +498,88 @@ class SurveyResultsView(View):
             
         except Exception as e:
             logger.error(f"Error displaying results for category {category}: {e}")
-            return render(request, 'surveys/simple_survey_form.html', {
+            return render(request, 'surveys/simple_survey_form_fixed.html', {
                 'error_message': 'Unable to display results. Please try again.',
                 'category': category
             })
+
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def save_response_ajax(request, category):
+    """
+    AJAX endpoint to save survey responses.
+    Automatically invalidates session when responses are modified.
+    """
+    # Validate category
+    if category not in ['health', 'funeral']:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid category'
+        }, status=400)
+    
+    try:
+        # Parse request data
+        data = json.loads(request.body)
+        question_id = data.get('question_id')
+        response_value = data.get('response_value')
+        
+        if not question_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'Question ID is required'
+            }, status=400)
+        
+        # Invalidate existing session since we're modifying responses
+        SimpleSessionManager.invalidate_session_on_modification(request, category)
+        
+        # Get fresh session
+        quotation_session = SimpleSessionManager.get_or_create_session(request, category)
+        session_key = quotation_session.session_key
+        
+        # Get question
+        try:
+            question = SimpleSurveyQuestion.objects.get(
+                id=question_id,
+                category=category
+            )
+        except SimpleSurveyQuestion.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Question not found'
+            }, status=404)
+        
+        # Save or update response
+        response, created = SimpleSurveyResponse.objects.update_or_create(
+            session_key=session_key,
+            category=category,
+            question=question,
+            defaults={'response_value': response_value}
+        )
+        
+        # Get updated completion status
+        engine = SimpleSurveyEngine(category)
+        completion_status = engine.get_completion_status(session_key)
+        
+        return JsonResponse({
+            'success': True,
+            'response_id': response.id,
+            'created': created,
+            'completion_status': completion_status,
+            'session_key': session_key
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error saving response for category {category}: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Unable to save response'
+        }, status=500)
 
 
 @require_http_methods(["GET"])
@@ -545,22 +595,11 @@ def survey_status_ajax(request, category):
             'error': 'Invalid category'
         }, status=400)
     
-    # Validate session
-    session_key = request.session.session_key
-    if not session_key:
-        return JsonResponse({
-            'success': False,
-            'error': 'No active session'
-        }, status=400)
-    
-    validation_result = SessionManager.validate_session(session_key, category)
-    if not validation_result['valid']:
-        return JsonResponse({
-            'success': False,
-            'error': f'Session validation failed: {validation_result["error"]}'
-        }, status=400)
-    
     try:
+        # Get or create session
+        quotation_session = SimpleSessionManager.get_or_create_session(request, category)
+        session_key = quotation_session.session_key
+        
         # Get completion status
         engine = SimpleSurveyEngine(category)
         status = engine.get_completion_status(session_key)
@@ -632,7 +671,7 @@ def session_expired_view(request):
         'show_restart_button': True
     }
     
-    return render(request, 'surveys/simple_survey_form.html', context)
+    return render(request, 'surveys/simple_survey_form_fixed.html', context)
 
 
 def session_error_view(request):
@@ -659,7 +698,7 @@ def session_error_view(request):
         'show_restart_button': True
     }
     
-    return render(request, 'surveys/simple_survey_form.html', context)
+    return render(request, 'surveys/simple_survey_form_fixed.html', context)
 
 
 @require_http_methods(["GET"])

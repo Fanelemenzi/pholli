@@ -46,6 +46,10 @@ urlpatterns = [
     path('feature-survey/<str:category>/', views.FeatureSurveyView.as_view(), name='feature_survey'),
     path('feature-survey/<str:category>/results/', views.FeatureResultsView.as_view(), name='feature_results'),
     
+    # AJAX endpoints
+    path('ajax/save-response/<str:category>/', views.save_response_ajax, name='save_response_ajax'),
+    path('ajax/survey-status/<str:category>/', views.survey_status_ajax, name='survey_status_ajax'),
+    
     # Response migration functionality
     path('migrate/<str:category>/', ResponseMigrationView.as_view(), name='migrate_responses'),
     path('ajax/migration-status/<str:category>/', check_migration_status, name='migration_status'),

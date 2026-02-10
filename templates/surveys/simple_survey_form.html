@@ -3,64 +3,65 @@
 {% load survey_extras %}
 
 {% block content %}
+
 <head>
     <style>
         body {
             background: #ffffff;
             min-height: 100vh;
         }
-        
+
         .survey-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 40px 20px;
         }
-        
+
         .survey-header {
             text-align: center;
             margin-bottom: 40px;
             color: #000000;
         }
-        
+
         .survey-header h1 {
             color: #000000;
             font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 15px;
         }
-        
+
         .survey-header .lead {
             color: #333333;
             font-size: 1.1rem;
         }
-        
+
         .survey-progress {
             margin-bottom: 30px;
         }
-        
+
         .progress {
             height: 12px;
             border-radius: 10px;
-            background: rgba(0,0,0,0.1);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        
+
         .question-card {
             background: #ffffff;
             border-radius: 20px;
             padding: 35px;
             margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             border: 2px solid #269523;
             transition: all 0.3s ease;
         }
-        
+
         .question-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 15px 40px rgba(38, 149, 35, 0.2);
             border-color: #f1d925;
         }
-        
+
         .question-title {
             font-size: 1.3rem;
             font-weight: 700;
@@ -71,8 +72,9 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             border-radius: 12px;
             border: 2px solid #e2e8f0;
             padding: 15px 18px;
@@ -81,47 +83,48 @@
             transition: all 0.3s ease;
             color: #000000;
         }
-        
-        .form-control:focus, .form-select:focus {
+
+        .form-control:focus,
+        .form-select:focus {
             border-color: #269523;
             box-shadow: 0 0 0 0.2rem rgba(38, 149, 35, 0.25);
             background: #ffffff;
             transform: translateY(-1px);
         }
-        
+
         .form-check {
             margin-bottom: 15px;
             padding: 12px 15px;
             border-radius: 10px;
             transition: all 0.2s ease;
         }
-        
+
         .form-check:hover {
             background: linear-gradient(145deg, #f9f9f9, #f1f1f1);
         }
-        
+
         .form-check-input {
             margin-top: 0.25rem;
             width: 1.2em;
             height: 1.2em;
         }
-        
+
         .form-check-input:checked {
             background-color: #269523;
             border-color: #269523;
         }
-        
+
         .form-check-input:focus {
             box-shadow: 0 0 0 0.2rem rgba(38, 149, 35, 0.25);
         }
-        
+
         .form-check-label {
             margin-left: 0.7rem;
             font-weight: 500;
             color: #000000;
             cursor: pointer;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #269523 0%, #f1d925 100%);
             border: none;
@@ -135,14 +138,14 @@
             box-shadow: 0 8px 25px rgba(38, 149, 35, 0.4);
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 12px 35px rgba(38, 149, 35, 0.5);
             background: linear-gradient(135deg, #1e7a1e 0%, #d4c020 100%);
             color: #000000;
         }
-        
+
         .progress-bar {
             background: linear-gradient(90deg, #269523, #f1d925);
             border-radius: 10px;
@@ -151,90 +154,95 @@
             color: #000000;
             box-shadow: 0 2px 8px rgba(38, 149, 35, 0.3);
         }
-        
+
         .alert {
             border-radius: 15px;
             border: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
-        
+
         .alert-danger {
             background: linear-gradient(135deg, #fed7d7, #feb2b2);
             color: #c53030;
         }
-        
-        .radio-group, .checkbox-group {
+
+        .radio-group,
+        .checkbox-group {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
-        
+
         .form-text {
             margin-top: 10px;
             font-size: 0.875rem;
             color: #666666;
             font-style: italic;
         }
-        
+
         .text-danger {
             color: #dc3545 !important;
             font-weight: 700;
         }
-        
+
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .survey-container {
                 padding: 20px 15px;
             }
-            
+
             .survey-header h1 {
                 font-size: 1.8rem;
                 line-height: 1.3;
             }
-            
+
             .survey-header .lead {
                 font-size: 1rem;
             }
-            
+
             .question-card {
                 padding: 25px 20px;
                 border-radius: 15px;
                 margin-bottom: 20px;
             }
-            
+
             .question-card:hover {
-                transform: none; /* Disable hover effects on mobile */
+                transform: none;
+                /* Disable hover effects on mobile */
             }
-            
+
             .question-title {
                 font-size: 1.2rem;
                 line-height: 1.4;
                 margin-bottom: 15px;
             }
-            
-            .form-control, .form-select {
-                font-size: 16px; /* Prevents zoom on iOS */
+
+            .form-control,
+            .form-select {
+                font-size: 16px;
+                /* Prevents zoom on iOS */
                 padding: 12px 15px;
                 border-radius: 8px;
-                min-height: 44px; /* Touch-friendly */
+                min-height: 44px;
+                /* Touch-friendly */
             }
-            
+
             .form-check {
                 padding: 10px 12px;
                 margin-bottom: 12px;
                 border-radius: 8px;
             }
-            
+
             .form-check-input {
                 width: 1.1em;
                 height: 1.1em;
             }
-            
+
             .form-check-label {
                 font-size: 0.95rem;
                 line-height: 1.4;
             }
-            
+
             .btn-primary {
                 width: 100%;
                 padding: 15px 20px;
@@ -242,82 +250,84 @@
                 border-radius: 12px;
                 margin-top: 20px;
             }
-            
+
             .progress {
                 height: 10px;
                 border-radius: 8px;
             }
-            
+
             .progress-bar {
                 font-size: 0.8rem;
                 border-radius: 8px;
             }
-            
+
             .alert {
                 border-radius: 12px;
                 padding: 15px;
                 font-size: 0.9rem;
             }
-            
+
             .form-text {
                 font-size: 0.8rem;
             }
-            
+
             /* Stack radio buttons and checkboxes better on mobile */
-            .radio-group, .checkbox-group {
+            .radio-group,
+            .checkbox-group {
                 gap: 5px;
             }
-            
+
             /* Page title adjustments */
             .page-title h1 {
                 font-size: 1.8rem !important;
                 line-height: 1.3;
             }
-            
+
             .page-title p {
                 font-size: 0.95rem;
                 line-height: 1.5;
             }
         }
-        
+
         /* Very small screens */
         @media (max-width: 480px) {
             .survey-container {
                 padding: 15px 10px;
             }
-            
+
             .survey-header h1 {
                 font-size: 1.6rem;
             }
-            
+
             .question-card {
                 padding: 20px 15px;
                 border-radius: 12px;
             }
-            
+
             .question-title {
                 font-size: 1.1rem;
             }
-            
-            .form-control, .form-select {
+
+            .form-control,
+            .form-select {
                 padding: 10px 12px;
                 font-size: 16px;
             }
-            
+
             .btn-primary {
                 padding: 12px 15px;
                 font-size: 0.95rem;
             }
-            
+
             .page-title h1 {
                 font-size: 1.6rem !important;
             }
-            
+
             .page-title p {
                 font-size: 0.9rem;
             }
         }
-        
+
         /* Touch-friendly improvements */
         @media (hover: none) and (pointer: coarse) {
             .form-check {
@@ -325,16 +335,16 @@
                 display: flex;
                 align-items: center;
             }
-            
+
             .form-check-input {
                 min-width: 20px;
                 min-height: 20px;
             }
-            
+
             .btn-primary {
                 min-height: 48px;
             }
-            
+
             /* Remove hover effects on touch devices */
             .question-card:hover,
             .form-check:hover,
@@ -342,7 +352,7 @@
                 transform: none;
             }
         }
-        
+
         /* Animated background elements - simplified for mobile */
         .survey-container::before {
             content: '';
@@ -366,7 +376,8 @@
             style="background-image: url('{% static 'assets/img/bg/bg-2.webp' %}');">
             <div class="container position-relative">
                 <h1>Health Insurance Survey</h1>
-                <p>Find the perfect health insurance plan for you and your family. Compare comprehensive coverage options,
+                <p>Find the perfect health insurance plan for you and your family. Compare comprehensive coverage
+                    options,
                     benefits, and premiums from top Eswatini medical schemes in just a few minutes.</p>
             </div>
         </div><!-- End Page Title -->
@@ -376,18 +387,19 @@
         <div class="survey-container">
             <div class="survey-header">
                 <h1>{{ category_display }} Survey</h1>
-                <p class="lead">Help us find the perfect {{ category_display|lower }} plan for you by answering a few quick questions about your specific needs and preferences.</p>
+                <p class="lead">Help us find the perfect {{ category_display|lower }} plan for you by answering a few
+                    quick questions about your specific needs and preferences.</p>
             </div>
 
             <!-- Progress Bar -->
             <div class="survey-progress">
                 <div class="progress">
-                    <div class="progress-bar" role="progressbar" 
-                         style="width: {{ completion_status.completion_percentage|default:0 }}%" 
-                         aria-valuenow="{{ completion_status.completion_percentage|default:0 }}" 
-                         aria-valuemin="0" 
-                         aria-valuemax="100">
-                        {{ completion_status.answered_required|default:0 }}/{{ completion_status.required_questions|default:0 }} Complete
+                    <div class="progress-bar" role="progressbar"
+                        style="width: {{ completion_status.completion_percentage|default:0 }}%"
+                        aria-valuenow="{{ completion_status.completion_percentage|default:0 }}" aria-valuemin="0"
+                        aria-valuemax="100">
+                        {{ completion_status.answered_required|default:0 }}/{{
+                        completion_status.required_questions|default:0 }} Complete
                     </div>
                 </div>
             </div>
@@ -399,119 +411,107 @@
             </div>
             {% endif %}
 
-            
+
 
             <!-- Survey Form -->
             <form id="surveyForm" method="post">
                 {% csrf_token %}
-                
+
                 {% for question in questions %}
                 <div class="question-card" data-question-id="{{ question.id }}">
                     <div class="question-title">
                         {{ question.question_text }}
                         {% if question.is_required %}<span class="text-danger">*</span>{% endif %}
                     </div>
-                    
+
                     {% if question.input_type == 'text' %}
-                        <input type="text" 
-                               class="form-control" 
-                               name="{{ question.field_name }}" 
-                               id="{{ question.field_name }}"
-                               value="{{ existing_responses|get_item:question.field_name|default:'' }}"
-                               {% if question.is_required %}required{% endif %}>
-                    
+                    <input type="text" class="form-control" name="{{ question.field_name }}"
+                        id="{{ question.field_name }}"
+                        value="{{ existing_responses|get_item:question.field_name|default:'' }}" {% if
+                        question.is_required %}required{% endif %}>
+
                     {% elif question.input_type == 'email' %}
-                        <input type="email" 
-                               class="form-control" 
-                               name="{{ question.field_name }}" 
-                               id="{{ question.field_name }}"
-                               value="{{ existing_responses|get_item:question.field_name|default:'' }}"
-                               {% if question.is_required %}required{% endif %}>
-                    
+                    <input type="email" class="form-control" name="{{ question.field_name }}"
+                        id="{{ question.field_name }}"
+                        value="{{ existing_responses|get_item:question.field_name|default:'' }}" {% if
+                        question.is_required %}required{% endif %}>
+
                     {% elif question.input_type == 'number' %}
-                        <input type="number" 
-                               class="form-control" 
-                               name="{{ question.field_name }}" 
-                               id="{{ question.field_name }}"
-                               value="{{ existing_responses|get_item:question.field_name|default:'' }}"
-                               {% if question.validation_rules.min %}min="{{ question.validation_rules.min }}"{% endif %}
-                               {% if question.validation_rules.max %}max="{{ question.validation_rules.max }}"{% endif %}
-                               {% if question.is_required %}required{% endif %}>
-                    
+                    <input type="number" class="form-control" name="{{ question.field_name }}"
+                        id="{{ question.field_name }}"
+                        value="{{ existing_responses|get_item:question.field_name|default:'' }}" {% if
+                        question.validation_rules.min %}min="{{ question.validation_rules.min }}" {% endif %} {% if
+                        question.validation_rules.max %}max="{{ question.validation_rules.max }}" {% endif %} {% if
+                        question.is_required %}required{% endif %}>
+
                     {% elif question.input_type == 'select' %}
-                        <select class="form-select" 
-                                name="{{ question.field_name }}" 
-                                id="{{ question.field_name }}"
-                                {% if question.is_required %}required{% endif %}>
-                            <option value="">Select an option...</option>
-                            {% for choice in question.choices %}
-                                <option value="{{ choice.0 }}" 
-                                        {% if existing_responses|get_item:question.field_name == choice.0 %}selected{% endif %}
-                                        {% if choice.2 %}title="{{ choice.2 }}"{% endif %}>
-                                    {{ choice.1 }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        {% if question.field_name == 'annual_limit_family_range' or question.field_name == 'annual_limit_member_range' %}
-                            <div class="form-text">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Choose a range that matches your expected medical expenses. If unsure, select "Not sure / Need guidance" for personalized recommendations.
-                            </div>
-                        {% endif %}
-                    
-                    {% elif question.input_type == 'radio' %}
-                        <div class="radio-group">
-                            {% for choice in question.choices %}
-                                <div class="form-check">
-                                    <input class="form-check-input" 
-                                           type="radio" 
-                                           name="{{ question.field_name }}" 
-                                           id="{{ question.field_name }}_{{ choice.0 }}"
-                                           value="{{ choice.0 }}"
-                                           {% if existing_responses|get_item:question.field_name == choice.0 %}checked{% endif %}
-                                           {% if question.is_required %}required{% endif %}>
-                                    <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
-                                        <strong>{{ choice.1 }}</strong>
-                                        {% if choice.2 %}
-                                            <br><small class="text-muted">{{ choice.2 }}</small>
-                                        {% endif %}
-                                    </label>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    
-                    {% elif question.input_type == 'checkbox' %}
-                        <div class="checkbox-group">
-                            {% for choice in question.choices %}
-                                <div class="form-check">
-                                    <input class="form-check-input" 
-                                           type="checkbox" 
-                                           name="{{ question.field_name }}" 
-                                           id="{{ question.field_name }}_{{ choice.0 }}"
-                                           value="{{ choice.0 }}"
-                                           {% if choice.0 in existing_responses|get_item:question.field_name|default_if_none:'' %}checked{% endif %}>
-                                    <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
-                                        {{ choice.1 }}
-                                    </label>
-                                </div>
-                            {% endfor %}
-                        </div>
+                    <select class="form-select" name="{{ question.field_name }}" id="{{ question.field_name }}" {% if
+                        question.is_required %}required{% endif %}>
+                        <option value="">Select an option...</option>
+                        {% for choice in question.choices %}
+                        <option value="{{ choice.0 }}" {% if existing_responses|get_item:question.field_name==choice.0
+                            %}selected{% endif %} {% if choice.2 %}title="{{ choice.2 }}" {% endif %}>
+                            {{ choice.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if question.field_name == 'annual_limit_family_range' or question.field_name ==
+                    'annual_limit_member_range' %}
+                    <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Choose a range that matches your expected medical expenses. If unsure, select "Not sure / Need
+                        guidance" for personalized recommendations.
+                    </div>
                     {% endif %}
-                    
-                    {% if question.validation_rules %}
-                        {% if question.validation_rules.min or question.validation_rules.max %}
-                            <div class="form-text">
-                                {% if question.input_type == 'number' %}
-                                    {% if question.validation_rules.min and question.validation_rules.max %}
-                                        Enter a number between {{ question.validation_rules.min }} and {{ question.validation_rules.max }}
-                                    {% elif question.validation_rules.min %}
-                                        Minimum value: {{ question.validation_rules.min }}
-                                    {% elif question.validation_rules.max %}
-                                        Maximum value: {{ question.validation_rules.max }}
-                                    {% endif %}
+
+                    {% elif question.input_type == 'radio' %}
+                    <div class="radio-group">
+                        {% for choice in question.choices %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="{{ question.field_name }}"
+                                id="{{ question.field_name }}_{{ choice.0 }}" value="{{ choice.0 }}" {% if
+                                existing_responses|get_item:question.field_name==choice.0 %}checked{% endif %} {% if
+                                question.is_required %}required{% endif %}>
+                            <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
+                                <strong>{{ choice.1 }}</strong>
+                                {% if choice.2 %}
+                                <br><small class="text-muted">{{ choice.2 }}</small>
                                 {% endif %}
-                            </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% elif question.input_type == 'checkbox' %}
+                    <div class="checkbox-group">
+                        {% for choice in question.choices %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="{{ question.field_name }}"
+                                id="{{ question.field_name }}_{{ choice.0 }}" value="{{ choice.0 }}" {% if choice.0 in
+                                existing_responses|get_item:question.field_name|default_if_none:'' %}checked{% endif %}>
+                            <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
+                                {{ choice.1 }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if question.validation_rules %}
+                    {% if question.validation_rules.min or question.validation_rules.max %}
+                    <div class="form-text">
+                        {% if question.input_type == 'number' %}
+                        {% if question.validation_rules.min and question.validation_rules.max %}
+                        Enter a number between {{ question.validation_rules.min }} and {{ question.validation_rules.max
+                        }}
+                        {% elif question.validation_rules.min %}
+                        Minimum value: {{ question.validation_rules.min }}
+                        {% elif question.validation_rules.max %}
+                        Maximum value: {{ question.validation_rules.max }}
                         {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -530,36 +530,36 @@
     <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('surveyForm');
             const submitBtn = document.getElementById('submitBtn');
-            
+
             // Auto-save responses as user types/selects
-            form.addEventListener('change', function(e) {
+            form.addEventListener('change', function (e) {
                 if (e.target.matches('input, select')) {
                     saveResponse(e.target);
                 }
             });
-            
+
             // Handle checkbox groups specially
-            form.addEventListener('change', function(e) {
+            form.addEventListener('change', function (e) {
                 if (e.target.type === 'checkbox') {
                     saveCheckboxResponse(e.target);
                 }
             });
-            
+
             // Handle form submission
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 processSurvey();
             });
-            
+
             function saveResponse(element) {
                 const questionCard = element.closest('.question-card');
                 const questionId = questionCard.dataset.questionId;
                 const responseValue = element.value;
-                
-                fetch('{% url "simple_surveys:save_response" %}', {
+
+                fetch('{% url \"simple_surveys:save_response_ajax\" category=category %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -567,32 +567,31 @@
                     },
                     body: JSON.stringify({
                         question_id: parseInt(questionId),
-                        response_value: responseValue,
-                        category: '{{ category }}'
+                        response_value: responseValue
                     })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.completion_status) {
-                        updateProgress(data.completion_status);
-                    } else if (!data.success) {
-                        console.error('Error saving response:', data.errors);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error saving response:', error);
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.completion_status) {
+                            updateProgress(data.completion_status);
+                        } else if (!data.success) {
+                            console.error('Error saving response:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving response:', error);
+                    });
             }
-            
+
             function saveCheckboxResponse(element) {
                 const questionCard = element.closest('.question-card');
                 const questionId = questionCard.dataset.questionId;
-                
+
                 // Get all checked checkboxes for this question
                 const checkboxes = questionCard.querySelectorAll('input[type="checkbox"]:checked');
                 const responseValue = Array.from(checkboxes).map(cb => cb.value);
-                
-                fetch('{% url "simple_surveys:save_response" %}', {
+
+                fetch('{% url \"simple_surveys:save_response_ajax\" category=category %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -600,60 +599,59 @@
                     },
                     body: JSON.stringify({
                         question_id: parseInt(questionId),
-                        response_value: responseValue,
-                        category: '{{ category }}'
+                        response_value: responseValue
                     })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.completion_status) {
-                        updateProgress(data.completion_status);
-                    } else if (!data.success) {
-                        console.error('Error saving checkbox response:', data.errors);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error saving checkbox response:', error);
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.completion_status) {
+                            updateProgress(data.completion_status);
+                        } else if (!data.success) {
+                            console.error('Error saving checkbox response:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving checkbox response:', error);
+                    });
             }
-            
+
             function updateProgress(status) {
                 const progressBar = document.querySelector('.progress-bar');
                 const percentage = status.completion_percentage || 0;
                 const completed = status.answered_required || 0;
                 const total = status.required_questions || 0;
-                
+
                 progressBar.style.width = percentage + '%';
                 progressBar.textContent = completed + '/' + total + ' Complete';
                 progressBar.setAttribute('aria-valuenow', percentage);
             }
-            
+
             function processSurvey() {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
-                
+
                 fetch('{% url "simple_surveys:process" category=category %}', {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                     }
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = data.redirect_url;
-                    } else {
-                        alert('Error: ' + data.error);
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            alert('Error: ' + data.error);
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>Get My Quotes';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error processing survey:', error);
+                        alert('An error occurred. Please try again.');
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>Get My Quotes';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error processing survey:', error);
-                    alert('An error occurred. Please try again.');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>Get My Quotes';
-                });
+                    });
             }
         });
     </script>

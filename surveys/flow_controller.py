@@ -64,12 +64,21 @@ class SurveyFlowController:
                 logger.warning(f"Session {self.session_key} not found, creating new session")
         
         # Create new session
-        self.session_key = self._generate_session_key()
+        from surveys.session_key_manager import session_key_manager
+        self.session_key = session_key_manager.generate_new_session_key(
+            self.category_slug,
+            None,  # No user context in flow controller
+            "flow_controller"
+        )
+        
         self.session = ComparisonSession.objects.create(
             session_key=self.session_key,
             category=self.category,
             status=ComparisonSession.Status.ACTIVE,
-            expires_at=timezone.now() + timezone.timedelta(hours=24)  # 24 hour expiry
+            expires_at=timezone.now() + timezone.timedelta(hours=2),  # Short 2 hour expiry
+            fallback_mode=True,
+            fallback_type="flow_controller_session",
+            fallback_reason="Session created by survey flow controller"
         )
     
     def _generate_session_key(self) -> str:

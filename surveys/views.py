@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, Http404
 from django.contrib import messages
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 from policies.models import PolicyCategory
 from comparison.models import ComparisonSession
 from .models import SurveyQuestion, SurveyResponse
@@ -20,12 +22,23 @@ def direct_survey_view(request, category_slug):
         # Get the category
         category = get_object_or_404(PolicyCategory, slug=category_slug)
         
-        # Create a new session
-        session_key = f"survey_{category_slug}_{uuid.uuid4().hex[:12]}"
+        # Create a new session with short expiry
+        from surveys.session_key_manager import session_key_manager
+        session_key = session_key_manager.generate_new_session_key(
+            category_slug,
+            request.user if request.user.is_authenticated else None,
+            "direct_survey"
+        )
+        
         session = ComparisonSession.objects.create(
             session_key=session_key,
             category=category,
-            status=ComparisonSession.Status.ACTIVE
+            status=ComparisonSession.Status.ACTIVE,
+            user=request.user if request.user.is_authenticated else None,
+            expires_at=timezone.now() + timedelta(hours=2),  # Short 2 hour expiry
+            fallback_mode=True,
+            fallback_type="direct_survey_session",
+            fallback_reason="Session created by direct survey view"
         )
         
         # Redirect to survey form with session

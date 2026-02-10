@@ -198,20 +198,29 @@ class PolicyComparisonEngine:
         user,
         session_key
     ) -> ComparisonSession:
-        """Create a new comparison session with expiration."""
+        """Create a new comparison session with short expiration for immediate use."""
         from datetime import timedelta
         from django.utils import timezone
-        import uuid
+        from surveys.session_key_manager import session_key_manager
         
+        # Always generate a new session key for each comparison
         if not session_key:
-            session_key = str(uuid.uuid4())
+            session_key = session_key_manager.generate_new_session_key(
+                policies[0].category.slug,
+                user,
+                "new_comparison"
+            )
         
+        # Create session with short expiry (2 hours instead of 7 days)
         session = ComparisonSession.objects.create(
             user=user,
             session_key=session_key,
             category=policies[0].category,
             criteria=criteria,
-            expires_at=timezone.now() + timedelta(days=7)
+            expires_at=timezone.now() + timedelta(hours=2),  # Short-lived session
+            fallback_mode=True,
+            fallback_type="comparison_session",
+            fallback_reason="Session created for immediate comparison use"
         )
         
         session.policies.set(policies)

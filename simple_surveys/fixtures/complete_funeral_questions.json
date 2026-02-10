@@ -1,0 +1,213 @@
+[
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 9,
+    "fields": {
+      "category": "funeral",
+      "question_text": "What is your age?",
+      "field_name": "age",
+      "input_type": "number",
+      "choices": [],
+      "is_required": true,
+      "display_order": 1,
+      "validation_rules": {
+        "min": 18,
+        "max": 80
+      },
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 10,
+    "fields": {
+      "category": "funeral",
+      "question_text": "Which region are you located in?",
+      "field_name": "location",
+      "input_type": "select",
+      "choices": [
+        ["hhohho", "Hhohho"],
+        ["manzini", "Manzini"],
+        ["shiselweni", "Shiselweni"],
+        ["lubombo", "Lubombo"]
+      ],
+      "is_required": true,
+      "display_order": 2,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 11,
+    "fields": {
+      "category": "funeral",
+      "question_text": "How many family members do you want to cover?",
+      "field_name": "family_members_to_cover",
+      "input_type": "number",
+      "choices": [],
+      "is_required": true,
+      "display_order": 3,
+      "validation_rules": {
+        "min": 1,
+        "max": 15
+      },
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 12,
+    "fields": {
+      "category": "funeral",
+      "question_text": "What coverage amount do you need?",
+      "field_name": "coverage_amount_needed",
+      "input_type": "radio",
+      "choices": [
+        ["25000", "R25,000"],
+        ["50000", "R50,000"],
+        ["100000", "R100,000"],
+        ["200000", "R200,000+"]
+      ],
+      "is_required": true,
+      "display_order": 4,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 25,
+    "fields": {
+      "category": "funeral",
+      "question_text": "What is your preferred cover amount?",
+      "field_name": "preferred_cover_amount",
+      "input_type": "select",
+      "choices": [
+        ["10000", "R10,000"],
+        ["25000", "R25,000"],
+        ["50000", "R50,000"],
+        ["75000", "R75,000"],
+        ["100000", "R100,000"],
+        ["150000", "R150,000"],
+        ["200000", "R200,000"],
+        ["250000", "R250,000+"]
+      ],
+      "is_required": true,
+      "display_order": 5,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 26,
+    "fields": {
+      "category": "funeral",
+      "question_text": "What is your marital status?",
+      "field_name": "marital_status",
+      "input_type": "radio",
+      "choices": [
+        ["single", "Single"],
+        ["married", "Married"],
+        ["divorced", "Divorced"],
+        ["widowed", "Widowed"],
+        ["other", "Other"]
+      ],
+      "is_required": true,
+      "display_order": 6,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 27,
+    "fields": {
+      "category": "funeral",
+      "question_text": "What is your gender?",
+      "field_name": "gender",
+      "input_type": "radio",
+      "choices": [
+        ["male", "Male"],
+        ["female", "Female"],
+        ["other", "Other"],
+        ["prefer_not_to_say", "Prefer not to say"]
+      ],
+      "is_required": true,
+      "display_order": 7,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 13,
+    "fields": {
+      "category": "funeral",
+      "question_text": "What type of funeral service do you prefer?",
+      "field_name": "service_preference",
+      "input_type": "radio",
+      "choices": [
+        ["basic", "Basic Service", "Essential funeral arrangements including transport, basic coffin, and burial/cremation. Covers immediate family only. Most affordable option."],
+        ["standard", "Standard Service", "Comprehensive funeral package with upgraded coffin, flowers, catering for 50 people, and extended family coverage. Balanced cost and benefits."],
+        ["premium", "Premium Service", "Full-service funeral with premium coffin, extensive catering, memorial service, and coverage for extended family members. Highest level of service and benefits."]
+      ],
+      "is_required": true,
+      "display_order": 8,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 14,
+    "fields": {
+      "category": "funeral",
+      "question_text": "What is your monthly budget for funeral insurance?",
+      "field_name": "monthly_budget",
+      "input_type": "radio",
+      "choices": [
+        ["50-100", "R50 - R100", "Budget-friendly option for basic coverage"],
+        ["101-200", "R101 - R200", "Standard coverage with moderate premiums"],
+        ["201-350", "R201 - R350", "Comprehensive coverage with higher benefits"],
+        ["351-500", "R351 - R500", "Premium coverage with maximum benefits"],
+        ["500+", "R500+", "Unlimited budget for top-tier coverage"]
+      ],
+      "is_required": true,
+      "display_order": 9,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "simple_surveys.simplesurveyquestion",
+    "pk": 15,
+    "fields": {
+      "category": "funeral",
+      "question_text": "What waiting period can you tolerate before coverage begins?",
+      "field_name": "waiting_period_tolerance",
+      "input_type": "radio",
+      "choices": [
+        ["none", "No Waiting Period"],
+        ["3_months", "3 Months"],
+        ["6_months", "6 Months"],
+        ["12_months", "12 Months"]
+      ],
+      "is_required": true,
+      "display_order": 10,
+      "validation_rules": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  }
+]

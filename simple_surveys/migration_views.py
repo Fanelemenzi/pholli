@@ -21,7 +21,7 @@ import logging
 from .models import SimpleSurveyResponse, SimpleSurveyQuestion, QuotationSession
 from .forms import HealthSurveyForm, FuneralSurveyForm
 from .response_migration import ResponseMigrationHandler
-from .session_manager import SessionManager
+from .simple_session_manager import SimpleSessionManager
 
 logger = logging.getLogger(__name__)
 
