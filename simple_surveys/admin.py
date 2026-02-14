@@ -76,7 +76,7 @@ class SimpleSurveyAdmin(admin.ModelAdmin):
     def benefit_levels_display(self, obj):
         """Display selected benefit levels with color coding"""
         if obj.insurance_type != 'HEALTH':
-            return format_html('<span style="color: #6c757d;">N/A</span>')
+            return format_html('<span style="color: #6c757d;">{}</span>', 'N/A')
         
         in_hospital = obj.get_in_hospital_benefit_level_display() if obj.in_hospital_benefit_level else 'Not set'
         out_hospital = obj.get_out_hospital_benefit_level_display() if obj.out_hospital_benefit_level else 'Not set'
@@ -91,7 +91,7 @@ class SimpleSurveyAdmin(admin.ModelAdmin):
     def annual_ranges_display(self, obj):
         """Display selected annual limit ranges"""
         if obj.insurance_type != 'HEALTH':
-            return format_html('<span style="color: #6c757d;">N/A</span>')
+            return format_html('<span style="color: #6c757d;">{}</span>', 'N/A')
         
         family_range = obj.get_annual_limit_family_range_display() if obj.annual_limit_family_range else 'Not set'
         member_range = obj.get_annual_limit_member_range_display() if obj.annual_limit_member_range else 'Not set'
@@ -261,9 +261,9 @@ class SimpleSurveyQuestionAdmin(admin.ModelAdmin):
     def question_type_display(self, obj):
         """Display question type with special indicators for new question types"""
         if 'benefit_level' in obj.field_name:
-            return format_html('<span style="color: #0066cc; font-weight: bold;">Benefit Level</span>')
+            return format_html('<span style="color: #0066cc; font-weight: bold;">{}</span>', 'Benefit Level')
         elif 'annual_limit' in obj.field_name and 'range' in obj.field_name:
-            return format_html('<span style="color: #28a745; font-weight: bold;">Annual Range</span>')
+            return format_html('<span style="color: #28a745; font-weight: bold;">{}</span>', 'Annual Range')
         else:
             return format_html('<span style="color: #6c757d;">{}</span>', obj.get_input_type_display())
     question_type_display.short_description = "Type"
@@ -413,11 +413,11 @@ class SimpleSurveyResponseAdmin(admin.ModelAdmin):
         """Display response type with special indicators for new question types"""
         field_name = obj.question.field_name
         if 'benefit_level' in field_name:
-            return format_html('<span style="color: #0066cc; font-weight: bold;">Benefit Level</span>')
+            return format_html('<span style="color: #0066cc; font-weight: bold;">{}</span>', 'Benefit Level')
         elif 'annual_limit' in field_name and 'range' in field_name:
-            return format_html('<span style="color: #28a745; font-weight: bold;">Annual Range</span>')
+            return format_html('<span style="color: #28a745; font-weight: bold;">{}</span>', 'Annual Range')
         elif 'monthly_budget' in field_name:
-            return format_html('<span style="color: #ff6b35; font-weight: bold;">Budget Range</span>')
+            return format_html('<span style="color: #ff6b35; font-weight: bold;">{}</span>', 'Budget Range')
         else:
             return format_html('<span style="color: #6c757d;">{}</span>', obj.question.get_input_type_display())
     response_type_display.short_description = "Type"

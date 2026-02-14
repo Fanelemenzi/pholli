@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block content %}
+
 <head>
     <style>
         /* Custom color overrides */
@@ -160,7 +161,8 @@
             style="background-image: url('{% static 'assets/img/bg/bg-2.webp' %}');">
             <div class="container position-relative">
                 <h1>Health Insurance Comparison</h1>
-                <p>Find the perfect health insurance plan for you and your family. Compare comprehensive coverage options,
+                <p>Find the perfect health insurance plan for you and your family. Compare comprehensive coverage
+                    options,
                     benefits, and premiums from top South African medical schemes in just a few minutes.</p>
                 <nav class="breadcrumbs">
                     <ol>
@@ -220,270 +222,271 @@
                                             <h6>Family Coverage</h6>
                                             <small>Protect your loved ones</small>
                                         </div>
-                    </div>
-                    </a>
-                    </li>
-                    </ul>
-                </div>
-
-                <div class="tab-content" data-aos="fade-up" data-aos-delay="300">
-
-                    <div class="tab-pane fade active show" id="features-tab-1">
-                        <div class="row align-items-center">
-                            <div class="col-lg-6">
-                                <div class="content-area">
-                                    <div class="content-badge">
-                                        <i class="bi bi-hospital"></i>
-                                        <span>Hospital Coverage</span>
                                     </div>
-                                    <h3>Comprehensive Hospital Protection</h3>
-                                    <p>Get peace of mind with comprehensive hospital coverage that protects you from
-                                        unexpected medical expenses. Our comparison tool helps you find plans with
-                                        the best hospital networks and coverage limits for your needs.</p>
-
-                                    <div class="highlight-stats">
-                                        <div class="stat-item">
-                                            <span class="stat-value">R2M+</span>
-                                            <span class="stat-label">Annual Hospital Limit</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value">500+</span>
-                                            <span class="stat-label">Network Hospitals</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="feature-points">
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>Private hospital room coverage</span>
-                                        </div>
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>Specialist consultations included</span>
-                                        </div>
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>Emergency medical procedures</span>
-                                        </div>
-                                    </div>
-
-                                    <a href="{% url 'simple_surveys:direct_survey' category_slug='health' %}"
-                                        class="explore-link">
-                                        Compare Hospital Plans <i class="bi bi-arrow-up-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="visual-content">
-                                    <img src="{% static 'assets/img/features/features-2.webp' %}"
-                                        alt="Hospital Coverage" class="img-fluid">
-                                    <div class="floating-element">
-                                        <div class="floating-card">
-                                            <i class="bi bi-shield-check"></i>
-                                            <div class="card-info">
-                                                <span>Protection</span>
-                                                <strong>100% Covered</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="features-tab-2">
-                        <div class="row align-items-center">
-                            <div class="col-lg-6">
-                                <div class="content-area">
-                                    <div class="content-badge">
-                                        <i class="bi bi-heart-pulse"></i>
-                                        <span>Day-to-Day Benefits</span>
-                                    </div>
-                                    <h3>Everyday Medical Expenses Covered</h3>
-                                    <p>Don't let routine medical expenses add up. Our comparison helps you find plans
-                                        with generous day-to-day benefits for doctor visits, medication, dental care,
-                                        and optical services that fit your lifestyle and budget.</p>
-
-                                    <div class="highlight-stats">
-                                        <div class="stat-item">
-                                            <span class="stat-value">R15K+</span>
-                                            <span class="stat-label">Annual Day-to-Day Limit</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value">90%</span>
-                                            <span class="stat-label">GP Visit Coverage</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="feature-points">
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>GP and specialist consultations</span>
-                                        </div>
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>Prescription medication coverage</span>
-                                        </div>
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>Dental and optical benefits</span>
-                                        </div>
-                                    </div>
-
-                                    <a href="{% url 'simple_surveys:direct_survey' category_slug='health' %}"
-                                        class="explore-link">
-                                        Find Day-to-Day Plans <i class="bi bi-arrow-up-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="visual-content">
-                                    <img src="{% static 'assets/img/features/features-4.webp' %}"
-                                        alt="Day-to-Day Benefits" class="img-fluid">
-                                    <div class="floating-element">
-                                        <div class="floating-card">
-                                            <i class="bi bi-currency-dollar"></i>
-                                            <div class="card-info">
-                                                <span>Savings</span>
-                                                <strong>Up to 80%</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="features-tab-3">
-                        <div class="row align-items-center">
-                            <div class="col-lg-6">
-                                <div class="content-area">
-                                    <div class="content-badge">
-                                        <i class="bi bi-heart"></i>
-                                        <span>Chronic Conditions</span>
-                                    </div>
-                                    <h3>Specialized Chronic Care Coverage</h3>
-                                    <p>Living with a chronic condition requires specialized care and medication.
-                                        Our comparison tool identifies plans with comprehensive chronic disease
-                                        lists and ensures you get the ongoing treatment you need without financial
-                                        stress.</p>
-
-                                    <div class="highlight-stats">
-                                        <div class="stat-item">
-                                            <span class="stat-value">270+</span>
-                                            <span class="stat-label">Chronic Conditions Covered</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value">100%</span>
-                                            <span class="stat-label">Medication Coverage</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="feature-points">
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>Diabetes, hypertension, and heart conditions</span>
-                                        </div>
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>Cancer treatment and oncology care</span>
-                                        </div>
-                                        <div class="point-item">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span>Mental health and psychiatric services</span>
-                                        </div>
-                                    </div>
-
-                                    <a href="{% url 'simple_surveys:direct_survey' category_slug='health' %}"
-                                        class="explore-link">
-                                        Compare Chronic Care Plans <i class="bi bi-arrow-up-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="visual-content">
-                                    <img src="{% static 'assets/img/features/features-1.webp' %}" alt="Chronic Care"
-                                        class="img-fluid">
-                                    <div class="floating-element">
-                                        <div class="floating-card">
-                                            <i class="bi bi-capsule"></i>
-                                            <div class="card-info">
-                                                <span>Medication</span>
-                                                <strong>Fully Covered</strong>
-                                            </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tab-pane fade" id="features-tab-4">
-                    <div class="row align-items-center">
-                        <div class="col-lg-6">
-                            <div class="content-area">
-                                <div class="content-badge">
-                                    <i class="bi bi-people"></i>
-                                    <span>Family Coverage</span>
-                                </div>
-                                <h3>Comprehensive Family Protection</h3>
-                                <p>Protect your entire family with comprehensive health coverage that grows with your
-                                    needs.
-                                    From maternity benefits to pediatric care, find plans that cover every member of
-                                    your
-                                    family at affordable rates with flexible options.</p>
-
-                                <div class="highlight-stats">
-                                    <div class="stat-item">
-                                        <span class="stat-value">6</span>
-                                        <span class="stat-label">Family Members Covered</span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-value">R50K</span>
-                                        <span class="stat-label">Maternity Benefits</span>
-                                    </div>
-                                </div>
-
-                                <div class="feature-points">
-                                    <div class="point-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Maternity and newborn care coverage</span>
-                                    </div>
-                                    <div class="point-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Pediatric and child healthcare</span>
-                                    </div>
-                                    <div class="point-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Family wellness and preventive care</span>
-                                    </div>
-                                </div>
-
-                                <a href="{% url 'simple_surveys:direct_survey' category_slug='health' %}" class="explore-link">
-                                    Find Family Plans <i class="bi bi-arrow-up-right"></i>
                                 </a>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="visual-content">
-                                <img src="{% static 'assets/img/features/features-5.webp' %}" alt="Family Coverage"
-                                    class="img-fluid">
-                                <div class="floating-element">
-                                    <div class="floating-card">
-                                        <i class="bi bi-house-heart"></i>
-                                        <div class="card-info">
-                                            <span>Family</span>
-                                            <strong>Protected</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="tab-content" data-aos="fade-up" data-aos-delay="300">
+
+                        <div class="tab-pane fade active show" id="features-tab-1">
+                            <div class="row align-items-center">
+                                <div class="col-lg-6">
+                                    <div class="content-area">
+                                        <div class="content-badge">
+                                            <i class="bi bi-hospital"></i>
+                                            <span>Hospital Coverage</span>
+                                        </div>
+                                        <h3>Comprehensive Hospital Protection</h3>
+                                        <p>Get peace of mind with comprehensive hospital coverage that protects you from
+                                            unexpected medical expenses. Our comparison tool helps you find plans with
+                                            the best hospital networks and coverage limits for your needs.</p>
+
+                                        <div class="highlight-stats">
+                                            <div class="stat-item">
+                                                <span class="stat-value">R2M+</span>
+                                                <span class="stat-label">Annual Hospital Limit</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-value">500+</span>
+                                                <span class="stat-label">Network Hospitals</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="feature-points">
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Private hospital room coverage</span>
+                                            </div>
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Specialist consultations included</span>
+                                            </div>
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Emergency medical procedures</span>
+                                            </div>
+                                        </div>
+
+                                        <a href="{% url 'direct_survey' category_slug='health' %}" class="explore-link">
+                                            Compare Hospital Plans <i class="bi bi-arrow-up-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="visual-content">
+                                        <img src="{% static 'assets/img/features/features-2.webp' %}"
+                                            alt="Hospital Coverage" class="img-fluid">
+                                        <div class="floating-element">
+                                            <div class="floating-card">
+                                                <i class="bi bi-shield-check"></i>
+                                                <div class="card-info">
+                                                    <span>Protection</span>
+                                                    <strong>100% Covered</strong>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <div class="tab-pane fade" id="features-tab-2">
+                            <div class="row align-items-center">
+                                <div class="col-lg-6">
+                                    <div class="content-area">
+                                        <div class="content-badge">
+                                            <i class="bi bi-heart-pulse"></i>
+                                            <span>Day-to-Day Benefits</span>
+                                        </div>
+                                        <h3>Everyday Medical Expenses Covered</h3>
+                                        <p>Don't let routine medical expenses add up. Our comparison helps you find
+                                            plans
+                                            with generous day-to-day benefits for doctor visits, medication, dental
+                                            care,
+                                            and optical services that fit your lifestyle and budget.</p>
+
+                                        <div class="highlight-stats">
+                                            <div class="stat-item">
+                                                <span class="stat-value">R15K+</span>
+                                                <span class="stat-label">Annual Day-to-Day Limit</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-value">90%</span>
+                                                <span class="stat-label">GP Visit Coverage</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="feature-points">
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>GP and specialist consultations</span>
+                                            </div>
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Prescription medication coverage</span>
+                                            </div>
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Dental and optical benefits</span>
+                                            </div>
+                                        </div>
+
+                                        <a href="{% url 'direct_survey' category_slug='health' %}" class="explore-link">
+                                            Find Day-to-Day Plans <i class="bi bi-arrow-up-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="visual-content">
+                                        <img src="{% static 'assets/img/features/features-4.webp' %}"
+                                            alt="Day-to-Day Benefits" class="img-fluid">
+                                        <div class="floating-element">
+                                            <div class="floating-card">
+                                                <i class="bi bi-currency-dollar"></i>
+                                                <div class="card-info">
+                                                    <span>Savings</span>
+                                                    <strong>Up to 80%</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="features-tab-3">
+                            <div class="row align-items-center">
+                                <div class="col-lg-6">
+                                    <div class="content-area">
+                                        <div class="content-badge">
+                                            <i class="bi bi-heart"></i>
+                                            <span>Chronic Conditions</span>
+                                        </div>
+                                        <h3>Specialized Chronic Care Coverage</h3>
+                                        <p>Living with a chronic condition requires specialized care and medication.
+                                            Our comparison tool identifies plans with comprehensive chronic disease
+                                            lists and ensures you get the ongoing treatment you need without financial
+                                            stress.</p>
+
+                                        <div class="highlight-stats">
+                                            <div class="stat-item">
+                                                <span class="stat-value">270+</span>
+                                                <span class="stat-label">Chronic Conditions Covered</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-value">100%</span>
+                                                <span class="stat-label">Medication Coverage</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="feature-points">
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Diabetes, hypertension, and heart conditions</span>
+                                            </div>
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Cancer treatment and oncology care</span>
+                                            </div>
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Mental health and psychiatric services</span>
+                                            </div>
+                                        </div>
+
+                                        <a href="{% url 'direct_survey' category_slug='health' %}" class="explore-link">
+                                            Compare Chronic Care Plans <i class="bi bi-arrow-up-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="visual-content">
+                                        <img src="{% static 'assets/img/features/features-1.webp' %}" alt="Chronic Care"
+                                            class="img-fluid">
+                                        <div class="floating-element">
+                                            <div class="floating-card">
+                                                <i class="bi bi-capsule"></i>
+                                                <div class="card-info">
+                                                    <span>Medication</span>
+                                                    <strong>Fully Covered</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="features-tab-4">
+                            <div class="row align-items-center">
+                                <div class="col-lg-6">
+                                    <div class="content-area">
+                                        <div class="content-badge">
+                                            <i class="bi bi-people"></i>
+                                            <span>Family Coverage</span>
+                                        </div>
+                                        <h3>Comprehensive Family Protection</h3>
+                                        <p>Protect your entire family with comprehensive health coverage that grows with
+                                            your
+                                            needs.
+                                            From maternity benefits to pediatric care, find plans that cover every
+                                            member of
+                                            your
+                                            family at affordable rates with flexible options.</p>
+
+                                        <div class="highlight-stats">
+                                            <div class="stat-item">
+                                                <span class="stat-value">6</span>
+                                                <span class="stat-label">Family Members Covered</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-value">R50K</span>
+                                                <span class="stat-label">Maternity Benefits</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="feature-points">
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Maternity and newborn care coverage</span>
+                                            </div>
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Pediatric and child healthcare</span>
+                                            </div>
+                                            <div class="point-item">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Family wellness and preventive care</span>
+                                            </div>
+                                        </div>
+
+                                        <a href="{% url 'direct_survey' category_slug='health' %}" class="explore-link">
+                                            Find Family Plans <i class="bi bi-arrow-up-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="visual-content">
+                                        <img src="{% static 'assets/img/features/features-5.webp' %}"
+                                            alt="Family Coverage" class="img-fluid">
+                                        <div class="floating-element">
+                                            <div class="floating-card">
+                                                <i class="bi bi-house-heart"></i>
+                                                <div class="card-info">
+                                                    <span>Family</span>
+                                                    <strong>Protected</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-
-            </div>
-            </div>
 
             </div>
 
@@ -594,8 +597,8 @@
                             asks you a few simple questions about your health needs, budget, and preferences, then
                             matches you with the best health insurance options available. Get personalized quotes
                             from top South African medical schemes in just minutes.</p>
-                        <a class="cta-btn align-self-start"
-                            href="{% url 'simple_surveys:direct_survey' category_slug='health' %}">Get Your Personalized Quotes
+                        <a class="cta-btn align-self-start" href="{% url 'direct_survey' category_slug='health' %}">Get
+                            Your Personalized Quotes
                             Now >>></a>
                     </div>
 

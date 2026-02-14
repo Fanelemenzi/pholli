@@ -1,16 +1,14 @@
-{% extends 'base/base.html'%}
+{% extends 'base/base.html' %}
 {% load static %}
-{% load survey_extras %}
 
 {% block content %}
 <style>
-    /* Survey-specific styles matching site color scheme */
     .survey-container {
         max-width: 900px;
         margin: 0 auto;
         padding: 40px 20px;
     }
-    
+
     .survey-header {
         text-align: center;
         margin-bottom: 40px;
@@ -19,35 +17,45 @@
         border-radius: 20px;
         border: 2px solid rgba(38, 149, 35, 0.2);
     }
-    
+
     .survey-header h1 {
         color: #269523 !important;
         font-weight: 700;
         margin-bottom: 15px;
         font-size: 2.5rem;
     }
-    
+
     .survey-header .lead {
         color: #f1d925 !important;
         font-size: 1.2rem;
         font-weight: 500;
     }
-    
+
     .survey-progress {
         margin-bottom: 30px;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 25px;
         border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
-    
+
+    .progress-text {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        color: #269523;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
     .progress {
-        height: 15px;
+        height: 20px;
         border-radius: 10px;
         background: rgba(38, 149, 35, 0.1);
         overflow: hidden;
     }
-    
+
     .progress-bar {
         background: linear-gradient(90deg, #269523, #1e7a1c);
         border-radius: 10px;
@@ -57,25 +65,19 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: width 0.3s ease;
+        transition: width 0.5s ease-in-out;
     }
-    
+
     .question-card {
         background: rgba(255, 255, 255, 0.95);
         border-radius: 20px;
         padding: 35px;
         margin-bottom: 25px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         border: 2px solid rgba(38, 149, 35, 0.1);
         transition: all 0.3s ease;
     }
-    
-    .question-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-        border-color: rgba(38, 149, 35, 0.3);
-    }
-    
+
     .question-title {
         font-size: 1.4rem;
         font-weight: 700;
@@ -85,8 +87,8 @@
         align-items: center;
         gap: 10px;
     }
-    
-    .question-title .question-number {
+
+    .question-number {
         background: linear-gradient(135deg, #269523, #1e7a1c);
         color: white;
         width: 35px;
@@ -99,8 +101,9 @@
         font-weight: 600;
         flex-shrink: 0;
     }
-    
-    .form-control, .form-select {
+
+    .form-control,
+    .form-select {
         border-radius: 12px;
         border: 2px solid rgba(38, 149, 35, 0.2);
         padding: 15px 18px;
@@ -109,14 +112,14 @@
         transition: all 0.3s ease;
         color: #333;
     }
-    
-    .form-control:focus, .form-select:focus {
+
+    .form-control:focus,
+    .form-select:focus {
         border-color: #269523;
         box-shadow: 0 0 0 0.2rem rgba(38, 149, 35, 0.25);
         background: #ffffff;
-        transform: translateY(-1px);
     }
-    
+
     .form-check {
         margin-bottom: 15px;
         padding: 15px 20px;
@@ -125,28 +128,28 @@
         border: 2px solid transparent;
         background: rgba(38, 149, 35, 0.02);
     }
-    
+
     .form-check:hover {
         background: rgba(38, 149, 35, 0.05);
         border-color: rgba(38, 149, 35, 0.2);
     }
-    
+
     .form-check-input {
         margin-top: 0.25rem;
         width: 1.3em;
         height: 1.3em;
         border: 2px solid #269523;
     }
-    
+
     .form-check-input:checked {
         background-color: #269523;
         border-color: #269523;
     }
-    
+
     .form-check-input:focus {
         box-shadow: 0 0 0 0.2rem rgba(38, 149, 35, 0.25);
     }
-    
+
     .form-check-label {
         margin-left: 0.8rem;
         font-weight: 500;
@@ -154,12 +157,30 @@
         cursor: pointer;
         line-height: 1.4;
     }
-    
+
     .form-check-label strong {
         color: #269523;
         font-weight: 600;
     }
-    
+
+    .radio-group,
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-text {
+        margin-top: 12px;
+        font-size: 0.9rem;
+        color: #f1d925;
+        font-weight: 500;
+        padding: 10px 15px;
+        background: rgba(241, 217, 37, 0.1);
+        border-radius: 8px;
+        border-left: 4px solid #f1d925;
+    }
+
     .btn-primary {
         background: linear-gradient(135deg, #269523, #1e7a1c);
         border: none;
@@ -173,107 +194,43 @@
         transition: all 0.3s ease;
         color: #ffffff;
     }
-    
+
     .btn-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 12px 35px rgba(38, 149, 35, 0.4);
         background: linear-gradient(135deg, #1e7a1c, #155a14);
     }
-    
-    .btn-primary:disabled {
-        opacity: 0.7;
-        transform: none;
-        box-shadow: 0 4px 15px rgba(38, 149, 35, 0.2);
-    }
-    
+
     .alert {
         border-radius: 15px;
         border: none;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         padding: 20px;
     }
-    
+
     .alert-danger {
         background: linear-gradient(135deg, #fee, #fdd);
         color: #c53030;
         border-left: 5px solid #e53e3e;
     }
-    
-    .radio-group, .checkbox-group {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .form-text {
-        margin-top: 12px;
-        font-size: 0.9rem;
-        color: #f1d925;
-        font-weight: 500;
-        padding: 10px 15px;
-        background: rgba(241, 217, 37, 0.1);
-        border-radius: 8px;
-        border-left: 4px solid #f1d925;
-    }
-    
-    .text-danger {
-        color: #e53e3e !important;
-        font-weight: 700;
-    }
-    
-    .text-muted {
-        color: #666 !important;
-        font-size: 0.9rem;
-    }
-    
-    /* Progress text styling */
-    .progress-text {
-        text-align: center;
-        margin-bottom: 15px;
-        color: #269523;
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-    
-    /* Loading state */
-    .loading {
-        opacity: 0.7;
-        pointer-events: none;
-    }
-    
-    /* Responsive design */
+
     @media (max-width: 768px) {
         .survey-container {
             padding: 20px 15px;
         }
-        
+
         .question-card {
             padding: 25px 20px;
         }
-        
+
         .survey-header h1 {
             font-size: 2rem;
         }
-        
-        .question-title {
-            font-size: 1.2rem;
-        }
-        
+
         .btn-primary {
             padding: 15px 35px;
             font-size: 1rem;
         }
-    }
-    
-    /* Animation for form submission */
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-    
-    .btn-primary.processing {
-        animation: pulse 1.5s infinite;
     }
 </style>
 
@@ -281,21 +238,22 @@
     <div class="survey-container">
         <div class="survey-header">
             <h1><i class="bi bi-clipboard-check me-3"></i>{{ category_display }} Survey</h1>
-            <p class="lead">Help us find the perfect {{ category_display|lower }} plan for you by answering a few quick questions.</p>
+            <p class="lead">Help us find the perfect {{ category_display|lower }} plan for you by answering a few quick
+                questions.</p>
         </div>
 
         <!-- Progress Section -->
         <div class="survey-progress">
             <div class="progress-text">
-                <i class="bi bi-graph-up me-2"></i>Survey Progress
+                <span><i class="bi bi-graph-up me-2"></i>Survey Progress</span>
+                <span>{{ completion_status.answered_required|default:0 }} of {{completion_status.required_questions|default:0 }} questions completed</span>
             </div>
             <div class="progress">
-                <div class="progress-bar" role="progressbar" 
-                     style="width: {{ completion_status.completion_percentage|default:0 }}%" 
-                     aria-valuenow="{{ completion_status.completion_percentage|default:0 }}" 
-                     aria-valuemin="0" 
-                     aria-valuemax="100">
-                    {{ completion_status.answered_required|default:0 }}/{{ completion_status.required_questions|default:0 }} Complete
+                <div class="progress-bar" role="progressbar"
+                    style="width: {{ completion_status.completion_percentage|default:0 }}%"
+                    aria-valuenow="{{ completion_status.completion_percentage|default:0 }}" aria-valuemin="0"
+                    aria-valuemax="100">
+                    {{ completion_status.completion_percentage|default:0 }}%
                 </div>
             </div>
         </div>
@@ -308,9 +266,9 @@
         {% endif %}
 
         <!-- Survey Form -->
-        <form id="surveyForm" method="post">
+        <form id="surveyForm" method="post" action="{% url 'process' category=category %}">
             {% csrf_token %}
-            
+
             {% for question in questions %}
             <div class="question-card" data-question-id="{{ question.id }}">
                 <div class="question-title">
@@ -320,123 +278,92 @@
                         {% if question.is_required %}<span class="text-danger">*</span>{% endif %}
                     </span>
                 </div>
-                
+
                 {% if question.input_type == 'text' %}
-                    <input type="text" 
-                           class="form-control" 
-                           name="{{ question.field_name }}" 
-                           id="{{ question.field_name }}"
-                           value="{{ existing_responses|get_item:question.field_name|default:'' }}"
-                           {% if question.is_required %}required{% endif %}
-                           placeholder="Enter your answer...">
-                
+                <input type="text" class="form-control" name="{{ question.field_name }}" id="{{ question.field_name }}"
+                    {% if question.is_required %}required{% endif %} placeholder="Enter your answer...">
+
                 {% elif question.input_type == 'email' %}
-                    <input type="email" 
-                           class="form-control" 
-                           name="{{ question.field_name }}" 
-                           id="{{ question.field_name }}"
-                           value="{{ existing_responses|get_item:question.field_name|default:'' }}"
-                           {% if question.is_required %}required{% endif %}
-                           placeholder="Enter your email address...">
-                
+                <input type="email" class="form-control" name="{{ question.field_name }}" id="{{ question.field_name }}"
+                    {% if question.is_required %}required{% endif %} placeholder="Enter your email address...">
+
                 {% elif question.input_type == 'number' %}
-                    <input type="number" 
-                           class="form-control" 
-                           name="{{ question.field_name }}" 
-                           id="{{ question.field_name }}"
-                           value="{{ existing_responses|get_item:question.field_name|default:'' }}"
-                           {% if question.validation_rules.min %}min="{{ question.validation_rules.min }}"{% endif %}
-                           {% if question.validation_rules.max %}max="{{ question.validation_rules.max }}"{% endif %}
-                           {% if question.is_required %}required{% endif %}
-                           placeholder="Enter a number...">
-                
+                <input type="number" class="form-control" name="{{ question.field_name }}"
+                    id="{{ question.field_name }}" {% if question.validation_rules %} {% if question.validation_rules.min %}min="{{ question.validation_rules.min }}" {% endif %} 
+                    {% if question.validation_rules.max %}max="{{ question.validation_rules.max }}" {% endif %} 
+                    {% endif %} 
+                    {%if question.is_required %}required{% endif %} placeholder="Enter a number...">
+
                 {% elif question.input_type == 'select' %}
-                    <select class="form-select" 
-                            name="{{ question.field_name }}" 
-                            id="{{ question.field_name }}"
-                            {% if question.is_required %}required{% endif %}>
-                        <option value="">Select an option...</option>
-                        {% for choice in question.choices %}
-                            <option value="{{ choice.0 }}" 
-                                    {% if existing_responses|get_item:question.field_name == choice.0 %}selected{% endif %}
-                                    {% if choice.2 %}title="{{ choice.2 }}"{% endif %}>
-                                {{ choice.1 }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    {% if question.field_name == 'annual_limit_family_range' or question.field_name == 'annual_limit_member_range' %}
-                        <div class="form-text">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Choose a range that matches your expected medical expenses. If unsure, select "Not sure / Need guidance" for personalized recommendations.
-                        </div>
-                    {% elif question.field_name == 'monthly_budget' %}
-                        <div class="form-text">
-                            <i class="bi bi-wallet2 me-1"></i>
-                            Select your comfortable monthly budget range for {{ category_display|lower }} insurance premiums.
-                        </div>
-                    {% endif %}
-                
+                <select class="form-select" name="{{ question.field_name }}" id="{{ question.field_name }}" {% if question.is_required %}required{% endif %}>
+                    <option value="">Select an option...</option>
+                    {% for choice in question.choices %}
+                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
+
+                {% if question.field_name == 'monthly_budget' %}
+                <div class="form-text">
+                    <i class="bi bi-wallet2 me-1"></i>
+                    Select your comfortable monthly budget range for {{ category_display|lower }} insurance premiums.
+                </div>
+                {% endif %}
+
                 {% elif question.input_type == 'radio' %}
-                    <div class="radio-group">
-                        {% for choice in question.choices %}
-                            <div class="form-check">
-                                <input class="form-check-input" 
-                                       type="radio" 
-                                       name="{{ question.field_name }}" 
-                                       id="{{ question.field_name }}_{{ choice.0 }}"
-                                       value="{{ choice.0 }}"
-                                       {% if existing_responses|get_item:question.field_name == choice.0 %}checked{% endif %}
-                                       {% if question.is_required %}required{% endif %}>
-                                <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
-                                    <strong>{{ choice.1 }}</strong>
-                                    {% if choice.2 %}
-                                        <br><small class="text-muted">{{ choice.2 }}</small>
-                                    {% endif %}
-                                </label>
-                            </div>
-                        {% endfor %}
+                <div class="radio-group">
+                    {% for choice in question.choices %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="{{ question.field_name }}"
+                            id="{{ question.field_name }}_{{ choice.0 }}" value="{{ choice.0 }}" {% if question.is_required %}required{% endif %}>
+                        <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
+                            <strong>{{ choice.1 }}</strong>
+                        </label>
                     </div>
-                
+                    {% endfor %}
+                </div>
+
                 {% elif question.input_type == 'checkbox' %}
-                    <div class="checkbox-group">
-                        {% for choice in question.choices %}
-                            <div class="form-check">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       name="{{ question.field_name }}" 
-                                       id="{{ question.field_name }}_{{ choice.0 }}"
-                                       value="{{ choice.0 }}"
-                                       {% if choice.0 in existing_responses|get_item:question.field_name|default_if_none:'' %}checked{% endif %}>
-                                <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
-                                    <strong>{{ choice.1 }}</strong>
-                                </label>
-                            </div>
-                        {% endfor %}
+                <div class="checkbox-group">
+                    {% for choice in question.choices %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="{{ question.field_name }}"
+                            id="{{ question.field_name }}_{{ choice.0 }}" value="{{ choice.0 }}">
+                        <label class="form-check-label" for="{{ question.field_name }}_{{ choice.0 }}">
+                            <strong>{{ choice.1 }}</strong>
+                        </label>
                     </div>
+                    {% endfor %}
+                </div>
                 {% endif %}
-                
+
                 {% if question.validation_rules %}
-                    {% if question.validation_rules.min or question.validation_rules.max %}
-                        <div class="form-text">
-                            <i class="bi bi-info-circle me-1"></i>
-                            {% if question.input_type == 'number' %}
-                                {% if question.validation_rules.min and question.validation_rules.max %}
-                                    Enter a number between {{ question.validation_rules.min }} and {{ question.validation_rules.max }}
-                                {% elif question.validation_rules.min %}
-                                    Minimum value: {{ question.validation_rules.min }}
-                                {% elif question.validation_rules.max %}
-                                    Maximum value: {{ question.validation_rules.max }}
-                                {% endif %}
-                            {% endif %}
-                        </div>
+                <div class="form-text">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {% if question.input_type == 'number' %}
+                    {% if question.validation_rules.min and question.validation_rules.max %}
+                    Enter a number between {{ question.validation_rules.min }} and {{ question.validation_rules.max }}
+                    {% elif question.validation_rules.min %}
+                    Minimum value: {{ question.validation_rules.min }}
+                    {% elif question.validation_rules.max %}
+                    Maximum value: {{ question.validation_rules.max }}
                     {% endif %}
+                    {% endif %}
+                </div>
                 {% endif %}
+            </div>
+            {% empty %}
+            <!-- Fallback message if no questions are provided -->
+            <div class="question-card">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Survey questions are being loaded. Please refresh the page if this message persists.
+                </div>
             </div>
             {% endfor %}
 
             <!-- Submit Button -->
             <div class="text-center mt-5">
-                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                <button type="submit" class="btn btn-primary btn-lg">
                     <i class="bi bi-search me-2"></i>Get My Personalized Quotes
                 </button>
                 <div class="mt-3">
@@ -451,185 +378,123 @@
 </main>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('surveyForm');
-        const submitBtn = document.getElementById('submitBtn');
-        
-        // Auto-save responses as user types/selects
-        form.addEventListener('change', function(e) {
-            if (e.target.matches('input, select')) {
-                saveResponse(e.target);
+        const progressBar = document.querySelector('.progress-bar');
+        const progressText = document.querySelector('.progress-text span:last-child');
+        const category = '{{ category }}';
+
+        // Function to update progress bar
+        function updateProgressBar(progress) {
+            if (progressBar && progressText) {
+                progressBar.style.width = progress.completion_percentage + '%';
+                progressBar.textContent = progress.completion_percentage + '%';
+                progressBar.setAttribute('aria-valuenow', progress.completion_percentage);
+                
+                progressText.textContent = progress.answered_required + ' of ' + 
+                                         progress.required_questions + ' questions completed';
             }
-        });
-        
-        // Handle checkbox groups specially
-        form.addEventListener('change', function(e) {
-            if (e.target.type === 'checkbox') {
-                saveCheckboxResponse(e.target);
-            }
-        });
-        
-        // Handle form submission
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            processSurvey();
-        });
-        
-        function saveResponse(element) {
-            const questionCard = element.closest('.question-card');
-            const questionId = questionCard.dataset.questionId;
-            const responseValue = element.value;
-            
-            // Add loading state to the question card
-            questionCard.classList.add('loading');
-            
-            fetch('{% url "simple_surveys:save_response_ajax" category=category %}', {
+        }
+
+        // Function to save response via AJAX
+        function saveResponse(fieldName, value) {
+            const formData = new FormData();
+            formData.append('field_name', fieldName);
+            formData.append('response_value', value);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            fetch(`/ajax/save-response/${category}/`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({
-                    question_id: parseInt(questionId),
-                    response_value: responseValue
-                })
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
-                questionCard.classList.remove('loading');
-                if (data.success && data.completion_status) {
-                    updateProgress(data.completion_status);
-                    // Update session key if it changed
-                    if (data.session_key) {
-                        console.log('Session updated:', data.session_key);
-                    }
-                } else if (!data.success) {
-                    console.error('Error saving response:', data.error);
-                    showError('Failed to save your response. Please try again.');
+                if (data.status === 'success' && data.progress) {
+                    updateProgressBar(data.progress);
                 }
             })
             .catch(error => {
-                questionCard.classList.remove('loading');
                 console.error('Error saving response:', error);
-                showError('Connection error. Please check your internet and try again.');
             });
         }
-        
-        function saveCheckboxResponse(element) {
-            const questionCard = element.closest('.question-card');
-            const questionId = questionCard.dataset.questionId;
-            
-            // Get all checked checkboxes for this question
-            const checkboxes = questionCard.querySelectorAll('input[type="checkbox"]:checked');
-            const responseValue = Array.from(checkboxes).map(cb => cb.value);
-            
-            // Add loading state
-            questionCard.classList.add('loading');
-            
-            fetch('{% url "simple_surveys:save_response_ajax" category=category %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({
-                    question_id: parseInt(questionId),
-                    response_value: responseValue
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                questionCard.classList.remove('loading');
-                if (data.success && data.completion_status) {
-                    updateProgress(data.completion_status);
-                    // Update session key if it changed
-                    if (data.session_key) {
-                        console.log('Session updated:', data.session_key);
+
+        // Add event listeners to form fields
+        if (form) {
+            // Handle text and number inputs
+            form.querySelectorAll('input[type="text"], input[type="number"], input[type="email"]').forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (this.value.trim() !== '') {
+                        saveResponse(this.name, this.value);
                     }
-                } else if (!data.success) {
-                    console.error('Error saving checkbox response:', data.error);
-                    showError('Failed to save your response. Please try again.');
-                }
-            })
-            .catch(error => {
-                questionCard.classList.remove('loading');
-                console.error('Error saving checkbox response:', error);
-                showError('Connection error. Please check your internet and try again.');
+                });
+            });
+
+            // Handle select dropdowns
+            form.querySelectorAll('select').forEach(select => {
+                select.addEventListener('change', function() {
+                    if (this.value !== '') {
+                        saveResponse(this.name, this.value);
+                    }
+                });
+            });
+
+            // Handle radio buttons
+            form.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        saveResponse(this.name, this.value);
+                    }
+                });
+            });
+
+            // Handle checkboxes
+            form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    // Get all checked values for this checkbox group
+                    const checkedBoxes = form.querySelectorAll(`input[name="${this.name}"]:checked`);
+                    const values = Array.from(checkedBoxes).map(cb => cb.value);
+                    
+                    // Save all values for this checkbox group
+                    const formData = new FormData();
+                    formData.append('field_name', this.name);
+                    values.forEach(value => formData.append('response_value', value));
+                    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                    fetch(`/ajax/save-response/${category}/`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success' && data.progress) {
+                            updateProgressBar(data.progress);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving checkbox response:', error);
+                    });
+                });
+            });
+
+            // Handle form submission
+            form.addEventListener('submit', function (e) {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing Your Responses...';
             });
         }
-        
-        function updateProgress(status) {
-            const progressBar = document.querySelector('.progress-bar');
-            const percentage = status.completion_percentage || 0;
-            const completed = status.answered_required || 0;
-            const total = status.required_questions || 0;
-            
-            progressBar.style.width = percentage + '%';
-            progressBar.textContent = completed + '/' + total + ' Complete';
-            progressBar.setAttribute('aria-valuenow', percentage);
-            
-            // Add visual feedback for completion
-            if (percentage === 100) {
-                progressBar.innerHTML = '<i class="bi bi-check-circle me-2"></i>Survey Complete!';
-                progressBar.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
-            }
-        }
-        
-        function processSurvey() {
-            submitBtn.disabled = true;
-            submitBtn.classList.add('processing');
-            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing Your Responses...';
-            
-            fetch('{% url "simple_surveys:process" category=category %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            })
+
+        // Load initial progress on page load
+        fetch(`/ajax/survey-status/${category}/`)
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Success! Redirecting...';
-                    setTimeout(() => {
-                        window.location.href = data.redirect_url;
-                    }, 1000);
-                } else {
-                    showError('Error: ' + data.error);
-                    resetSubmitButton();
+                if (data.progress) {
+                    updateProgressBar(data.progress);
                 }
             })
             .catch(error => {
-                console.error('Error processing survey:', error);
-                showError('An error occurred while processing your survey. Please try again.');
-                resetSubmitButton();
+                console.error('Error loading initial progress:', error);
             });
-        }
-        
-        function resetSubmitButton() {
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('processing');
-            submitBtn.innerHTML = '<i class="bi bi-search me-2"></i>Get My Personalized Quotes';
-        }
-        
-        function showError(message) {
-            // Create or update error alert
-            let errorAlert = document.querySelector('.alert-danger');
-            if (!errorAlert) {
-                errorAlert = document.createElement('div');
-                errorAlert.className = 'alert alert-danger';
-                errorAlert.setAttribute('role', 'alert');
-                document.querySelector('.survey-progress').after(errorAlert);
-            }
-            errorAlert.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>' + message;
-            errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                if (errorAlert.parentNode) {
-                    errorAlert.remove();
-                }
-            }, 5000);
-        }
     });
 </script>
 {% endblock %}

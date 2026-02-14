@@ -21,8 +21,7 @@ from django.urls import path, include
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("simple_surveys.urls")),  # Main pages now handled by simple_surveys
-    path("surveys/", include("surveys.urls")),
     path("comparison/", include("comparison.urls")),
     path("policies/", include("policies.urls")),  # Feature-based policy listings
-    path("organizations/", include("organizations.urls")),  # Keep organizations for legacy support
+    # Organizations app models still used but URL routing handled by simple_surveys
 ]

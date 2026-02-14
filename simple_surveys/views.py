@@ -4,804 +4,544 @@ from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.contrib.sessions.models import Session
+from django.contrib import messages
+from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
-from decimal import Decimal
-import json
-import logging
-
-from .models import SimpleSurvey, SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession
-from .forms import SimpleSurveyForm, HealthSurveyForm, FuneralSurveyForm
-from .engine import SimpleSurveyEngine
-from .comparison_adapter import SimpleSurveyComparisonAdapter
-from .simple_session_manager import SimpleSessionManager, with_survey_session
-from .response_migration import ResponseMigrationHandler
-
-logger = logging.getLogger(__name__)
-
-
-def _serialize_for_session(data):
-    """
-    Convert Decimal objects to float for JSON serialization in Django sessions.
-    
-    Args:
-        data: Any data structure that might contain Decimal objects
-        
-    Returns:
-        Data structure with Decimal objects converted to float
-    """
-    if isinstance(data, Decimal):
-        return float(data)
-    elif isinstance(data, dict):
-        return {key: _serialize_for_session(value) for key, value in data.items()}
-    elif isinstance(data, list):
-        return [_serialize_for_session(item) for item in data]
-    elif isinstance(data, tuple):
-        return tuple(_serialize_for_session(item) for item in data)
-    else:
-        return data
-
-
-class FeatureSurveyView(View):
-    """
-    Feature-based survey view for health and funeral insurance types.
-    Uses SimpleSurvey model with feature-specific questions.
-    """
-    
-    def get(self, request, category):
-        """Display feature-based survey form for the specified category"""
-        # Validate category
-        if category not in ['health', 'funeral']:
-            raise Http404("Invalid survey category")
-        
-        try:
-            # Handle session management directly
-            quotation_session = SimpleSessionManager.get_or_create_session(request, category)
-            session_key = quotation_session.session_key
-            
-            # Initialize survey engine to get enhanced questions
-            engine = SimpleSurveyEngine(category)
-            questions = engine.get_questions()
-            
-            # Get existing responses for this session/category
-            existing_responses = {}
-            responses = SimpleSurveyResponse.objects.for_session_category(session_key, category)
-            for response in responses:
-                existing_responses[response.question.field_name] = response.response_value
-            
-            # Get completion status
-            completion_status = engine.get_completion_status(session_key)
-            
-            context = {
-                'category': category,
-                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-                'questions': questions,
-                'existing_responses': existing_responses,
-                'completion_status': completion_status,
-                'session_key': session_key,
-            }
-            
-            return render(request, 'surveys/simple_survey_form_fixed.html', context)
-            
-        except Exception as e:
-            logger.error(f"Error displaying feature survey for category {category}: {e}")
-            return render(request, 'surveys/simple_survey_form_fixed.html', {
-                'error_message': 'Unable to load survey questions. Please try again.',
-                'category': category
-            })
-    
-    def post(self, request, category):
-        """Process feature-based survey form submission"""
-        # Validate category
-        if category not in ['health', 'funeral']:
-            raise Http404("Invalid survey category")
-        
-        try:
-            # Get fresh session for results (invalidates old session if needed)
-            quotation_session = SimpleSessionManager.ensure_fresh_session_for_results(request, category)
-            session_key = quotation_session.session_key
-            
-            # Initialize survey engine
-            engine = SimpleSurveyEngine(category)
-            
-            # Check if survey is complete
-            if not engine.is_survey_complete(session_key):
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Survey is not complete. Please answer all required questions.'
-                }, status=400)
-            
-            # Process responses to quotation criteria
-            criteria = engine.process_responses(session_key)
-            
-            # Update quotation session with criteria
-            quotation_session.update_criteria(criteria)
-            
-            # Generate quotations using comparison adapter
-            adapter = SimpleSurveyComparisonAdapter(category)
-            quotation_result = adapter.generate_quotations(session_key)
-            
-            # Check if quotation generation was successful
-            if not quotation_result.get('success'):
-                return JsonResponse({
-                    'success': False,
-                    'error': quotation_result.get('error', 'Unable to generate quotations')
-                }, status=500)
-            
-            # Extract policies from the result
-            quotations = quotation_result.get('policies', [])
-            
-            # Mark session as completed
-            quotation_session.mark_completed()
-            
-            # Store quotations in session for results page (convert Decimal values to avoid JSON serialization errors)
-            request.session[f'quotations_{category}'] = _serialize_for_session(quotations)
-            request.session[f'criteria_{category}'] = _serialize_for_session(criteria)
-            request.session[f'quotation_metadata_{category}'] = _serialize_for_session({
-                'total_policies_evaluated': quotation_result.get('total_policies_evaluated', 0),
-                'best_match': quotation_result.get('best_match'),
-                'summary': quotation_result.get('summary', {}),
-                'generated_at': quotation_result.get('generated_at')
-            })
-            
-            return JsonResponse({
-                'success': True,
-                'quotations_count': len(quotations),
-                'redirect_url': f'/survey/{category}/results/'
-            })
-            
-        except Exception as e:
-            logger.error(f"Error processing feature survey for category {category}: {e}")
-            return JsonResponse({
-                'success': False,
-                'error': 'Unable to generate quotations. Please try again.'
-            }, status=500)
-
-
-class FeatureResultsView(View):
-    """
-    View for processing feature-based survey and displaying results.
-    Integrates with the comparison system to show matching policies.
-    """
-    
-    def get(self, request, category):
-        """Display quotation results for the category"""
-        # Validate category
-        if category not in ['health', 'funeral']:
-            raise Http404("Invalid survey category")
-        
-        # Check for quotations in session
-        quotations_key = f'quotations_{category}'
-        criteria_key = f'criteria_{category}'
-        metadata_key = f'quotation_metadata_{category}'
-        
-        quotations = request.session.get(quotations_key)
-        criteria = request.session.get(criteria_key)
-        metadata = request.session.get(metadata_key, {})
-        
-        if not quotations:
-            # No quotations found, redirect to survey
-            return render(request, 'surveys/simple_survey_results.html', {
-                'category': category,
-                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-                'message': 'No quotations found. Please complete the survey first.'
-            })
-        
-        try:
-            # Get session information
-            session_key = request.session.session_key
-            quotation_session = None
-            
-            if session_key:
-                try:
-                    quotation_session = QuotationSession.objects.get(
-                        session_key=session_key,
-                        category=category
-                    )
-                except QuotationSession.DoesNotExist:
-                    pass
-            
-            context = {
-                'category': category,
-                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-                'quotations': quotations,
-                'criteria': criteria,
-                'quotation_session': quotation_session,
-                'total_quotations': len(quotations),
-                'metadata': metadata,
-                'best_match': metadata.get('best_match'),
-                'summary': metadata.get('summary', {})
-            }
-            
-            return render(request, 'surveys/simple_survey_results.html', context)
-            
-        except Exception as e:
-            logger.error(f"Error displaying feature results for category {category}: {e}")
-            return render(request, 'surveys/simple_survey_form_fixed.html', {
-                'error_message': 'Unable to display results. Please try again.',
-                'category': category
-            })
-
-
-class SurveyView(View):
-    """
-    Main view for displaying survey questions by category (health/funeral).
-    Handles session management for anonymous users.
-    """
-    
-    def get(self, request, category):
-        """Display survey form for the specified category"""
-        # Validate category
-        if category not in ['health', 'funeral']:
-            raise Http404("Invalid survey category")
-        
-        try:
-            # Create or get session using SessionManager
-            quotation_session, created = SessionManager.create_or_get_session(request, category)
-            session_key = quotation_session.session_key
-            
-            # Initialize survey engine
-            engine = SimpleSurveyEngine(category)
-            questions = engine.get_questions()
-            
-            # Get existing responses for this session/category
-            existing_responses = {}
-            responses = SimpleSurveyResponse.objects.for_session_category(session_key, category)
-            for response in responses:
-                existing_responses[response.question.field_name] = response.response_value
-            
-            # Get completion status
-            completion_status = engine.get_completion_status(session_key)
-            
-            context = {
-                'category': category,
-                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-                'questions': questions,
-                'existing_responses': existing_responses,
-                'completion_status': completion_status,
-                'session_key': session_key,
-                'session_created': created,
-            }
-            
-            return render(request, 'surveys/simple_survey_form_fixed.html', context)
-            
-        except ValueError as e:
-            logger.error(f"Invalid category for survey: {e}")
-            raise Http404("Invalid survey category")
-        except Exception as e:
-            logger.error(f"Error displaying survey for category {category}: {e}")
-            return render(request, 'surveys/simple_survey_form_fixed.html', {
-                'error_message': 'Unable to load survey questions. Please try again.',
-                'category': category
-            })
-
-
-@require_POST
-@csrf_exempt
-def save_response_ajax(request):
-    """
-    AJAX endpoint for saving individual responses.
-    Expects JSON data with question_id, response_value, and category.
-    """
-    try:
-        # Parse JSON data
-        data = json.loads(request.body)
-        question_id = data.get('question_id')
-        response_value = data.get('response_value')
-        category = data.get('category')
-        
-        # Validate required fields
-        if not all([question_id, category]):
-            return JsonResponse({
-                'success': False,
-                'errors': ['Missing required fields: question_id and category']
-            }, status=400)
-        
-        # Validate category
-        if category not in ['health', 'funeral']:
-            return JsonResponse({
-                'success': False,
-                'errors': ['Invalid category']
-            }, status=400)
-        
-        # Validate session
-        session_key = request.session.session_key
-        if not session_key:
-            return JsonResponse({
-                'success': False,
-                'errors': ['No active session']
-            }, status=400)
-        
-        validation_result = SessionManager.validate_session(session_key, category)
-        if not validation_result['valid']:
-            return JsonResponse({
-                'success': False,
-                'errors': [f'Session validation failed: {validation_result["error"]}']
-            }, status=400)
-        
-        # Initialize survey engine and save response
-        engine = SimpleSurveyEngine(category)
-        result = engine.save_response(session_key, question_id, response_value)
-        
-        if result['success']:
-            # Extend session expiry on successful response
-            SessionManager.extend_session(session_key, category)
-            
-            # Check if survey is now complete
-            is_complete = engine.is_survey_complete(session_key)
-            completion_status = engine.get_completion_status(session_key)
-            
-            return JsonResponse({
-                'success': True,
-                'response_id': result['response_id'],
-                'is_complete': is_complete,
-                'completion_status': completion_status
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'errors': result['errors']
-            }, status=400)
-            
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'errors': ['Invalid JSON data']
-        }, status=400)
-    except Exception as e:
-        logger.error(f"Error saving response via AJAX: {e}")
-        return JsonResponse({
-            'success': False,
-            'errors': ['Server error occurred']
-        }, status=500)
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class ProcessSurveyView(View):
-    """
-    View for processing completed surveys and generating quotations.
-    Handles the transition from survey completion to quotation results.
-    """
-    
-    def post(self, request, category):
-        """Process completed survey and generate quotations"""
-        # Validate category
-        if category not in ['health', 'funeral']:
-            raise Http404("Invalid survey category")
-        
-        try:
-            # Get fresh session for results (invalidates old session if needed)
-            quotation_session = SimpleSessionManager.ensure_fresh_session_for_results(request, category)
-            session_key = quotation_session.session_key
-            
-            # Initialize survey engine
-            engine = SimpleSurveyEngine(category)
-            
-            # Check if survey is complete
-            if not engine.is_survey_complete(session_key):
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Survey is not complete. Please answer all required questions.'
-                }, status=400)
-            
-            # Process responses to quotation criteria
-            criteria = engine.process_responses(session_key)
-            
-            # Update quotation session with criteria
-            quotation_session.update_criteria(criteria)
-            
-            # Generate quotations using comparison adapter
-            adapter = SimpleSurveyComparisonAdapter(category)
-            quotation_result = adapter.generate_quotations(session_key)
-            
-            # Check if quotation generation was successful
-            if not quotation_result.get('success'):
-                return JsonResponse({
-                    'success': False,
-                    'error': quotation_result.get('error', 'Unable to generate quotations')
-                }, status=500)
-            
-            # Extract policies from the result
-            quotations = quotation_result.get('policies', [])
-            
-            # Mark session as completed
-            quotation_session.mark_completed()
-            
-            # Store quotations in session for results page (convert Decimal values to avoid JSON serialization errors)
-            request.session[f'quotations_{category}'] = _serialize_for_session(quotations)
-            request.session[f'criteria_{category}'] = _serialize_for_session(criteria)
-            request.session[f'quotation_metadata_{category}'] = _serialize_for_session({
-                'total_policies_evaluated': quotation_result.get('total_policies_evaluated', 0),
-                'best_match': quotation_result.get('best_match'),
-                'summary': quotation_result.get('summary', {}),
-                'generated_at': quotation_result.get('generated_at')
-            })
-            
-            return JsonResponse({
-                'success': True,
-                'quotations_count': len(quotations),
-                'redirect_url': f'/survey/{category}/results/'
-            })
-            
-        except Exception as e:
-            logger.error(f"Error processing survey for category {category}: {e}")
-            return JsonResponse({
-                'success': False,
-                'error': 'Unable to generate quotations. Please try again.'
-            }, status=500)
-    
-    def get(self, request, category):
-        """Redirect GET requests to survey form"""
-        return render(request, 'surveys/simple_survey_form_fixed.html', {
-            'category': category,
-            'error_message': 'Please complete the survey first.'
-        })
-
-
-class SurveyResultsView(View):
-    """
-    View for displaying quotation results after survey completion.
-    Shows the top matching policies in a comparison format.
-    """
-    
-    def get(self, request, category):
-        """Display quotation results for the category"""
-        # Validate category
-        if category not in ['health', 'funeral']:
-            raise Http404("Invalid survey category")
-        
-        # Check for quotations in session
-        quotations_key = f'quotations_{category}'
-        criteria_key = f'criteria_{category}'
-        metadata_key = f'quotation_metadata_{category}'
-        
-        quotations = request.session.get(quotations_key)
-        criteria = request.session.get(criteria_key)
-        metadata = request.session.get(metadata_key, {})
-        
-        if not quotations:
-            # No quotations found, redirect to survey
-            return render(request, 'surveys/simple_survey_results.html', {
-                'category': category,
-                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-                'message': 'No quotations found. Please complete the survey first.'
-            })
-        
-        try:
-            # Get session information
-            session_key = request.session.session_key
-            quotation_session = None
-            
-            if session_key:
-                try:
-                    quotation_session = QuotationSession.objects.get(
-                        session_key=session_key,
-                        category=category
-                    )
-                except QuotationSession.DoesNotExist:
-                    pass
-            
-            context = {
-                'category': category,
-                'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-                'quotations': quotations,
-                'criteria': criteria,
-                'quotation_session': quotation_session,
-                'total_quotations': len(quotations),
-                'metadata': metadata,
-                'best_match': metadata.get('best_match'),
-                'summary': metadata.get('summary', {})
-            }
-            
-            return render(request, 'surveys/simple_survey_results.html', context)
-            
-        except Exception as e:
-            logger.error(f"Error displaying results for category {category}: {e}")
-            return render(request, 'surveys/simple_survey_form_fixed.html', {
-                'error_message': 'Unable to display results. Please try again.',
-                'category': category
-            })
-
-
-@require_http_methods(["POST"])
-@csrf_exempt
-def save_response_ajax(request, category):
-    """
-    AJAX endpoint to save survey responses.
-    Automatically invalidates session when responses are modified.
-    """
-    # Validate category
-    if category not in ['health', 'funeral']:
-        return JsonResponse({
-            'success': False,
-            'error': 'Invalid category'
-        }, status=400)
-    
-    try:
-        # Parse request data
-        data = json.loads(request.body)
-        question_id = data.get('question_id')
-        response_value = data.get('response_value')
-        
-        if not question_id:
-            return JsonResponse({
-                'success': False,
-                'error': 'Question ID is required'
-            }, status=400)
-        
-        # Invalidate existing session since we're modifying responses
-        SimpleSessionManager.invalidate_session_on_modification(request, category)
-        
-        # Get fresh session
-        quotation_session = SimpleSessionManager.get_or_create_session(request, category)
-        session_key = quotation_session.session_key
-        
-        # Get question
-        try:
-            question = SimpleSurveyQuestion.objects.get(
-                id=question_id,
-                category=category
-            )
-        except SimpleSurveyQuestion.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'Question not found'
-            }, status=404)
-        
-        # Save or update response
-        response, created = SimpleSurveyResponse.objects.update_or_create(
-            session_key=session_key,
-            category=category,
-            question=question,
-            defaults={'response_value': response_value}
-        )
-        
-        # Get updated completion status
-        engine = SimpleSurveyEngine(category)
-        completion_status = engine.get_completion_status(session_key)
-        
-        return JsonResponse({
-            'success': True,
-            'response_id': response.id,
-            'created': created,
-            'completion_status': completion_status,
-            'session_key': session_key
-        })
-        
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'error': 'Invalid JSON data'
-        }, status=400)
-    except Exception as e:
-        logger.error(f"Error saving response for category {category}: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': 'Unable to save response'
-        }, status=500)
-
-
-@require_http_methods(["GET"])
-def survey_status_ajax(request, category):
-    """
-    AJAX endpoint to get current survey completion status.
-    Used for updating progress indicators.
-    """
-    # Validate category
-    if category not in ['health', 'funeral']:
-        return JsonResponse({
-            'success': False,
-            'error': 'Invalid category'
-        }, status=400)
-    
-    try:
-        # Get or create session
-        quotation_session = SimpleSessionManager.get_or_create_session(request, category)
-        session_key = quotation_session.session_key
-        
-        # Get completion status
-        engine = SimpleSurveyEngine(category)
-        status = engine.get_completion_status(session_key)
-        
-        return JsonResponse({
-            'success': True,
-            'status': status
-        })
-        
-    except Exception as e:
-        logger.error(f"Error getting survey status for category {category}: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': 'Unable to get survey status'
-        }, status=500)
+from .models import SimpleSurveyQuestion, SimpleSurveyResponse, QuotationSession
 
 
 def home(request):
-    """
-    Home page using the main index.html template.
-    """
+    """Main home page view"""
     return render(request, 'public/index.html', {})
 
 
 def health_page(request):
-    """
-    Health insurance page using the main health.html template.
-    """
+    """Health insurance information page"""
     return render(request, 'public/health.html', {})
 
 
 def funerals_page(request):
-    """
-    Funeral insurance page using the main funerals.html template.
-    """
+    """Funeral insurance information page"""
     return render(request, 'public/funerals.html', {})
 
 
 def direct_survey(request, category_slug):
     """
-    Direct survey entry point that redirects to the feature-based survey.
-    This matches the URL pattern used in the templates.
+    Direct survey entry point that redirects to the appropriate survey.
+    This maintains compatibility with the existing URL structure.
     """
-    # Map category slugs to our internal category names
-    category_mapping = {
-        'health': 'health',
-        'funeral': 'funeral'
+    if category_slug in ['funeral', 'health']:
+        # Redirect to the survey view within this app
+        return redirect('survey', category=category_slug)
+    else:
+        raise Http404("Survey category not found")
+
+
+# Survey view classes - these handle survey functionality
+class SurveyView(View):
+    """Survey view that renders survey forms"""
+    def get(self, request, category):
+        # Ensure session exists
+        if not request.session.session_key:
+            request.session.create()
+        
+        session_key = request.session.session_key
+        
+        # Generate survey questions based on category
+        questions = self.get_survey_questions(category)
+        
+        # Get existing responses for this session and category
+        existing_responses = self.get_existing_responses(session_key, category)
+        
+        # Calculate completion status
+        completion_status = self.calculate_completion_status(questions, existing_responses)
+        
+        context = {
+            'category': category,
+            'category_display': category.title(),
+            'completion_status': completion_status,
+            'questions': questions,
+            'existing_responses': existing_responses,
+            'session_key': session_key
+        }
+        return render(request, 'surveys/simple_survey_form_fixed.html', context)
+    
+    def get_existing_responses(self, session_key, category):
+        """Get existing responses for this session and category"""
+        responses = SimpleSurveyResponse.objects.filter(
+            session_key=session_key,
+            category=category
+        ).select_related('question')
+        
+        response_dict = {}
+        for response in responses:
+            response_dict[response.question.field_name] = response.response_value
+        
+        return response_dict
+    
+    def calculate_completion_status(self, questions, existing_responses):
+        """Calculate completion status based on questions and responses"""
+        required_questions = [q for q in questions if q.get('is_required', True)]
+        total_required = len(required_questions)
+        
+        if total_required == 0:
+            return {
+                'completion_percentage': 100,
+                'answered_required': 0,
+                'required_questions': 0,
+                'is_complete': True
+            }
+        
+        # Count answered required questions
+        answered_required = 0
+        for question in required_questions:
+            field_name = question.get('field_name')
+            if field_name in existing_responses:
+                response_value = existing_responses[field_name]
+                # Check if response is not empty
+                if response_value is not None and response_value != '' and response_value != []:
+                    answered_required += 1
+        
+        # Calculate percentage
+        completion_percentage = int((answered_required / total_required) * 100)
+        is_complete = answered_required == total_required
+        
+        return {
+            'completion_percentage': completion_percentage,
+            'answered_required': answered_required,
+            'required_questions': total_required,
+            'is_complete': is_complete
+        }
+    
+    def get_survey_questions(self, category):
+        """Load survey questions from database based on category"""
+        questions = SimpleSurveyQuestion.objects.for_category(category)
+        
+        # Convert to the format expected by the template
+        question_list = []
+        for question in questions:
+            question_dict = {
+                'id': question.pk,
+                'question_text': question.question_text,
+                'field_name': question.field_name,
+                'input_type': question.input_type,
+                'is_required': question.is_required,
+                'choices': question.get_choices_list(),
+                'validation_rules': question.validation_rules,
+            }
+            question_list.append(question_dict)
+        
+        return question_list
+
+
+class ProcessSurveyView(View):
+    """Process survey responses"""
+    def post(self, request, category):
+        # Ensure session exists
+        if not request.session.session_key:
+            request.session.create()
+        
+        session_key = request.session.session_key
+        
+        # Process form data
+        responses_saved = 0
+        errors = []
+        
+        # Get all questions for this category
+        questions = SimpleSurveyQuestion.objects.for_category(category)
+        question_dict = {q.field_name: q for q in questions}
+        
+        # Process each form field
+        for field_name, value in request.POST.items():
+            if field_name in ['csrfmiddlewaretoken']:
+                continue
+                
+            if field_name in question_dict:
+                question = question_dict[field_name]
+                
+                # Handle checkbox fields (multiple values)
+                if question.input_type == 'checkbox':
+                    checkbox_values = request.POST.getlist(field_name)
+                    value = checkbox_values if checkbox_values else []
+                
+                # Save or update response
+                response, created = SimpleSurveyResponse.objects.update_or_create(
+                    session_key=session_key,
+                    question=question,
+                    defaults={
+                        'category': category,
+                        'response_value': value
+                    }
+                )
+                responses_saved += 1
+        
+        # Create or update quotation session
+        quotation_session, created = QuotationSession.objects.update_or_create(
+            session_key=session_key,
+            category=category,
+            defaults={
+                'expires_at': timezone.now() + timedelta(hours=24)
+            }
+        )
+        
+        # Check if survey is complete
+        completion_status = self.calculate_completion_status(session_key, category)
+        if completion_status['is_complete']:
+            quotation_session.mark_completed()
+        
+        # Redirect to results
+        return redirect('results', category=category)
+    
+    def calculate_completion_status(self, session_key, category):
+        """Calculate completion status for a session"""
+        # Get all required questions
+        required_questions = SimpleSurveyQuestion.objects.filter(
+            category=category,
+            is_required=True
+        )
+        total_required = required_questions.count()
+        
+        if total_required == 0:
+            return {'is_complete': True, 'completion_percentage': 100}
+        
+        # Count answered required questions
+        answered_responses = SimpleSurveyResponse.objects.filter(
+            session_key=session_key,
+            category=category,
+            question__is_required=True
+        ).exclude(response_value__in=['', None, []])
+        
+        answered_count = answered_responses.count()
+        completion_percentage = int((answered_count / total_required) * 100)
+        
+        return {
+            'is_complete': answered_count == total_required,
+            'completion_percentage': completion_percentage,
+            'answered_required': answered_count,
+            'required_questions': total_required
+        }
+
+
+class SurveyResultsView(View):
+    """Display survey results"""
+    def get(self, request, category):
+        # Render survey results with sample data
+        context = {
+            'category': category,
+            'category_display': category.title(),
+            'quotations': [],  # Will be populated by actual comparison engine
+            'total_quotations': 0,
+            'message': 'Survey processing complete. Results will be displayed here.',
+            'metadata': {
+                'total_policies_evaluated': 0,
+                'fallback_used': False
+            }
+        }
+        return render(request, 'surveys/simple_survey_results.html', context)
+
+
+class FeatureSurveyView(View):
+    """Feature-based survey view"""
+    def get(self, request, category):
+        # Ensure session exists
+        if not request.session.session_key:
+            request.session.create()
+        
+        session_key = request.session.session_key
+        
+        # Generate feature survey questions
+        questions = self.get_feature_survey_questions(category)
+        
+        # Get existing responses for this session and category
+        existing_responses = self.get_existing_responses(session_key, category)
+        
+        # Calculate completion status
+        completion_status = self.calculate_completion_status(questions, existing_responses)
+        
+        context = {
+            'category': category,
+            'category_display': f'{category.title()} Feature',
+            'completion_status': completion_status,
+            'questions': questions,
+            'existing_responses': existing_responses,
+            'session_key': session_key
+        }
+        return render(request, 'surveys/simple_survey_form_fixed.html', context)
+    
+    def get_existing_responses(self, session_key, category):
+        """Get existing responses for this session and category"""
+        responses = SimpleSurveyResponse.objects.filter(
+            session_key=session_key,
+            category=category
+        ).select_related('question')
+        
+        response_dict = {}
+        for response in responses:
+            response_dict[response.question.field_name] = response.response_value
+        
+        return response_dict
+    
+    def calculate_completion_status(self, questions, existing_responses):
+        """Calculate completion status based on questions and responses"""
+        required_questions = [q for q in questions if q.get('is_required', True)]
+        total_required = len(required_questions)
+        
+        if total_required == 0:
+            return {
+                'completion_percentage': 100,
+                'answered_required': 0,
+                'required_questions': 0,
+                'is_complete': True
+            }
+        
+        # Count answered required questions
+        answered_required = 0
+        for question in required_questions:
+            field_name = question.get('field_name')
+            if field_name in existing_responses:
+                response_value = existing_responses[field_name]
+                # Check if response is not empty
+                if response_value is not None and response_value != '' and response_value != []:
+                    answered_required += 1
+        
+        # Calculate percentage
+        completion_percentage = int((answered_required / total_required) * 100)
+        is_complete = answered_required == total_required
+        
+        return {
+            'completion_percentage': completion_percentage,
+            'answered_required': answered_required,
+            'required_questions': total_required,
+            'is_complete': is_complete
+        }
+    
+    def get_survey_questions(self, category):
+        """Load survey questions from database based on category"""
+        questions = SimpleSurveyQuestion.objects.for_category(category)
+        
+        # Convert to the format expected by the template
+        question_list = []
+        for question in questions:
+            question_dict = {
+                'id': question.pk,
+                'question_text': question.question_text,
+                'field_name': question.field_name,
+                'input_type': question.input_type,
+                'is_required': question.is_required,
+                'choices': question.get_choices_list(),
+                'validation_rules': question.validation_rules,
+            }
+            question_list.append(question_dict)
+        
+        return question_list
+    
+    def get_feature_survey_questions(self, category):
+        """Generate feature-based survey questions from database"""
+        base_questions = self.get_survey_questions(category)
+        
+        # Add feature-specific questions
+        feature_questions = [
+            {
+                'id': 'feature_1',
+                'question_text': 'Which features are most important to you?',
+                'field_name': 'important_features',
+                'input_type': 'checkbox',
+                'is_required': True,
+                'choices': [
+                    ('online_claims', 'Online Claims Processing'),
+                    ('24_7_support', '24/7 Customer Support'),
+                    ('mobile_app', 'Mobile App'),
+                    ('network_hospitals', 'Large Hospital Network'),
+                    ('quick_approval', 'Quick Approval Process'),
+                    ('wellness_programs', 'Wellness Programs')
+                ]
+            },
+            {
+                'id': 'feature_2',
+                'question_text': 'How do you prefer to manage your policy?',
+                'field_name': 'management_preference',
+                'input_type': 'radio',
+                'is_required': True,
+                'choices': [
+                    ('online', 'Online Portal'),
+                    ('mobile', 'Mobile App'),
+                    ('phone', 'Phone Support'),
+                    ('branch', 'Physical Branch')
+                ]
+            }
+        ]
+        
+        return base_questions + feature_questions
+
+
+class FeatureResultsView(View):
+    """Feature-based survey results"""
+    def get(self, request, category):
+        # Render feature results
+        context = {
+            'category': category,
+            'category_display': f'{category.title()} Feature',
+            'quotations': [],  # Will be populated by actual feature comparison engine
+            'total_quotations': 0,
+            'message': 'Feature survey processing complete. Enhanced results will be displayed here.',
+            'metadata': {
+                'total_policies_evaluated': 0,
+                'fallback_used': False
+            }
+        }
+        return render(request, 'surveys/simple_survey_results.html', context)
+
+
+# AJAX endpoints - these should integrate with existing survey functionality
+@require_POST
+@csrf_exempt
+def save_response_ajax(request, category=None):
+    """Save survey response via AJAX and return updated progress"""
+    try:
+        # Ensure session exists
+        if not request.session.session_key:
+            request.session.create()
+        
+        session_key = request.session.session_key
+        
+        # Get form data
+        field_name = request.POST.get('field_name')
+        response_value = request.POST.get('response_value')
+        
+        if not field_name or not category:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Missing field_name or category'
+            })
+        
+        # Get the question
+        try:
+            question = SimpleSurveyQuestion.objects.get(
+                category=category,
+                field_name=field_name
+            )
+        except SimpleSurveyQuestion.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Question not found'
+            })
+        
+        # Handle checkbox fields
+        if question.input_type == 'checkbox':
+            checkbox_values = request.POST.getlist('response_value')
+            response_value = checkbox_values if checkbox_values else []
+        elif isinstance(response_value, str) and response_value.startswith('['):
+            # Handle JSON-like string arrays from frontend
+            try:
+                import json
+                response_value = json.loads(response_value)
+            except:
+                pass
+        
+        # Save response
+        response, created = SimpleSurveyResponse.objects.update_or_create(
+            session_key=session_key,
+            question=question,
+            defaults={
+                'category': category,
+                'response_value': response_value
+            }
+        )
+        
+        # Calculate updated progress
+        progress = calculate_progress_for_session(session_key, category)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Response saved',
+            'progress': progress
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })
+
+
+def calculate_progress_for_session(session_key, category):
+    """Helper function to calculate progress for a session"""
+    # Get all required questions
+    required_questions = SimpleSurveyQuestion.objects.filter(
+        category=category,
+        is_required=True
+    )
+    total_required = required_questions.count()
+    
+    if total_required == 0:
+        return {
+            'completion_percentage': 100,
+            'answered_required': 0,
+            'required_questions': 0,
+            'is_complete': True
+        }
+    
+    # Count answered required questions
+    answered_responses = SimpleSurveyResponse.objects.filter(
+        session_key=session_key,
+        category=category,
+        question__is_required=True
+    ).exclude(response_value__in=['', None, []])
+    
+    answered_count = answered_responses.count()
+    completion_percentage = int((answered_count / total_required) * 100)
+    
+    return {
+        'completion_percentage': completion_percentage,
+        'answered_required': answered_count,
+        'required_questions': total_required,
+        'is_complete': answered_count == total_required
     }
-    
-    category = category_mapping.get(category_slug)
-    if not category:
-        raise Http404("Invalid survey category")
-    
-    # Redirect to the feature-based survey view (new default)
-    return redirect('simple_surveys:feature_survey', category=category)
 
 
+def survey_status_ajax(request, category):
+    """Get survey status via AJAX"""
+    try:
+        if not request.session.session_key:
+            return JsonResponse({
+                'status': 'no_session',
+                'progress': {
+                    'completion_percentage': 0,
+                    'answered_required': 0,
+                    'required_questions': 0,
+                    'is_complete': False
+                }
+            })
+        
+        session_key = request.session.session_key
+        progress = calculate_progress_for_session(session_key, category)
+        
+        return JsonResponse({
+            'status': 'active',
+            'category': category,
+            'progress': progress
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })
+
+
+def policy_benefits_ajax(request, policy_id):
+    """Get policy benefits via AJAX"""
+    # This could integrate with the policies app
+    return JsonResponse({'benefits': [], 'policy_id': policy_id})
+
+
+# Error handling views
 def session_expired_view(request):
-    """
-    View to handle expired session errors gracefully.
-    Provides user-friendly message and options to restart.
-    """
-    category = request.GET.get('category', '')
-    
-    context = {
-        'category': category,
-        'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-        'message': 'Your session has expired. Please start a new survey to continue.',
-        'show_restart_button': True
-    }
-    
-    return render(request, 'surveys/simple_survey_form_fixed.html', context)
+    """Handle session expired errors"""
+    return render(request, 'surveys/session_expired.html')
 
 
 def session_error_view(request):
-    """
-    View to handle general session errors.
-    Provides user-friendly error message and recovery options.
-    """
-    error_type = request.GET.get('error', 'unknown')
-    category = request.GET.get('category', '')
-    
-    error_messages = {
-        'no_session': 'No active session found. Please start a new survey.',
-        'invalid_session': 'Your session is invalid. Please start a new survey.',
-        'expired': 'Your session has expired. Please start a new survey.',
-        'validation_failed': 'Session validation failed. Please start a new survey.',
-        'unknown': 'A session error occurred. Please start a new survey.'
-    }
-    
-    context = {
-        'category': category,
-        'category_display': 'Health Insurance' if category == 'health' else 'Funeral Insurance',
-        'error_type': error_type,
-        'message': error_messages.get(error_type, error_messages['unknown']),
-        'show_restart_button': True
-    }
-    
-    return render(request, 'surveys/simple_survey_form_fixed.html', context)
-
-
-@require_http_methods(["GET"])
-def policy_benefits_ajax(request, policy_id):
-    """
-    AJAX endpoint to get comprehensive benefits data for a specific policy.
-    Returns PolicyFeatures, AdditionalFeatures, and Rewards data.
-    """
-    try:
-        # Import policy models
-        from policies.models import BasePolicy, PolicyFeatures, AdditionalFeatures, Rewards
-        
-        # Get the policy
-        policy = get_object_or_404(BasePolicy, id=policy_id, is_active=True)
-        
-        # Increment view count
-        policy.increment_views()
-        
-        # Get policy features
-        policy_features = None
-        features_data = {}
-        try:
-            policy_features = policy.policy_features
-            features_data = policy_features.get_all_features_dict()
-        except PolicyFeatures.DoesNotExist:
-            pass
-        
-        # Get additional features
-        additional_features = policy.additional_features.all().order_by('display_order', 'title')
-        additional_features_data = []
-        for feature in additional_features:
-            additional_features_data.append({
-                'title': feature.title,
-                'description': feature.description,
-                'coverage_details': feature.coverage_details,
-                'icon': feature.icon,
-                'is_highlighted': feature.is_highlighted,
-            })
-        
-        # Get rewards
-        rewards = policy.rewards.filter(is_active=True).order_by('display_order', 'title')
-        rewards_data = []
-        for reward in rewards:
-            rewards_data.append({
-                'title': reward.title,
-                'description': reward.description,
-                'reward_type': reward.get_reward_type_display(),
-                'display_value': reward.get_display_value(),
-                'eligibility_criteria': reward.eligibility_criteria,
-                'terms_and_conditions': reward.terms_and_conditions,
-            })
-        
-        # Format policy features for display
-        formatted_features = {}
-        if policy_features:
-            if policy_features.insurance_type == 'HEALTH':
-                if features_data.get('annual_limit_per_family'):
-                    formatted_features['Annual Limit per Family'] = f"R{features_data['annual_limit_per_family']:,.2f}"
-                if features_data.get('annual_limit_per_member'):
-                    formatted_features['Annual Limit per Member'] = f"R{features_data['annual_limit_per_member']:,.2f}"
-                if features_data.get('monthly_household_income'):
-                    formatted_features['Monthly Household Income Requirement'] = f"R{features_data['monthly_household_income']:,.2f}"
-                if features_data.get('currently_on_medical_aid') is not None:
-                    formatted_features['Currently on Medical Aid'] = 'Yes' if features_data['currently_on_medical_aid'] else 'No'
-                if features_data.get('ambulance_coverage') is not None:
-                    formatted_features['Ambulance Coverage'] = 'Included' if features_data['ambulance_coverage'] else 'Not Included'
-                if features_data.get('in_hospital_benefit') is not None:
-                    formatted_features['In-Hospital Benefit'] = 'Included' if features_data['in_hospital_benefit'] else 'Not Included'
-                if features_data.get('out_hospital_benefit') is not None:
-                    formatted_features['Out-of-Hospital Benefit'] = 'Included' if features_data['out_hospital_benefit'] else 'Not Included'
-                if features_data.get('chronic_medication_availability') is not None:
-                    formatted_features['Chronic Medication'] = 'Available' if features_data['chronic_medication_availability'] else 'Not Available'
-            
-            elif policy_features.insurance_type == 'FUNERAL':
-                if features_data.get('cover_amount'):
-                    formatted_features['Cover Amount'] = f"R{features_data['cover_amount']:,.2f}"
-                if features_data.get('marital_status_requirement'):
-                    formatted_features['Marital Status Requirement'] = features_data['marital_status_requirement']
-                if features_data.get('gender_requirement'):
-                    formatted_features['Gender Requirement'] = features_data['gender_requirement']
-        
-        # Prepare response data
-        response_data = {
-            'success': True,
-            'policy': {
-                'id': policy.id,
-                'name': policy.name,
-                'organization': policy.organization.name,
-                'category': policy.category.name,
-                'base_premium': float(policy.base_premium),
-                'coverage_amount': float(policy.coverage_amount),
-                'description': policy.description,
-            },
-            'features': formatted_features,
-            'additional_features': additional_features_data,
-            'rewards': rewards_data,
-        }
-        
-        return JsonResponse(response_data)
-        
-    except Exception as e:
-        logger.error(f"Error getting policy benefits for policy {policy_id}: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': 'Unable to load policy benefits. Please try again.'
-        }, status=500)
+    """Handle general session errors"""
+    return render(request, 'surveys/session_error.html')

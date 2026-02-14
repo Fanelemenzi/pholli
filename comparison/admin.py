@@ -108,9 +108,9 @@ class FeatureComparisonResultAdmin(admin.ModelAdmin):
             color = 'red'
         
         return format_html(
-            '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
+            '<span style="color: {}; font-weight: bold;">{}%</span>',
             color,
-            score
+            f'{score:.1f}'
         )
     compatibility_score_display.short_description = 'Compatibility Score'
     compatibility_score_display.admin_order_field = 'overall_compatibility_score'
@@ -290,7 +290,8 @@ class ComparisonSessionAdmin(admin.ModelAdmin):
             reverse=True
         )
         for policy_id, score in sorted_scores:
-            html += f'<div>Policy #{policy_id}: <strong>{score:.1f}/100</strong></div>'
+            score_formatted = f'{float(score):.1f}'
+            html += f'<div>Policy #{policy_id}: <strong>{score_formatted}/100</strong></div>'
         html += '</div>'
         return format_html(html)
     match_scores_display.short_description = _('Match Scores')
@@ -374,11 +375,11 @@ class ComparisonResultAdmin(admin.ModelAdmin):
         
         return format_html(
             '<div style="text-align: center;">'
-            '<span style="font-size: 20px; font-weight: bold; color: {};">{:.1f}</span>'
+            '<span style="font-size: 20px; font-weight: bold; color: {};">{}</span>'
             '<div style="font-size: 11px; color: #6C757D;">/ 100</div>'
             '</div>',
             color,
-            score
+            f'{score:.1f}'
         )
     overall_score_display.short_description = _('Score')
     overall_score_display.admin_order_field = 'overall_score'
@@ -428,9 +429,9 @@ class ComparisonResultAdmin(admin.ModelAdmin):
         html += '<tr style="background: #E9ECEF;"><th>Criteria</th><th>Score</th><th>Weight</th><th>Weighted Score</th></tr>'
         
         for field_name, scores in obj.criteria_scores.items():
-            score = scores.get('score', 0)
+            score = float(scores.get('score', 0))
             weight = scores.get('weight', 0)
-            weighted = scores.get('weighted_score', 0)
+            weighted = float(scores.get('weighted_score', 0))
             
             # Color code the score
             if score >= 80:

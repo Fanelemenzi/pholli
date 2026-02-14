@@ -49,7 +49,8 @@ class SimpleSurveyComparisonAdapter:
     def generate_quotations(
         self, 
         session_key: str, 
-        max_results: int = 5
+        max_results: int = 5,
+        include_shortcomings: bool = False
     ) -> Dict[str, Any]:
         """
         Generate policy quotations from simple survey responses.
@@ -57,6 +58,7 @@ class SimpleSurveyComparisonAdapter:
         Args:
             session_key: Session identifier containing survey responses
             max_results: Maximum number of policy results to return
+            include_shortcomings: Whether to include detailed shortcomings analysis
             
         Returns:
             Dictionary with quotation results and metadata
@@ -73,18 +75,45 @@ class SimpleSurveyComparisonAdapter:
             
             # Get eligible policies for the category
             policy_ids = self._get_eligible_policy_ids(criteria)
+            fallback_used = False
+            
+            # Console logging for policy matching
+            print(f"\n{'='*60}")
+            print(f"POLICY MATCHING ANALYSIS - Session: {session_key[:8]}")
+            print(f"{'='*60}")
+            print(f"Category: {self.category}")
+            print(f"Initial strict matching found: {len(policy_ids)} policies")
+            
             if not policy_ids:
-                return {
-                    'success': False,
-                    'error': 'No eligible policies found for your criteria',
-                    'session_key': session_key,
-                    'criteria': criteria
-                }
+                # Fallback: Get best available policies with relaxed criteria
+                print(f"⚠️  No policies found with strict criteria, applying fallback...")
+                logger.info(f"No policies found with strict criteria, applying fallback for session {session_key}")
+                policy_ids = self._get_fallback_policy_ids(criteria)
+                fallback_used = True
+                print(f"Fallback matching found: {len(policy_ids)} policies")
+                
+                if not policy_ids:
+                    print(f"❌ No policies available even with fallback criteria")
+                    print(f"{'='*60}\n")
+                    return {
+                        'success': False,
+                        'error': 'No policies available in this category',
+                        'session_key': session_key,
+                        'criteria': criteria
+                    }
+                else:
+                    print(f"✅ Fallback successful - showing best available policies")
+            else:
+                print(f"✅ Strict matching successful - showing exact matches")
             
             # Limit to max_results for performance
             if len(policy_ids) > max_results * 2:
                 # Get more than needed for better selection
+                original_count = len(policy_ids)
                 policy_ids = policy_ids[:max_results * 2]
+                print(f"📊 Limited policies for performance: {original_count} → {len(policy_ids)}")
+            
+            print(f"🔍 Analyzing {len(policy_ids)} policies for comparison...")
             
             # Use comparison engine with simplified criteria
             comparison_result = self.comparison_engine.compare_policies(
@@ -94,6 +123,8 @@ class SimpleSurveyComparisonAdapter:
             )
             
             if not comparison_result.get('success'):
+                print(f"❌ Comparison engine failed: {comparison_result.get('error', 'Unknown error')}")
+                print(f"{'='*60}\n")
                 return {
                     'success': False,
                     'error': comparison_result.get('error', 'Comparison failed'),
@@ -104,6 +135,29 @@ class SimpleSurveyComparisonAdapter:
             simplified_results = self._simplify_comparison_results(
                 comparison_result, max_results
             )
+            
+            # Console logging for final results
+            final_count = len(simplified_results['policies'])
+            print(f"📋 Final results prepared: {final_count} policies")
+            
+            if simplified_results['policies']:
+                best_score = simplified_results['policies'][0].get('match_score', 0)
+                avg_premium = sum(p['monthly_premium'] for p in simplified_results['policies']) / final_count
+                print(f"🏆 Best match score: {best_score}%")
+                print(f"💰 Average premium: R{avg_premium:.0f}")
+                
+                # Show top 3 policy names
+                print(f"📝 Top policies:")
+                for i, policy in enumerate(simplified_results['policies'][:3], 1):
+                    print(f"   {i}. {policy['name']} - R{policy['monthly_premium']:.0f} ({policy['match_score']}% match)")
+            
+            print(f"{'='*60}\n")
+            
+            # Add shortcomings analysis if requested
+            if include_shortcomings:
+                simplified_results = self._add_shortcomings_to_results(
+                    simplified_results, session_key
+                )
             
             # Update quotation session
             self._update_quotation_session(session_key, criteria, simplified_results)
@@ -117,7 +171,9 @@ class SimpleSurveyComparisonAdapter:
                 'best_match': simplified_results['best_match'],
                 'policies': simplified_results['policies'],
                 'summary': simplified_results['summary'],
-                'generated_at': timezone.now().isoformat()
+                'generated_at': timezone.now().isoformat(),
+                'has_shortcomings_analysis': include_shortcomings,
+                'fallback_used': fallback_used
             }
             
         except Exception as e:
@@ -127,6 +183,52 @@ class SimpleSurveyComparisonAdapter:
                 'error': f'Failed to generate quotations: {str(e)}',
                 'session_key': session_key
             }
+    
+    def generate_quotations_with_shortcomings(
+        self, 
+        session_key: str, 
+        max_results: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Generate quotations with detailed shortcomings analysis.
+        
+        This is a convenience method that calls generate_quotations with 
+        include_shortcomings=True and adds additional analysis.
+        
+        Args:
+            session_key: Session identifier containing survey responses
+            max_results: Maximum number of policy results to return
+            
+        Returns:
+            Dictionary with enhanced quotation results and shortcomings analysis
+        """
+        # Get base quotations with shortcomings
+        result = self.generate_quotations(
+            session_key=session_key, 
+            max_results=max_results, 
+            include_shortcomings=True
+        )
+        
+        if not result.get('success'):
+            return result
+        
+        # Add enhanced analysis
+        user_criteria = self._get_user_criteria_for_analysis(session_key)
+        enhanced_policies = result.get('policies', [])
+        
+        # Add overall shortcomings analysis
+        overall_analysis = self._generate_overall_shortcomings_analysis(
+            enhanced_policies, user_criteria
+        )
+        
+        result.update({
+            'shortcomings_analysis': overall_analysis,
+            'has_perfect_match': any(p.get('shortcomings_severity') == 'none' for p in enhanced_policies),
+            'common_gaps': self._identify_common_gaps(enhanced_policies),
+            'recommendations': self._generate_recommendations(enhanced_policies, user_criteria)
+        })
+        
+        return result
     
     def _convert_survey_responses_to_criteria(self, session_key: str) -> Dict[str, Any]:
         """
@@ -350,8 +452,11 @@ class SimpleSurveyComparisonAdapter:
         Returns:
             Dictionary with min/max values and matching criteria
         """
+        # Use a large number instead of infinity for JSON compatibility
+        MAX_VALUE = 999999999  # 999 million
+        
         if not range_selection or range_selection == 'not_sure':
-            return {'min_value': 0, 'max_value': float('inf'), 'guidance_needed': True}
+            return {'min_value': 0, 'max_value': MAX_VALUE, 'guidance_needed': True}
         
         # Define range mappings
         range_mappings = {
@@ -363,7 +468,7 @@ class SimpleSurveyComparisonAdapter:
             '500k-1m': {'min': 500001, 'max': 1000000},
             '1m-2m': {'min': 1000001, 'max': 2000000},
             '2m-5m': {'min': 2000001, 'max': 5000000},
-            '5m-plus': {'min': 5000001, 'max': float('inf')},
+            '5m-plus': {'min': 5000001, 'max': MAX_VALUE},
             
             # Member ranges
             '10k-25k': {'min': 10000, 'max': 25000},
@@ -373,10 +478,10 @@ class SimpleSurveyComparisonAdapter:
             '200k-500k': {'min': 200001, 'max': 500000},
             '500k-1m': {'min': 500001, 'max': 1000000},
             '1m-2m': {'min': 1000001, 'max': 2000000},
-            '2m-plus': {'min': 2000001, 'max': float('inf')},
+            '2m-plus': {'min': 2000001, 'max': MAX_VALUE},
         }
         
-        range_data = range_mappings.get(range_selection, {'min': 0, 'max': float('inf')})
+        range_data = range_mappings.get(range_selection, {'min': 0, 'max': MAX_VALUE})
         
         return {
             'min_value': range_data['min'],
@@ -404,7 +509,9 @@ class SimpleSurveyComparisonAdapter:
             '101-200': 150,    # Midpoint of range
             '201-350': 275,    # Midpoint of range
             '351-500': 425,    # Midpoint of range
-            '500+': 600        # Reasonable value for unlimited budget
+            '500+': 600,       # Reasonable value for unlimited budget
+            '500-750': 625,    # Handle legacy range format
+            '750+': 800        # Handle higher budget ranges
         }
         
         return budget_mappings.get(range_selection, 200)  # Default to R200 if unknown range
@@ -535,10 +642,82 @@ class SimpleSurveyComparisonAdapter:
             policy_ids = list(queryset.order_by('base_premium').values_list('id', flat=True))
             
             logger.info(f"Found {len(policy_ids)} eligible policies for {self.category} category")
+            
+            # Console logging for policy filtering
+            print(f"🔍 Policy Filtering Details:")
+            print(f"   Category: {self.category}")
+            print(f"   Base query (active, approved): Found policies")
+            
+            if 'base_premium' in criteria:
+                max_premium = criteria['base_premium'] * 1.2
+                print(f"   Budget filter: ≤ R{max_premium:.0f} (user budget: R{criteria['base_premium']:.0f})")
+            
+            if 'age' in criteria:
+                age = criteria['age']
+                print(f"   Age filter: {age} years old")
+            
+            if 'coverage_amount' in criteria:
+                min_coverage = criteria['coverage_amount'] * 0.8
+                print(f"   Coverage filter: ≥ R{min_coverage:.0f} (user needs: R{criteria['coverage_amount']:.0f})")
+            
+            print(f"   ✅ Final eligible policies: {len(policy_ids)}")
+            
             return policy_ids
             
         except Exception as e:
             logger.error(f"Error getting eligible policies: {e}")
+            return []
+    
+    def _get_fallback_policy_ids(self, criteria: Dict[str, Any]) -> List[int]:
+        """
+        Get fallback policy IDs when no policies match strict criteria.
+        Uses relaxed filtering to find the best available policies.
+        
+        Args:
+            criteria: Comparison criteria
+            
+        Returns:
+            List of fallback policy IDs
+        """
+        try:
+            # Get category object
+            category = PolicyCategory.objects.get(slug=self.category)
+            
+            # Base query for active, approved policies (no strict filtering)
+            queryset = BasePolicy.objects.filter(
+                category=category,
+                is_active=True,
+                approval_status='APPROVED'
+            )
+            
+            # Apply very relaxed filtering - only age if specified
+            if 'age' in criteria:
+                age = criteria['age']
+                # Allow wider age range for fallback
+                queryset = queryset.filter(
+                    minimum_age__lte=age + 5,  # Allow 5 years over
+                    maximum_age__gte=age - 5   # Allow 5 years under
+                )
+            
+            # Order by premium to get most affordable options first
+            policy_ids = list(queryset.order_by('base_premium').values_list('id', flat=True)[:10])
+            
+            logger.info(f"Found {len(policy_ids)} fallback policies for {self.category} category")
+            
+            # Console logging for fallback filtering
+            print(f"🔄 Fallback Policy Filtering:")
+            print(f"   Relaxed criteria applied (wider age range, no budget/coverage limits)")
+            
+            if 'age' in criteria:
+                age = criteria['age']
+                print(f"   Age range: {age-5} to {age+5} years (original: {age})")
+            
+            print(f"   ✅ Fallback policies found: {len(policy_ids)}")
+            
+            return policy_ids
+            
+        except Exception as e:
+            logger.error(f"Error getting fallback policies: {e}")
             return []
     
     def _simplify_comparison_results(
@@ -778,6 +957,310 @@ class SimpleSurveyComparisonAdapter:
             
         except Exception as e:
             logger.error(f"Error updating quotation session: {e}")
+    
+    def _add_shortcomings_to_results(
+        self, 
+        simplified_results: Dict[str, Any], 
+        session_key: str
+    ) -> Dict[str, Any]:
+        """
+        Add shortcomings analysis to simplified results.
+        
+        Args:
+            simplified_results: Base simplified results
+            session_key: Session identifier for getting user criteria
+            
+        Returns:
+            Enhanced results with shortcomings analysis
+        """
+        try:
+            user_criteria = self._get_user_criteria_for_analysis(session_key)
+            enhanced_policies = []
+            
+            for policy_data in simplified_results.get('policies', []):
+                enhanced_policy = self._add_shortcomings_analysis_to_policy(
+                    policy_data, user_criteria
+                )
+                enhanced_policies.append(enhanced_policy)
+            
+            simplified_results['policies'] = enhanced_policies
+            return simplified_results
+            
+        except Exception as e:
+            logger.error(f"Error adding shortcomings analysis: {e}")
+            return simplified_results
+    
+    def _get_user_criteria_for_analysis(self, session_key: str) -> Dict[str, Any]:
+        """Get user criteria from survey responses for shortcomings analysis."""
+        try:
+            responses = SimpleSurveyResponse.objects.filter(
+                session_key=session_key,
+                category=self.category
+            )
+            
+            criteria = {}
+            for response in responses:
+                criteria[response.question.field_name] = {
+                    'value': response.response_value,
+                    'display_value': response.get_display_value()
+                }
+            
+            return criteria
+            
+        except Exception as e:
+            logger.error(f"Error getting user criteria for analysis: {e}")
+            return {}
+    
+    def _add_shortcomings_analysis_to_policy(
+        self, 
+        policy_data: Dict[str, Any], 
+        user_criteria: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Add shortcomings analysis to a single policy.
+        
+        Args:
+            policy_data: Base policy data
+            user_criteria: User's survey responses
+            
+        Returns:
+            Enhanced policy data with shortcomings analysis
+        """
+        try:
+            # Get the actual policy object
+            policy = BasePolicy.objects.get(id=policy_data['id'])
+            
+            # Analyze shortcomings
+            shortcomings = self._analyze_policy_shortcomings(policy, user_criteria)
+            
+            # Categorize shortcomings by severity
+            critical_gaps = [s for s in shortcomings if s['severity'] == 'critical']
+            moderate_gaps = [s for s in shortcomings if s['severity'] == 'moderate']
+            minor_gaps = [s for s in shortcomings if s['severity'] == 'minor']
+            
+            # Determine overall shortcomings severity
+            if critical_gaps:
+                severity = 'critical'
+                severity_description = "Has critical gaps that may make this policy unsuitable"
+            elif moderate_gaps:
+                severity = 'moderate'
+                severity_description = "Has some important limitations to consider"
+            elif minor_gaps:
+                severity = 'minor'
+                severity_description = "Minor limitations that may not be significant"
+            else:
+                severity = 'none'
+                severity_description = "Excellent match with no significant gaps"
+            
+            # Add shortcomings data to policy
+            policy_data.update({
+                'shortcomings': shortcomings,
+                'critical_gaps': critical_gaps,
+                'moderate_gaps': moderate_gaps,
+                'minor_gaps': minor_gaps,
+                'shortcomings_severity': severity,
+                'shortcomings_description': severity_description,
+                'gap_count': len(shortcomings),
+                'suitability_score': self._calculate_suitability_score(shortcomings),
+                'improvement_suggestions': self._generate_improvement_suggestions(shortcomings, policy)
+            })
+            
+            return policy_data
+            
+        except Exception as e:
+            logger.error(f"Error analyzing shortcomings for policy {policy_data.get('id')}: {e}")
+            # Return original data if analysis fails
+            policy_data.update({
+                'shortcomings': [],
+                'shortcomings_severity': 'unknown',
+                'shortcomings_description': 'Unable to analyze gaps',
+                'gap_count': 0,
+                'suitability_score': policy_data.get('match_score', 50)
+            })
+            return policy_data
+    
+    def _analyze_policy_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Analyze specific shortcomings between policy and user needs.
+        
+        Args:
+            policy: Policy object to analyze
+            user_criteria: User's preferences and requirements
+            
+        Returns:
+            List of shortcoming dictionaries with details
+        """
+        shortcomings = []
+        
+        if self.category == 'health':
+            shortcomings.extend(self._analyze_health_shortcomings(policy, user_criteria))
+        elif self.category == 'funeral':
+            shortcomings.extend(self._analyze_funeral_shortcomings(policy, user_criteria))
+        
+        return shortcomings
+    
+    def _analyze_health_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Analyze health policy shortcomings."""
+        shortcomings = []
+        
+        try:
+            policy_features = policy.policy_features
+        except AttributeError:
+            shortcomings.append({
+                'type': 'missing_features',
+                'severity': 'critical',
+                'title': 'No Policy Features Available',
+                'description': 'This policy lacks detailed feature information',
+                'impact': 'Cannot verify coverage details',
+                'suggestion': 'Contact provider for detailed policy information'
+            })
+            return shortcomings
+        
+        # Budget analysis
+        user_budget = user_criteria.get('monthly_budget', {}).get('value')
+        if user_budget:
+            budget_value = self._convert_budget_range_to_value(user_budget)
+            if float(policy.base_premium) > budget_value * 1.1:  # 10% tolerance
+                excess = float(policy.base_premium) - budget_value
+                shortcomings.append({
+                    'type': 'budget_exceeded',
+                    'severity': 'moderate' if excess <= 100 else 'critical',
+                    'title': 'Over Budget',
+                    'description': f'Premium is R{excess:.0f} above your stated budget',
+                    'impact': 'May strain your monthly finances',
+                    'suggestion': f'Consider policies under R{budget_value} or increase your budget'
+                })
+        
+        # Chronic medication
+        needs_chronic = user_criteria.get('needs_chronic_medication', {}).get('value')
+        if needs_chronic == 'yes' and not policy_features.chronic_medication_availability:
+            shortcomings.append({
+                'type': 'missing_feature',
+                'severity': 'critical',
+                'title': 'No Chronic Medication Coverage',
+                'description': 'You need chronic medication coverage but this policy does not provide it',
+                'impact': 'Will need to pay full cost of chronic medications',
+                'suggestion': 'This is a critical gap - look for policies that include chronic medication benefits'
+            })
+        
+        return shortcomings
+    
+    def _analyze_funeral_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Analyze funeral policy shortcomings."""
+        shortcomings = []
+        # Add funeral-specific analysis here
+        return shortcomings
+    
+    def _calculate_suitability_score(self, shortcomings: List[Dict[str, Any]]) -> int:
+        """Calculate overall suitability score based on shortcomings."""
+        if not shortcomings:
+            return 100
+        
+        penalty = 0
+        for shortcoming in shortcomings:
+            if shortcoming['severity'] == 'critical':
+                penalty += 25
+            elif shortcoming['severity'] == 'moderate':
+                penalty += 15
+            elif shortcoming['severity'] == 'minor':
+                penalty += 5
+        
+        return max(0, 100 - penalty)
+    
+    def _generate_improvement_suggestions(
+        self, 
+        shortcomings: List[Dict[str, Any]], 
+        policy: BasePolicy
+    ) -> List[str]:
+        """Generate suggestions for addressing shortcomings."""
+        suggestions = []
+        
+        critical_gaps = [s for s in shortcomings if s['severity'] == 'critical']
+        moderate_gaps = [s for s in shortcomings if s['severity'] == 'moderate']
+        
+        if critical_gaps:
+            suggestions.append("This policy has critical gaps - consider other options first")
+            for gap in critical_gaps:
+                suggestions.append(gap['suggestion'])
+        
+        if moderate_gaps:
+            suggestions.append("Consider if you can accept these limitations:")
+            for gap in moderate_gaps[:2]:  # Limit to top 2
+                suggestions.append(f"• {gap['title']}: {gap['suggestion']}")
+        
+        if not critical_gaps and not moderate_gaps:
+            suggestions.append("This policy is a good match for your needs")
+        
+        return suggestions[:4]  # Limit to 4 suggestions
+    
+    def _identify_common_gaps(self, enhanced_policies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Identify gaps that are common across multiple policies."""
+        gap_counts = {}
+        
+        for policy in enhanced_policies:
+            for shortcoming in policy.get('shortcomings', []):
+                gap_type = shortcoming['type']
+                if gap_type not in gap_counts:
+                    gap_counts[gap_type] = {
+                        'count': 0,
+                        'title': shortcoming['title'],
+                        'description': shortcoming['description']
+                    }
+                gap_counts[gap_type]['count'] += 1
+        
+        # Return gaps that affect more than half the policies
+        threshold = len(enhanced_policies) / 2
+        common_gaps = [
+            {
+                'type': gap_type,
+                'title': data['title'],
+                'description': data['description'],
+                'affected_policies': data['count'],
+                'percentage': (data['count'] / len(enhanced_policies)) * 100
+            }
+            for gap_type, data in gap_counts.items()
+            if data['count'] > threshold
+        ]
+        
+        return sorted(common_gaps, key=lambda x: x['affected_policies'], reverse=True)
+    
+    def _generate_recommendations(
+        self, 
+        enhanced_policies: List[Dict[str, Any]], 
+        user_criteria: Dict[str, Any]
+    ) -> List[str]:
+        """Generate overall recommendations based on the analysis."""
+        recommendations = []
+        
+        if not enhanced_policies:
+            return ["No policies match your criteria. Consider broadening your requirements."]
+        
+        best_policy = enhanced_policies[0]
+        
+        if best_policy.get('shortcomings_severity') == 'none':
+            recommendations.append(f"Excellent match found: {best_policy['name']} meets all your requirements")
+        elif best_policy.get('shortcomings_severity') == 'critical':
+            recommendations.append("No ideal matches found. Consider:")
+            recommendations.append("• Adjusting your budget or coverage requirements")
+            recommendations.append("• Looking into supplementary insurance for gaps")
+            recommendations.append("• Consulting with an insurance advisor")
+        else:
+            recommendations.append(f"Best available option: {best_policy['name']}")
+            recommendations.append("Consider if you can accept the identified limitations")
+        
+        return recommendations[:5]  # Limit to 5 recommendations
 
 
 class SimplifiedPolicyComparisonEngine(PolicyComparisonEngine):
@@ -1293,6 +1776,446 @@ class SimplifiedPolicyComparisonEngine(PolicyComparisonEngine):
         else:
             return "Best available option for your requirements"
     
+    def _add_shortcomings_to_results(
+        self, 
+        simplified_results: Dict[str, Any], 
+        session_key: str
+    ) -> Dict[str, Any]:
+        """
+        Add shortcomings analysis to simplified results.
+        
+        Args:
+            simplified_results: Base simplified results
+            session_key: Session identifier for getting user criteria
+            
+        Returns:
+            Enhanced results with shortcomings analysis
+        """
+        try:
+            user_criteria = self._get_user_criteria_for_analysis(session_key)
+            enhanced_policies = []
+            
+            for policy_data in simplified_results.get('policies', []):
+                enhanced_policy = self._add_shortcomings_analysis_to_policy(
+                    policy_data, user_criteria
+                )
+                enhanced_policies.append(enhanced_policy)
+            
+            simplified_results['policies'] = enhanced_policies
+            return simplified_results
+            
+        except Exception as e:
+            logger.error(f"Error adding shortcomings analysis: {e}")
+            return simplified_results
+    
+    def _get_user_criteria_for_analysis(self, session_key: str) -> Dict[str, Any]:
+        """Get user criteria from survey responses for shortcomings analysis."""
+        try:
+            responses = SimpleSurveyResponse.objects.filter(
+                session_key=session_key,
+                category=self.category
+            )
+            
+            criteria = {}
+            for response in responses:
+                criteria[response.question.field_name] = {
+                    'value': response.response_value,
+                    'display_value': response.get_display_value()
+                }
+            
+            return criteria
+            
+        except Exception as e:
+            logger.error(f"Error getting user criteria for analysis: {e}")
+            return {}
+    
+    def _add_shortcomings_analysis_to_policy(
+        self, 
+        policy_data: Dict[str, Any], 
+        user_criteria: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Add shortcomings analysis to a single policy.
+        
+        Args:
+            policy_data: Base policy data
+            user_criteria: User's survey responses
+            
+        Returns:
+            Enhanced policy data with shortcomings analysis
+        """
+        try:
+            # Get the actual policy object
+            policy = BasePolicy.objects.get(id=policy_data['id'])
+            
+            # Analyze shortcomings
+            shortcomings = self._analyze_policy_shortcomings(policy, user_criteria)
+            
+            # Categorize shortcomings by severity
+            critical_gaps = [s for s in shortcomings if s['severity'] == 'critical']
+            moderate_gaps = [s for s in shortcomings if s['severity'] == 'moderate']
+            minor_gaps = [s for s in shortcomings if s['severity'] == 'minor']
+            
+            # Determine overall shortcomings severity
+            if critical_gaps:
+                severity = 'critical'
+                severity_description = "Has critical gaps that may make this policy unsuitable"
+            elif moderate_gaps:
+                severity = 'moderate'
+                severity_description = "Has some important limitations to consider"
+            elif minor_gaps:
+                severity = 'minor'
+                severity_description = "Minor limitations that may not be significant"
+            else:
+                severity = 'none'
+                severity_description = "Excellent match with no significant gaps"
+            
+            # Add shortcomings data to policy
+            policy_data.update({
+                'shortcomings': shortcomings,
+                'critical_gaps': critical_gaps,
+                'moderate_gaps': moderate_gaps,
+                'minor_gaps': minor_gaps,
+                'shortcomings_severity': severity,
+                'shortcomings_description': severity_description,
+                'gap_count': len(shortcomings),
+                'suitability_score': self._calculate_suitability_score(shortcomings),
+                'improvement_suggestions': self._generate_improvement_suggestions(shortcomings, policy)
+            })
+            
+            return policy_data
+            
+        except Exception as e:
+            logger.error(f"Error analyzing shortcomings for policy {policy_data.get('id')}: {e}")
+            # Return original data if analysis fails
+            policy_data.update({
+                'shortcomings': [],
+                'shortcomings_severity': 'unknown',
+                'shortcomings_description': 'Unable to analyze gaps',
+                'gap_count': 0,
+                'suitability_score': policy_data.get('match_score', 50)
+            })
+            return policy_data
+    
+    def _analyze_policy_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Analyze specific shortcomings between policy and user needs.
+        
+        Args:
+            policy: Policy object to analyze
+            user_criteria: User's preferences and requirements
+            
+        Returns:
+            List of shortcoming dictionaries with details
+        """
+        shortcomings = []
+        
+        if self.category == 'health':
+            shortcomings.extend(self._analyze_health_shortcomings(policy, user_criteria))
+        elif self.category == 'funeral':
+            shortcomings.extend(self._analyze_funeral_shortcomings(policy, user_criteria))
+        
+        return shortcomings
+    
+    def _analyze_health_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Analyze health policy shortcomings."""
+        shortcomings = []
+        
+        try:
+            policy_features = policy.policy_features
+        except AttributeError:
+            shortcomings.append({
+                'type': 'missing_features',
+                'severity': 'critical',
+                'title': 'No Policy Features Available',
+                'description': 'This policy lacks detailed feature information',
+                'impact': 'Cannot verify coverage details',
+                'suggestion': 'Contact provider for detailed policy information'
+            })
+            return shortcomings
+        
+        # Budget analysis
+        user_budget = user_criteria.get('monthly_budget', {}).get('value')
+        if user_budget:
+            budget_value = self._convert_budget_range_to_value(user_budget)
+            if float(policy.base_premium) > budget_value * 1.1:  # 10% tolerance
+                excess = float(policy.base_premium) - budget_value
+                shortcomings.append({
+                    'type': 'budget_exceeded',
+                    'severity': 'moderate' if excess <= 100 else 'critical',
+                    'title': 'Over Budget',
+                    'description': f'Premium is R{excess:.0f} above your stated budget',
+                    'impact': 'May strain your monthly finances',
+                    'suggestion': f'Consider policies under R{budget_value} or increase your budget'
+                })
+        
+        # Annual limit analysis
+        family_limit_pref = user_criteria.get('annual_limit_family_range', {}).get('value')
+        if family_limit_pref and hasattr(policy_features, 'annual_limit_per_family'):
+            if policy_features.annual_limit_per_family:
+                user_range = self._convert_range_to_criteria('annual_limit_family_range', family_limit_pref)
+                policy_limit = float(policy_features.annual_limit_per_family)
+                
+                if policy_limit < user_range['min_value']:
+                    shortfall = user_range['min_value'] - policy_limit
+                    shortcomings.append({
+                        'type': 'coverage_shortfall',
+                        'severity': 'critical' if shortfall > 100000 else 'moderate',
+                        'title': 'Annual Family Limit Too Low',
+                        'description': f'Policy limit (R{policy_limit:,.0f}) is R{shortfall:,.0f} below your minimum preference',
+                        'impact': 'May not cover major medical expenses',
+                        'suggestion': 'Look for policies with higher annual limits or consider gap insurance'
+                    })
+        
+        # Benefit level analysis
+        hospital_pref = user_criteria.get('in_hospital_benefit_level', {}).get('value')
+        if hospital_pref and hasattr(policy_features, 'in_hospital_benefit_level'):
+            policy_level = policy_features.in_hospital_benefit_level
+            if self._is_benefit_level_insufficient(hospital_pref, policy_level):
+                shortcomings.append({
+                    'type': 'benefit_level_gap',
+                    'severity': 'moderate',
+                    'title': 'In-Hospital Coverage Below Preference',
+                    'description': f'Policy offers {policy_level or "no"} coverage, you wanted {hospital_pref}',
+                    'impact': 'May have higher out-of-pocket costs for hospital stays',
+                    'suggestion': 'Consider upgrading to a plan with higher hospital coverage'
+                })
+        
+        # Ambulance coverage
+        wants_ambulance = user_criteria.get('wants_ambulance_coverage', {}).get('value')
+        if wants_ambulance == 'yes' and not policy_features.ambulance_coverage:
+            shortcomings.append({
+                'type': 'missing_feature',
+                'severity': 'moderate',
+                'title': 'No Ambulance Coverage',
+                'description': 'You requested ambulance coverage but this policy does not include it',
+                'impact': 'Will need to pay ambulance costs out-of-pocket',
+                'suggestion': 'Look for policies with ambulance coverage or consider separate ambulance insurance'
+            })
+        
+        # Chronic medication
+        needs_chronic = user_criteria.get('needs_chronic_medication', {}).get('value')
+        if needs_chronic == 'yes' and not policy_features.chronic_medication_availability:
+            shortcomings.append({
+                'type': 'missing_feature',
+                'severity': 'critical',
+                'title': 'No Chronic Medication Coverage',
+                'description': 'You need chronic medication coverage but this policy does not provide it',
+                'impact': 'Will need to pay full cost of chronic medications',
+                'suggestion': 'This is a critical gap - look for policies that include chronic medication benefits'
+            })
+        
+        return shortcomings
+    
+    def _analyze_funeral_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Analyze funeral policy shortcomings."""
+        shortcomings = []
+        
+        # Add funeral-specific shortcoming analysis here
+        # This would follow similar patterns to health analysis
+        
+        return shortcomings
+    
+    def _is_benefit_level_insufficient(self, user_preference: str, policy_level: str) -> bool:
+        """Check if policy benefit level is insufficient for user preference."""
+        level_hierarchy = {
+            'no_cover': 0,
+            'basic': 1,
+            'basic_visits': 1,
+            'moderate': 2,
+            'routine_care': 2,
+            'extensive': 3,
+            'extended_care': 3,
+            'comprehensive': 4,
+            'comprehensive_care': 4
+        }
+        
+        user_level = level_hierarchy.get(user_preference, 2)
+        policy_level_num = level_hierarchy.get(policy_level, 2)
+        
+        return policy_level_num < user_level
+    
+    def _calculate_suitability_score(self, shortcomings: List[Dict[str, Any]]) -> int:
+        """Calculate overall suitability score based on shortcomings."""
+        if not shortcomings:
+            return 100
+        
+        penalty = 0
+        for shortcoming in shortcomings:
+            if shortcoming['severity'] == 'critical':
+                penalty += 25
+            elif shortcoming['severity'] == 'moderate':
+                penalty += 15
+            elif shortcoming['severity'] == 'minor':
+                penalty += 5
+        
+        return max(0, 100 - penalty)
+    
+    def _generate_improvement_suggestions(
+        self, 
+        shortcomings: List[Dict[str, Any]], 
+        policy: BasePolicy
+    ) -> List[str]:
+        """Generate suggestions for addressing shortcomings."""
+        suggestions = []
+        
+        critical_gaps = [s for s in shortcomings if s['severity'] == 'critical']
+        moderate_gaps = [s for s in shortcomings if s['severity'] == 'moderate']
+        
+        if critical_gaps:
+            suggestions.append("This policy has critical gaps - consider other options first")
+            for gap in critical_gaps:
+                suggestions.append(gap['suggestion'])
+        
+        if moderate_gaps:
+            suggestions.append("Consider if you can accept these limitations:")
+            for gap in moderate_gaps[:2]:  # Limit to top 2
+                suggestions.append(f"• {gap['title']}: {gap['suggestion']}")
+        
+        if not critical_gaps and not moderate_gaps:
+            suggestions.append("This policy is a good match for your needs")
+        
+        return suggestions[:4]  # Limit to 4 suggestions
+    
+    def _generate_overall_shortcomings_analysis(
+        self, 
+        enhanced_policies: List[Dict[str, Any]], 
+        user_criteria: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate overall analysis of shortcomings across all policies."""
+        if not enhanced_policies:
+            return {'summary': 'No policies to analyze'}
+        
+        total_policies = len(enhanced_policies)
+        perfect_matches = len([p for p in enhanced_policies if p.get('shortcomings_severity') == 'none'])
+        critical_issues = len([p for p in enhanced_policies if p.get('shortcomings_severity') == 'critical'])
+        
+        analysis = {
+            'total_policies': total_policies,
+            'perfect_matches': perfect_matches,
+            'policies_with_critical_issues': critical_issues,
+            'best_available_score': enhanced_policies[0].get('suitability_score', 0) if enhanced_policies else 0,
+            'summary': self._generate_analysis_summary(enhanced_policies),
+            'market_gaps': self._identify_market_gaps(enhanced_policies, user_criteria)
+        }
+        
+        return analysis
+    
+    def _generate_analysis_summary(self, enhanced_policies: List[Dict[str, Any]]) -> str:
+        """Generate a summary of the overall analysis."""
+        if not enhanced_policies:
+            return "No policies found matching your criteria."
+        
+        perfect_matches = len([p for p in enhanced_policies if p.get('shortcomings_severity') == 'none'])
+        critical_issues = len([p for p in enhanced_policies if p.get('shortcomings_severity') == 'critical'])
+        
+        if perfect_matches > 0:
+            return f"Great news! Found {perfect_matches} policies that fully match your needs with no significant gaps."
+        elif critical_issues == len(enhanced_policies):
+            return "All available policies have critical gaps. You may need to adjust your requirements or consider additional coverage."
+        else:
+            good_options = len(enhanced_policies) - critical_issues
+            return f"Found {good_options} policies with minor to moderate limitations that may still meet your needs."
+    
+    def _identify_common_gaps(self, enhanced_policies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Identify gaps that are common across multiple policies."""
+        gap_counts = {}
+        
+        for policy in enhanced_policies:
+            for shortcoming in policy.get('shortcomings', []):
+                gap_type = shortcoming['type']
+                if gap_type not in gap_counts:
+                    gap_counts[gap_type] = {
+                        'count': 0,
+                        'title': shortcoming['title'],
+                        'description': shortcoming['description']
+                    }
+                gap_counts[gap_type]['count'] += 1
+        
+        # Return gaps that affect more than half the policies
+        threshold = len(enhanced_policies) / 2
+        common_gaps = [
+            {
+                'type': gap_type,
+                'title': data['title'],
+                'description': data['description'],
+                'affected_policies': data['count'],
+                'percentage': (data['count'] / len(enhanced_policies)) * 100
+            }
+            for gap_type, data in gap_counts.items()
+            if data['count'] > threshold
+        ]
+        
+        return sorted(common_gaps, key=lambda x: x['affected_policies'], reverse=True)
+    
+    def _identify_market_gaps(
+        self, 
+        enhanced_policies: List[Dict[str, Any]], 
+        user_criteria: Dict[str, Any]
+    ) -> List[str]:
+        """Identify gaps in the market based on user needs vs available policies."""
+        market_gaps = []
+        
+        # Check if all policies exceed budget
+        user_budget = user_criteria.get('monthly_budget', {}).get('value')
+        if user_budget:
+            budget_value = self._convert_budget_range_to_value(user_budget)
+            over_budget = all(p['monthly_premium'] > budget_value for p in enhanced_policies)
+            if over_budget:
+                market_gaps.append(f"No policies available within your R{budget_value} budget")
+        
+        # Check for common missing features
+        common_gaps = self._identify_common_gaps(enhanced_policies)
+        for gap in common_gaps:
+            if gap['percentage'] > 80:  # If 80%+ of policies lack this feature
+                market_gaps.append(f"Limited availability: {gap['title']}")
+        
+        return market_gaps
+    
+    def _generate_recommendations(
+        self, 
+        enhanced_policies: List[Dict[str, Any]], 
+        user_criteria: Dict[str, Any]
+    ) -> List[str]:
+        """Generate overall recommendations based on the analysis."""
+        recommendations = []
+        
+        if not enhanced_policies:
+            return ["No policies match your criteria. Consider broadening your requirements."]
+        
+        best_policy = enhanced_policies[0]
+        
+        if best_policy.get('shortcomings_severity') == 'none':
+            recommendations.append(f"Excellent match found: {best_policy['name']} meets all your requirements")
+        elif best_policy.get('shortcomings_severity') == 'critical':
+            recommendations.append("No ideal matches found. Consider:")
+            recommendations.append("• Adjusting your budget or coverage requirements")
+            recommendations.append("• Looking into supplementary insurance for gaps")
+            recommendations.append("• Consulting with an insurance advisor")
+        else:
+            recommendations.append(f"Best available option: {best_policy['name']}")
+            recommendations.append("Consider if you can accept the identified limitations")
+        
+        # Add market-specific recommendations
+        market_gaps = self._identify_market_gaps(enhanced_policies, user_criteria)
+        if market_gaps:
+            recommendations.append("Market limitations identified:")
+            recommendations.extend([f"• {gap}" for gap in market_gaps[:2]])
+        
+        return recommendations[:5]  # Limit to 5 recommendations
+    
     def _save_simplified_results(self, session: 'ComparisonSession', ranked_results: List[Dict]):
         """Save simplified results to session."""
         try:
@@ -1346,4 +2269,309 @@ class SimplifiedPolicyComparisonEngine(PolicyComparisonEngine):
             Simplified score data without survey enhancements
         """
         # Use simplified scoring method instead of survey-enhanced version
-        return self._score_policy_simplified(policy, user_criteria)
+        return self._calculate_simplified_scores(policy, user_criteria)
+    
+    def _add_shortcomings_to_results(
+        self, 
+        simplified_results: Dict[str, Any], 
+        session_key: str
+    ) -> Dict[str, Any]:
+        """
+        Add shortcomings analysis to simplified results.
+        
+        Args:
+            simplified_results: Base simplified results
+            session_key: Session identifier for getting user criteria
+            
+        Returns:
+            Enhanced results with shortcomings analysis
+        """
+        try:
+            user_criteria = self._get_user_criteria_for_analysis(session_key)
+            enhanced_policies = []
+            
+            for policy_data in simplified_results.get('policies', []):
+                enhanced_policy = self._add_shortcomings_analysis_to_policy(
+                    policy_data, user_criteria
+                )
+                enhanced_policies.append(enhanced_policy)
+            
+            simplified_results['policies'] = enhanced_policies
+            return simplified_results
+            
+        except Exception as e:
+            logger.error(f"Error adding shortcomings analysis: {e}")
+            return simplified_results
+    
+    def _get_user_criteria_for_analysis(self, session_key: str) -> Dict[str, Any]:
+        """Get user criteria from survey responses for shortcomings analysis."""
+        try:
+            responses = SimpleSurveyResponse.objects.filter(
+                session_key=session_key,
+                category=self.category
+            )
+            
+            criteria = {}
+            for response in responses:
+                criteria[response.question.field_name] = {
+                    'value': response.response_value,
+                    'display_value': response.get_display_value()
+                }
+            
+            return criteria
+            
+        except Exception as e:
+            logger.error(f"Error getting user criteria for analysis: {e}")
+            return {}
+    
+    def _add_shortcomings_analysis_to_policy(
+        self, 
+        policy_data: Dict[str, Any], 
+        user_criteria: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Add shortcomings analysis to a single policy.
+        
+        Args:
+            policy_data: Base policy data
+            user_criteria: User's survey responses
+            
+        Returns:
+            Enhanced policy data with shortcomings analysis
+        """
+        try:
+            # Get the actual policy object
+            policy = BasePolicy.objects.get(id=policy_data['id'])
+            
+            # Analyze shortcomings
+            shortcomings = self._analyze_policy_shortcomings(policy, user_criteria)
+            
+            # Categorize shortcomings by severity
+            critical_gaps = [s for s in shortcomings if s['severity'] == 'critical']
+            moderate_gaps = [s for s in shortcomings if s['severity'] == 'moderate']
+            minor_gaps = [s for s in shortcomings if s['severity'] == 'minor']
+            
+            # Determine overall shortcomings severity
+            if critical_gaps:
+                severity = 'critical'
+                severity_description = "Has critical gaps that may make this policy unsuitable"
+            elif moderate_gaps:
+                severity = 'moderate'
+                severity_description = "Has some important limitations to consider"
+            elif minor_gaps:
+                severity = 'minor'
+                severity_description = "Minor limitations that may not be significant"
+            else:
+                severity = 'none'
+                severity_description = "Excellent match with no significant gaps"
+            
+            # Add shortcomings data to policy
+            policy_data.update({
+                'shortcomings': shortcomings,
+                'critical_gaps': critical_gaps,
+                'moderate_gaps': moderate_gaps,
+                'minor_gaps': minor_gaps,
+                'shortcomings_severity': severity,
+                'shortcomings_description': severity_description,
+                'gap_count': len(shortcomings),
+                'suitability_score': self._calculate_suitability_score(shortcomings),
+                'improvement_suggestions': self._generate_improvement_suggestions(shortcomings, policy)
+            })
+            
+            return policy_data
+            
+        except Exception as e:
+            logger.error(f"Error analyzing shortcomings for policy {policy_data.get('id')}: {e}")
+            # Return original data if analysis fails
+            policy_data.update({
+                'shortcomings': [],
+                'shortcomings_severity': 'unknown',
+                'shortcomings_description': 'Unable to analyze gaps',
+                'gap_count': 0,
+                'suitability_score': policy_data.get('match_score', 50)
+            })
+            return policy_data
+    
+    def _analyze_policy_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Analyze specific shortcomings between policy and user needs.
+        
+        Args:
+            policy: Policy object to analyze
+            user_criteria: User's preferences and requirements
+            
+        Returns:
+            List of shortcoming dictionaries with details
+        """
+        shortcomings = []
+        
+        if self.category == 'health':
+            shortcomings.extend(self._analyze_health_shortcomings(policy, user_criteria))
+        elif self.category == 'funeral':
+            shortcomings.extend(self._analyze_funeral_shortcomings(policy, user_criteria))
+        
+        return shortcomings
+    
+    def _analyze_health_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Analyze health policy shortcomings."""
+        shortcomings = []
+        
+        try:
+            policy_features = policy.policy_features
+        except AttributeError:
+            shortcomings.append({
+                'type': 'missing_features',
+                'severity': 'critical',
+                'title': 'No Policy Features Available',
+                'description': 'This policy lacks detailed feature information',
+                'impact': 'Cannot verify coverage details',
+                'suggestion': 'Contact provider for detailed policy information'
+            })
+            return shortcomings
+        
+        # Budget analysis
+        user_budget = user_criteria.get('monthly_budget', {}).get('value')
+        if user_budget:
+            budget_value = self._convert_budget_range_to_value(user_budget)
+            if float(policy.base_premium) > budget_value * 1.1:  # 10% tolerance
+                excess = float(policy.base_premium) - budget_value
+                shortcomings.append({
+                    'type': 'budget_exceeded',
+                    'severity': 'moderate' if excess <= 100 else 'critical',
+                    'title': 'Over Budget',
+                    'description': f'Premium is R{excess:.0f} above your stated budget',
+                    'impact': 'May strain your monthly finances',
+                    'suggestion': f'Consider policies under R{budget_value} or increase your budget'
+                })
+        
+        # Chronic medication
+        needs_chronic = user_criteria.get('needs_chronic_medication', {}).get('value')
+        if needs_chronic == 'yes' and not policy_features.chronic_medication_availability:
+            shortcomings.append({
+                'type': 'missing_feature',
+                'severity': 'critical',
+                'title': 'No Chronic Medication Coverage',
+                'description': 'You need chronic medication coverage but this policy does not provide it',
+                'impact': 'Will need to pay full cost of chronic medications',
+                'suggestion': 'This is a critical gap - look for policies that include chronic medication benefits'
+            })
+        
+        return shortcomings
+    
+    def _analyze_funeral_shortcomings(
+        self, 
+        policy: BasePolicy, 
+        user_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Analyze funeral policy shortcomings."""
+        shortcomings = []
+        # Add funeral-specific analysis here
+        return shortcomings
+    
+    def _calculate_suitability_score(self, shortcomings: List[Dict[str, Any]]) -> int:
+        """Calculate overall suitability score based on shortcomings."""
+        if not shortcomings:
+            return 100
+        
+        penalty = 0
+        for shortcoming in shortcomings:
+            if shortcoming['severity'] == 'critical':
+                penalty += 25
+            elif shortcoming['severity'] == 'moderate':
+                penalty += 15
+            elif shortcoming['severity'] == 'minor':
+                penalty += 5
+        
+        return max(0, 100 - penalty)
+    
+    def _generate_improvement_suggestions(
+        self, 
+        shortcomings: List[Dict[str, Any]], 
+        policy: BasePolicy
+    ) -> List[str]:
+        """Generate suggestions for addressing shortcomings."""
+        suggestions = []
+        
+        critical_gaps = [s for s in shortcomings if s['severity'] == 'critical']
+        moderate_gaps = [s for s in shortcomings if s['severity'] == 'moderate']
+        
+        if critical_gaps:
+            suggestions.append("This policy has critical gaps - consider other options first")
+            for gap in critical_gaps:
+                suggestions.append(gap['suggestion'])
+        
+        if moderate_gaps:
+            suggestions.append("Consider if you can accept these limitations:")
+            for gap in moderate_gaps[:2]:  # Limit to top 2
+                suggestions.append(f"• {gap['title']}: {gap['suggestion']}")
+        
+        if not critical_gaps and not moderate_gaps:
+            suggestions.append("This policy is a good match for your needs")
+        
+        return suggestions[:4]  # Limit to 4 suggestions
+    
+    def _identify_common_gaps(self, enhanced_policies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Identify gaps that are common across multiple policies."""
+        gap_counts = {}
+        
+        for policy in enhanced_policies:
+            for shortcoming in policy.get('shortcomings', []):
+                gap_type = shortcoming['type']
+                if gap_type not in gap_counts:
+                    gap_counts[gap_type] = {
+                        'count': 0,
+                        'title': shortcoming['title'],
+                        'description': shortcoming['description']
+                    }
+                gap_counts[gap_type]['count'] += 1
+        
+        # Return gaps that affect more than half the policies
+        threshold = len(enhanced_policies) / 2
+        common_gaps = [
+            {
+                'type': gap_type,
+                'title': data['title'],
+                'description': data['description'],
+                'affected_policies': data['count'],
+                'percentage': (data['count'] / len(enhanced_policies)) * 100
+            }
+            for gap_type, data in gap_counts.items()
+            if data['count'] > threshold
+        ]
+        
+        return sorted(common_gaps, key=lambda x: x['affected_policies'], reverse=True)
+    
+    def _generate_recommendations(
+        self, 
+        enhanced_policies: List[Dict[str, Any]], 
+        user_criteria: Dict[str, Any]
+    ) -> List[str]:
+        """Generate overall recommendations based on the analysis."""
+        recommendations = []
+        
+        if not enhanced_policies:
+            return ["No policies match your criteria. Consider broadening your requirements."]
+        
+        best_policy = enhanced_policies[0]
+        
+        if best_policy.get('shortcomings_severity') == 'none':
+            recommendations.append(f"Excellent match found: {best_policy['name']} meets all your requirements")
+        elif best_policy.get('shortcomings_severity') == 'critical':
+            recommendations.append("No ideal matches found. Consider:")
+            recommendations.append("• Adjusting your budget or coverage requirements")
+            recommendations.append("• Looking into supplementary insurance for gaps")
+            recommendations.append("• Consulting with an insurance advisor")
+        else:
+            recommendations.append(f"Best available option: {best_policy['name']}")
+            recommendations.append("Consider if you can accept the identified limitations")
+        
+        return recommendations[:5]  # Limit to 5 recommendations
+

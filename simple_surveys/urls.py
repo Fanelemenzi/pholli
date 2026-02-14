@@ -26,7 +26,7 @@ from .migration_views import (
     get_migration_notification
 )
 
-app_name = 'simple_surveys'
+# No app_name so URLs can be referenced directly (e.g., 'home' instead of 'simple_surveys:home')
 
 urlpatterns = [
     # Main pages using public templates

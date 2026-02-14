@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-q_3*n6p5sb@k30r8ghcu5p%29y0v5rp3^mw461o6)l8ak7fpam
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['pholli.up.railway.app', '127.0.0.1']
+ALLOWED_HOSTS = ['pholli.up.railway.app', '127.0.0.1', 'testserver']
 CSRF_TRUSTED_ORIGINS = ['https://pholli.up.railway.app']
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     "comparison",
     "health_policies",
     "funeral_policies",
-    "surveys",
     "simple_surveys",
 ]
 
@@ -135,6 +134,7 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

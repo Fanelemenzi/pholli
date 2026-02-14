@@ -1,0 +1,19 @@
+[33m4f64aaa[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m matched survey question with comparison engine
+[33m04e4bef[m Fixed features comparison
+[33mdd5cef6[m upgrade to funerala and base policy
+[33m7641418[m fixed region from SA to Eswatini
+[33m1983339[m Upgrades to policy features
+[33m7724c27[m Base policy fix
+[33mb511352[m deploy error psycopg 2
+[33m821fffc[m deploy error psycopg
+[33ma254661[m deploy error fix
+[33m4951462[m deploy error fix
+[33mf4fc3ec[m fixed base policy and other error fix
+[33mf97baab[m New policy features
+[33mfbf9750[m navbar mobie fix
+[33mff9795c[m CRSF fix 2
+[33ma9d4561[m fix CRSF token error
+[33m43603ea[m questions fix
+[33mee26f18[m add questions and fix CRSF tokens
+[33m8b93f6b[m initial railway deployment
+[33m1c89b5f[m First Commit

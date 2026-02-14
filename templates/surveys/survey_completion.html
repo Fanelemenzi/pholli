@@ -50,7 +50,7 @@
                                 View Your Policy Recommendations
                             </a>
                         {% else %}
-                            <a href="{% url 'surveys:survey_results' %}?session={{ session_key }}" class="btn btn-primary btn-lg">
+                            <a href="{% url 'results' category=category %}?session={{ session_key }}" class="btn btn-primary btn-lg">
                                 View Your Results
                             </a>
                         {% endif %}
