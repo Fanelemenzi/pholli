@@ -45,10 +45,10 @@ INSTALLED_APPS = [
     "rest_framework",
     # Local apps
     "organizations",
+    "funeral_policies",
+    "health_policies",
     "policies",
     "comparison",
-    "health_policies",
-    "funeral_policies",
     "simple_surveys",
 ]
 
