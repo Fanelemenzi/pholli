@@ -393,24 +393,6 @@
         </div>
 
         {% if quotations %}
-        <div class="alert" style="background: linear-gradient(135deg, #e8f5e8, #f0f8e8); color: #2d5a2d; border: 2px solid #269523; border-radius: 20px; margin-bottom: 40px;" role="alert">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-stars me-3" style="font-size: 2rem; color: #f1d925;"></i>
-                        <div>
-                            <h5 class="mb-1" style="color: #1a4a1a; font-weight: 700;">Get Even Better Matches!</h5>
-                            <p class="mb-0">Try our new feature-based survey for more precise policy recommendations based on specific {{ category_display|lower }} features.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                    <a href="{% url 'feature_survey' category=category %}" class="btn" style="background: linear-gradient(135deg, #269523, #f1d925); color: #000000; border: none; border-radius: 25px; padding: 12px 25px; font-weight: 700;">
-                        <i class="bi bi-arrow-right me-2"></i>Try Feature Survey
-                    </a>
-                </div>
-            </div>
-        </div>
 
         <!-- Summary Statistics -->
         {% if metadata %}
@@ -430,8 +412,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="stat-item">
-                        <span class="stat-number">{% if quotations %}R{{ quotations.0.monthly_premium|floatformat:0
-                            }}{% endif %}</span>
+                        <span class="stat-number">{% if quotations %}R{{ quotations.0.monthly_premium|floatformat:0}}{% endif %}</span>
                         <span class="stat-label">Best Price</span>
                     </div>
                 </div>
@@ -605,9 +586,9 @@
                         </div>
                     </div>
                     <a href="tel:0800266727" class="btn btn-primary btn-lg me-3">
-                        <i class="bi bi-telephone me-2"></i>Call 0800-COMPARE
+                        <i class="bi bi-telephone me-2"></i>Call 268-COMPARE
                     </a>
-                    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-lg">
+                    <a href="{% url 'health' %}" class="btn btn-outline-primary btn-lg">
                         <i class="bi bi-arrow-left me-2"></i>Start New Search
                     </a>
                 </div>
