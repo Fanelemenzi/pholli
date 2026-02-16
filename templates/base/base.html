@@ -4,6 +4,15 @@
 <html lang="en">
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DP2JZQRMLS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-DP2JZQRMLS');
+  </script>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" name="viewport">
   <meta name="format-detection" content="telephone=no">
@@ -36,7 +45,7 @@
 
   <!-- Main CSS File -->
   <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
-  
+
   <!-- Custom Color Overrides -->
   <style>
     /* Global color overrides */
@@ -48,7 +57,7 @@
     .footer .footer-links ul li a,
     .footer .credits,
     .footer .credits a {
-        color: #f1d925 !important;
+      color: #f1d925 !important;
     }
 
     /* Keep black and white text unchanged */
@@ -57,68 +66,68 @@
     .dark-background p,
     .dark-background .footer-about p,
     .dark-background .footer-contact p {
-        color: #ffffff !important;
+      color: #ffffff !important;
     }
 
     /* Button backgrounds and links to #269523 */
     .header .social-links a:hover,
     .footer .social-links a:hover {
-        background-color: #269523 !important;
-        color: #ffffff !important;
+      background-color: #269523 !important;
+      color: #ffffff !important;
     }
 
     /* Navigation hover states */
     .navmenu a:hover,
     .navmenu .active {
-        color: #269523 !important;
+      color: #269523 !important;
     }
 
     /* Footer link hover states */
     .footer .footer-links ul a:hover {
-        color: #269523 !important;
+      color: #269523 !important;
     }
 
     /* Scroll top button */
     .scroll-top {
-        background-color: #269523 !important;
+      background-color: #269523 !important;
     }
 
     .scroll-top:hover {
-        background-color: #1e7a1c !important;
+      background-color: #1e7a1c !important;
     }
 
     /* Social links accent color */
     .header .social-links a:hover,
     .footer .social-links a:hover {
-        color: #ffffff !important;
-        background-color: #269523 !important;
+      color: #ffffff !important;
+      background-color: #269523 !important;
     }
 
     /* Logo and sitename styling */
     .logo .sitename {
-        color: #f1d925 !important;
+      color: #f1d925 !important;
     }
 
     /* Contact info styling */
     .contact-info .phone {
-        color: #f1d925 !important;
+      color: #f1d925 !important;
     }
 
     /* Footer accent elements */
     .footer h4:after {
-        background-color: #269523 !important;
+      background-color: #269523 !important;
     }
 
     .footer .footer-links ul a i {
-        color: #269523 !important;
+      color: #269523 !important;
     }
 
     .footer .footer-contact .contact-item .contact-icon {
-        background-color: rgba(38, 149, 35, 0.1) !important;
+      background-color: rgba(38, 149, 35, 0.1) !important;
     }
 
     .footer .footer-contact .contact-item .contact-icon i {
-        color: #269523 !important;
+      color: #269523 !important;
     }
 
     /* Mobile-specific optimizations */
@@ -126,18 +135,18 @@
       .header .top-row {
         padding: 10px 15px;
       }
-      
+
       .header .contact-info {
         order: 3;
         width: 100%;
         text-align: center;
         margin-top: 10px;
       }
-      
+
       .header .social-links {
         order: 2;
       }
-      
+
       /* Mobile Navigation Styles */
       .mobile-navmenu {
         position: fixed;
@@ -153,23 +162,23 @@
         padding-top: 80px;
         overflow-y: auto;
       }
-      
+
       /* Use body class for mobile nav state to match main.js */
       body.mobile-nav-active .mobile-navmenu {
         right: 0;
       }
-      
+
       .mobile-navmenu ul {
         flex-direction: column;
         padding: 20px;
         margin: 0;
         list-style: none;
       }
-      
+
       .mobile-navmenu ul li {
         margin-bottom: 10px;
       }
-      
+
       .mobile-navmenu ul li a {
         display: block;
         padding: 15px 20px;
@@ -181,7 +190,7 @@
         transition: all 0.3s ease;
         border: 2px solid transparent;
       }
-      
+
       .mobile-navmenu ul li a:hover,
       .mobile-navmenu ul li a.active {
         background-color: #269523;
@@ -189,12 +198,12 @@
         border-color: #269523;
         transform: translateX(5px);
       }
-      
+
       /* Hide mobile nav on desktop */
       .mobile-navmenu {
         display: block;
       }
-      
+
       /* Mobile nav toggle button */
       .mobile-nav-toggle {
         position: fixed !important;
@@ -215,16 +224,16 @@
         box-shadow: 0 4px 15px rgba(38, 149, 35, 0.3) !important;
         transition: all 0.3s ease !important;
       }
-      
+
       .mobile-nav-toggle:hover {
         background: #1e7a1c !important;
         transform: scale(1.05) !important;
       }
-      
+
       .mobile-nav-toggle.bi-x {
         font-size: 24px !important;
       }
-      
+
       /* Mobile nav overlay */
       .mobile-nav-overlay {
         position: fixed;
@@ -238,45 +247,45 @@
         visibility: hidden;
         transition: all 0.3s ease;
       }
-      
+
       /* Show overlay when mobile nav is active */
       body.mobile-nav-active .mobile-nav-overlay {
         opacity: 1;
         visibility: visible;
       }
-      
+
       /* Hide desktop navigation on mobile */
       .nav-wrap {
         display: none;
       }
-      
-      .footer .row > div {
+
+      .footer .row>div {
         text-align: center;
         margin-bottom: 30px;
       }
-      
+
       .footer .footer-links ul {
         justify-content: center;
         flex-wrap: wrap;
         gap: 10px 20px;
       }
     }
-    
+
     /* Desktop navigation - hide mobile toggle and mobile nav */
     @media (min-width: 769px) {
       .mobile-nav-toggle {
         display: none !important;
       }
-      
+
       .mobile-nav-overlay {
         display: none !important;
       }
-      
+
       .mobile-navmenu {
         display: none !important;
       }
     }
-    
+
     /* Ensure mobile toggle is visible on mobile */
     @media (max-width: 768px) {
       .mobile-nav-toggle {
@@ -326,7 +335,7 @@
         </nav>
       </div>
     </div>
-    
+
     <!-- Mobile Navigation Menu - Separate from desktop nav -->
     <nav id="mobile-navmenu" class="mobile-navmenu">
       <ul>
@@ -340,19 +349,19 @@
         <li><a href="#contact">Contact</a></li>
       </ul>
     </nav>
-    
+
     <!-- Mobile Navigation Toggle -->
     <button class="mobile-nav-toggle" aria-label="Toggle navigation">
       <i class="bi bi-list"></i>
     </button>
-    
+
     <!-- Mobile Navigation Overlay -->
     <div class="mobile-nav-overlay"></div>
   </header>
 
-   
+
   {% block content %}
-        
+
   {% endblock%}
 
 
@@ -400,9 +409,9 @@
 
         <div class="col-lg-4 col-md-12 footer-contact text-center text-md-start">
           <h4>Contact Us</h4>
-          <p><strong>Phone:</strong> 0800-COMPARE (0800-266-7273)</p>
-          <p><strong>Email:</strong> info@pholli.co.sz</p>
-          <p><strong>Address:</strong> 123 Insurance Street, Cape Town, 8001</p>
+          <p><strong>Phone:</strong> 268-COMPARE (268 78354987)</p>
+          <p><strong>Email:</strong> info@phollisz.com</p>
+          <p><strong>Address:</strong> Manzini, Eswatini</p>
           <p><strong>Hours:</strong> Mon-Fri 8AM-6PM, Sat 9AM-1PM</p>
         </div>
 
@@ -437,15 +446,15 @@
 
   <!-- Mobile Navigation Script -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       // Enhanced mobile navigation functionality
       const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
       const navOverlay = document.querySelector('.mobile-nav-overlay');
       const navLinks = document.querySelectorAll('.mobile-navmenu ul li a');
-      
+
       if (navOverlay) {
         // Close menu when clicking overlay
-        navOverlay.addEventListener('click', function(e) {
+        navOverlay.addEventListener('click', function (e) {
           e.preventDefault();
           if (document.body.classList.contains('mobile-nav-active')) {
             // Trigger the main.js toggle function
@@ -453,44 +462,44 @@
           }
         });
       }
-      
+
       // Close menu on escape key
-      document.addEventListener('keydown', function(e) {
+      document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && document.body.classList.contains('mobile-nav-active')) {
           mobileNavToggle.click();
         }
       });
-      
+
       // Handle window resize
-      window.addEventListener('resize', function() {
+      window.addEventListener('resize', function () {
         if (window.innerWidth > 768 && document.body.classList.contains('mobile-nav-active')) {
           mobileNavToggle.click();
         }
       });
-      
+
       // Set active nav link based on current page for both desktop and mobile
       const currentPath = window.location.pathname;
       const allNavLinks = document.querySelectorAll('.navmenu ul li a, .mobile-navmenu ul li a');
-      
+
       allNavLinks.forEach(link => {
         link.classList.remove('active');
         const linkPath = link.getAttribute('href');
-        
-        if (linkPath === currentPath || 
-            (currentPath === '/' && linkPath && linkPath.includes('home')) ||
-            (currentPath.includes('health') && linkPath && linkPath.includes('health')) ||
-            (currentPath.includes('funerals') && linkPath && linkPath.includes('funerals'))) {
+
+        if (linkPath === currentPath ||
+          (currentPath === '/' && linkPath && linkPath.includes('home')) ||
+          (currentPath.includes('health') && linkPath && linkPath.includes('health')) ||
+          (currentPath.includes('funerals') && linkPath && linkPath.includes('funerals'))) {
           link.classList.add('active');
         }
       });
-      
+
       // Add touch feedback for mobile nav toggle
       if ('ontouchstart' in window && mobileNavToggle) {
-        mobileNavToggle.addEventListener('touchstart', function() {
+        mobileNavToggle.addEventListener('touchstart', function () {
           this.style.transform = 'scale(0.95)';
         });
-        
-        mobileNavToggle.addEventListener('touchend', function() {
+
+        mobileNavToggle.addEventListener('touchend', function () {
           this.style.transform = '';
         });
       }

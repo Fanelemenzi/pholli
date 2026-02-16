@@ -1375,18 +1375,8 @@ admin.site.register(PolicyFeatures, IntegratedPolicyFeaturesAdmin)
 # Integration URLs will be added through the custom admin site instead
 
 
-# Add integration menu item to admin
-def add_integration_to_admin_index(request):
-    """Add integration link to admin index."""
-    from django.template.response import TemplateResponse
-    from django.urls import reverse
-    
-    # This would be used in a custom admin template
-    integration_url = reverse('admin:system_integration')
-    return {
-        'integration_url': integration_url,
-        'integration_title': 'System Integration'
-    }
+# Integration status methods for enhanced admin classes
+# These methods provide integration status for policies and features
 
 
 # Custom admin site configuration

@@ -19,7 +19,8 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+     path('admin/', include('admin_honeypot.urls', namespace='admin_honeypot')),
+    path("pholli/", admin.site.urls),
     path("", include("simple_surveys.urls")),  # Main pages now handled by simple_surveys
     path("comparison/", include("comparison.urls")),
     path("policies/", include("policies.urls")),  # Feature-based policy listings

@@ -154,9 +154,13 @@ class OrganizationAdmin(admin.ModelAdmin):
         """Display count of active policies with link."""
         count = obj.get_active_policies_count()
         if count > 0:
-            # Assuming there's a policy admin with organization filter
-            url = reverse('admin:policies_policy_changelist') + f'?organization__id__exact={obj.id}'
-            return format_html('<a href="{}">{} policies</a>', url, count)
+            # Use the correct admin URL pattern for BasePolicy
+            try:
+                url = reverse('admin:policies_basepolicy_changelist') + f'?organization__id__exact={obj.id}'
+                return format_html('<a href="{}">{} policies</a>', url, count)
+            except Exception:
+                # Fallback if URL reverse fails
+                return f'{count} policies'
         return '0 policies'
     active_policies_count.short_description = _('Active Policies')
     

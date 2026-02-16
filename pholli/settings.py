@@ -13,6 +13,12 @@ import dj_database_url
 from pathlib import Path
 import os
 
+
+from environ import Env
+env = Env()
+Env.read_env()
+ENVIRONMENT = env('ENVIRONMENT', default='production')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,10 +27,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-q_3*n6p5sb@k30r8ghcu5p%29y0v5rp3^mw461o6)l8ak7fpam"
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if ENVIRONMENT == 'development':
+    DEBUG = True
+else:
+    DEBUG = False
 
 ALLOWED_HOSTS = ['pholli.up.railway.app', '127.0.0.1', 'testserver']
 CSRF_TRUSTED_ORIGINS = ['https://pholli.up.railway.app']
@@ -41,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "admin_honeypot",
     # Third party apps
     "rest_framework",
     # Local apps
@@ -153,3 +163,5 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
     ],
 }
+
+ACCOUNT_USERNAME_BLACKLIST = ['admin', 'pholli',]
