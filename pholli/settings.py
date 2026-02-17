@@ -35,7 +35,7 @@ if ENVIRONMENT == 'development':
 else:
     DEBUG = False
 
-ALLOWED_HOSTS = ['https://phollisz.com', 'https://pholli.up.railway.app', '127.0.0.1', 'testserver']
+ALLOWED_HOSTS = ['https://phollisz.com', 'phollisz.com', 'https://pholli.up.railway.app', '127.0.0.1', 'testserver']
 CSRF_TRUSTED_ORIGINS = ['https://phollisz.com', 'https://pholli.up.railway.app']
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
