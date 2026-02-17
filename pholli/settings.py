@@ -35,8 +35,8 @@ if ENVIRONMENT == 'development':
 else:
     DEBUG = False
 
-ALLOWED_HOSTS = ['pholli.up.railway.app', '127.0.0.1', 'testserver']
-CSRF_TRUSTED_ORIGINS = ['https://pholli.up.railway.app']
+ALLOWED_HOSTS = ['https://phollisz.com', 'https://pholli.up.railway.app', '127.0.0.1', 'testserver']
+CSRF_TRUSTED_ORIGINS = ['https://phollisz.com', 'https://pholli.up.railway.app']
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
@@ -97,16 +97,16 @@ WSGI_APPLICATION = "pholli.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASE_URL = os.getenv('DATABASE_URL')
 DATABASES = {
-    #"default": {
-    #    "ENGINE": "django.db.backends.sqlite3",
-    #   "NAME": BASE_DIR / "db.sqlite3",
-    #}
-    'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
 
-DATABASES ["default"] = dj_database_url.parse("postgresql://neondb_owner:npg_TeLJO3Y5rRDX@ep-dawn-fog-a8mxgcsn-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require")
+POSTGRES_LOCALLY = True
+if ENVIRONMENT == 'production' or POSTGRES_LOCALLY == True:
+    DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
