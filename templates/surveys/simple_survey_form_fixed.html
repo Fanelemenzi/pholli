@@ -86,6 +86,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
+        flex-wrap: wrap;
     }
 
     .question-number {
@@ -100,6 +101,50 @@
         font-size: 1rem;
         font-weight: 600;
         flex-shrink: 0;
+    }
+
+    /* Tooltip help icon styling */
+    .bi-question-circle {
+        transition: all 0.2s ease;
+        opacity: 0.7;
+    }
+
+    .bi-question-circle:hover {
+        opacity: 1;
+        color: #269523 !important;
+        transform: scale(1.1);
+    }
+
+    /* Custom tooltip styling */
+    .tooltip {
+        font-size: 0.875rem;
+    }
+
+    .tooltip-inner {
+        background-color: #269523;
+        color: white;
+        border-radius: 8px;
+        padding: 10px 12px;
+        max-width: 300px;
+        text-align: left;
+        line-height: 1.4;
+        box-shadow: 0 4px 12px rgba(38, 149, 35, 0.3);
+    }
+
+    .tooltip.bs-tooltip-top .tooltip-arrow::before {
+        border-top-color: #269523;
+    }
+
+    .tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+        border-bottom-color: #269523;
+    }
+
+    .tooltip.bs-tooltip-start .tooltip-arrow::before {
+        border-left-color: #269523;
+    }
+
+    .tooltip.bs-tooltip-end .tooltip-arrow::before {
+        border-right-color: #269523;
     }
 
     .form-control,
@@ -276,16 +321,146 @@
                     <span>
                         {{ question.question_text }}
                         {% if question.is_required %}<span class="text-danger">*</span>{% endif %}
+                        
+                        <!-- Tooltip Help Icon -->
+                        {% if question.field_name == 'age' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Your age affects premium rates and available plans. Enter your current age in years."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'monthly_income' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Enter your gross monthly income before taxes. This helps us recommend affordable premium ranges."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'family_size' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Include yourself, spouse, and dependents you want to cover under the policy."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'medical_history' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Include chronic conditions like diabetes, hypertension, heart conditions, or any ongoing treatments."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'coverage_type' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Hospital-only covers major medical procedures. Comprehensive includes day-to-day benefits like GP visits and medication."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'monthly_budget' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Choose a comfortable monthly premium range. Higher budgets typically offer better coverage and benefits."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'preferred_hospitals' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Select hospitals you prefer to use. We'll find plans with the best network coverage for your choices."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'current_medical_aid' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="If you have existing medical aid, we can help you compare and potentially find better value options."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        
+                        <!-- Funeral Insurance Help Tooltips -->
+                        {% elif question.field_name == 'coverage_amount' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Typical funeral costs range from E15,000 to E50,000. Choose an amount that covers expected funeral expenses."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'family_members_to_cover' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Include spouse, children, parents, and extended family members you want to cover. Each member may have different coverage amounts."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'waiting_period_preference' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Some policies have waiting periods (3-12 months) before full benefits apply. Immediate cover costs more but provides instant protection."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'premium_payment_frequency' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Monthly payments offer flexibility, while annual payments often provide discounts. Choose what works best for your budget."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'additional_benefits' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Additional benefits may include grocery vouchers, transport assistance, or memorial services. These increase premium costs."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'current_funeral_cover' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="If you have existing funeral cover, we can help you compare benefits and potentially find better value or coverage."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'employment_status' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Your employment status helps us recommend appropriate coverage levels and payment options that suit your financial situation."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% elif question.field_name == 'contact_preference' %}
+                        <i class="bi bi-question-circle text-muted ms-2" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Choose how you'd like insurance providers to contact you with quotes. We respect your communication preferences."
+                           style="cursor: help; font-size: 1rem;"></i>
+                        {% endif %}
                     </span>
                 </div>
 
                 {% if question.input_type == 'text' %}
                 <input type="text" class="form-control" name="{{ question.field_name }}" id="{{ question.field_name }}"
                     {% if question.is_required %}required{% endif %} placeholder="Enter your answer...">
+                
+                <!-- Inline Help Text for Text Fields -->
+                {% if question.field_name == 'full_name' %}
+                <div class="form-text">
+                    <i class="bi bi-person me-1"></i>
+                    Enter your full legal name as it appears on your ID document for accurate policy documentation.
+                </div>
+                {% elif question.field_name == 'medical_conditions' %}
+                <div class="form-text">
+                    <i class="bi bi-heart-pulse me-1"></i>
+                    List any chronic conditions, ongoing treatments, or medications you're currently taking (e.g., diabetes, hypertension, asthma).
+                </div>
+                {% elif question.field_name == 'preferred_doctor' %}
+                <div class="form-text">
+                    <i class="bi bi-person-heart me-1"></i>
+                    Enter your current doctor's name or practice. We'll find plans that include them in the network.
+                </div>
+                {% elif question.field_name == 'funeral_preferences' %}
+                <div class="form-text">
+                    <i class="bi bi-flower1 me-1"></i>
+                    Describe any specific funeral arrangements or cultural requirements you'd like covered.
+                </div>
+                {% endif %}
 
                 {% elif question.input_type == 'email' %}
                 <input type="email" class="form-control" name="{{ question.field_name }}" id="{{ question.field_name }}"
                     {% if question.is_required %}required{% endif %} placeholder="Enter your email address...">
+                
+                <!-- Inline Help Text for Email Fields -->
+                <div class="form-text">
+                    <i class="bi bi-envelope me-1"></i>
+                    We'll send your personalized quotes and policy information to this email address. Check your spam folder if you don't receive them.
+                </div>
 
                 {% elif question.input_type == 'number' %}
                 <input type="number" class="form-control" name="{{ question.field_name }}"
@@ -293,6 +468,39 @@
                     {% if question.validation_rules.max %}max="{{ question.validation_rules.max }}" {% endif %} 
                     {% endif %} 
                     {%if question.is_required %}required{% endif %} placeholder="Enter a number...">
+                
+                <!-- Inline Help Text for Number Fields -->
+                {% if question.field_name == 'age' %}
+                <div class="form-text">
+                    <i class="bi bi-calendar-check me-1"></i>
+                    Your age affects premium rates. Younger applicants typically pay lower premiums, while older applicants may have waiting periods.
+                </div>
+                {% elif question.field_name == 'monthly_income' %}
+                <div class="form-text">
+                    <i class="bi bi-currency-dollar me-1"></i>
+                    Enter your gross monthly income in Emalangeni. This helps us recommend affordable premium ranges (typically 5-15% of income).
+                </div>
+                {% elif question.field_name == 'family_size' %}
+                <div class="form-text">
+                    <i class="bi bi-people me-1"></i>
+                    Count yourself, spouse, and all dependents you want covered. Larger families may qualify for discounted rates.
+                </div>
+                {% elif question.field_name == 'coverage_amount' %}
+                <div class="form-text">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Average funeral costs: Basic (E15,000-25,000), Standard (E25,000-40,000), Premium (E40,000+). Consider inflation and family preferences.
+                </div>
+                {% elif question.field_name == 'current_premium' %}
+                <div class="form-text">
+                    <i class="bi bi-wallet2 me-1"></i>
+                    Enter what you currently pay monthly. We'll find better value options or improved coverage at similar prices.
+                </div>
+                {% elif question.field_name == 'family_members_to_cover' %}
+                <div class="form-text">
+                    <i class="bi bi-people-fill me-1"></i>
+                    Include yourself, spouse, children, parents, and extended family. Each member can have different coverage amounts based on relationship and age.
+                </div>
+                {% endif %}
 
                 {% elif question.input_type == 'select' %}
                 <select class="form-select" name="{{ question.field_name }}" id="{{ question.field_name }}" {% if question.is_required %}required{% endif %}>
@@ -302,10 +510,61 @@
                     {% endfor %}
                 </select>
 
+                <!-- Inline Help Text for Select Fields -->
                 {% if question.field_name == 'monthly_budget' %}
                 <div class="form-text">
                     <i class="bi bi-wallet2 me-1"></i>
-                    Select your comfortable monthly budget range for {{ category_display|lower }} insurance premiums.
+                    Select your comfortable monthly budget range for {{ category_display|lower }} insurance premiums. Higher budgets offer better coverage and benefits.
+                </div>
+                {% elif question.field_name == 'coverage_type' %}
+                <div class="form-text">
+                    <i class="bi bi-hospital me-1"></i>
+                    Hospital-only: Covers major procedures and emergencies. Comprehensive: Includes day-to-day benefits like GP visits, medication, and dental care.
+                </div>
+                {% elif question.field_name == 'employment_status' %}
+                <div class="form-text">
+                    <i class="bi bi-briefcase me-1"></i>
+                    Your employment status affects available payment options and may qualify you for group discounts or special rates.
+                </div>
+                {% elif question.field_name == 'waiting_period_preference' %}
+                <div class="form-text">
+                    <i class="bi bi-clock me-1"></i>
+                    Immediate cover: Higher premiums, instant protection. Waiting period: Lower premiums, coverage starts after 3-12 months.
+                </div>
+                {% elif question.field_name == 'premium_payment_frequency' %}
+                <div class="form-text">
+                    <i class="bi bi-calendar-month me-1"></i>
+                    Monthly: Flexible but slightly higher cost. Annual: Often 5-10% discount but requires lump sum payment.
+                </div>
+                {% elif question.field_name == 'contact_preference' %}
+                <div class="form-text">
+                    <i class="bi bi-telephone me-1"></i>
+                    Choose how you'd prefer to receive quotes. Phone calls are fastest, emails provide detailed comparisons.
+                </div>
+                {% elif question.field_name == 'location' %}
+                <div class="form-text">
+                    <i class="bi bi-geo-alt me-1"></i>
+                    Your location affects available healthcare providers and may influence premium rates based on regional healthcare costs.
+                </div>
+                {% elif question.field_name == 'annual_limit_family_range' %}
+                <div class="form-text">
+                    <i class="bi bi-people-fill me-1"></i>
+                    Higher annual limits provide better protection for major medical expenses. Consider your family's health history and potential needs.
+                </div>
+                {% elif question.field_name == 'annual_limit_member_range' %}
+                <div class="form-text">
+                    <i class="bi bi-person-check me-1"></i>
+                    Individual annual limits apply per family member. Higher limits offer better protection for serious medical conditions.
+                </div>
+                {% elif question.field_name == 'household_income' %}
+                <div class="form-text">
+                    <i class="bi bi-house-heart me-1"></i>
+                    Your household income helps us recommend affordable plans. Most families spend 5-15% of income on health insurance.
+                </div>
+                {% elif question.field_name == 'preferred_cover_amount' %}
+                <div class="form-text">
+                    <i class="bi bi-currency-dollar me-1"></i>
+                    Consider current funeral costs in your area. Basic funerals: R10,000-25,000. Standard: R25,000-75,000. Premium: R75,000+. Factor in inflation.
                 </div>
                 {% endif %}
 
@@ -321,6 +580,79 @@
                     </div>
                     {% endfor %}
                 </div>
+                
+                <!-- Inline Help Text for Radio Fields -->
+                {% if question.field_name == 'current_medical_aid' %}
+                <div class="form-text">
+                    <i class="bi bi-clipboard-heart me-1"></i>
+                    If you have existing medical aid, we can compare your current benefits and costs with available alternatives to find better value.
+                </div>
+                {% elif question.field_name == 'current_funeral_cover' %}
+                <div class="form-text">
+                    <i class="bi bi-shield me-1"></i>
+                    Existing funeral cover can often be improved or supplemented. We'll help you avoid gaps in coverage during transitions.
+                </div>
+                {% elif question.field_name == 'health_status' %}
+                <div class="form-text">
+                    <i class="bi bi-heart me-1"></i>
+                    Your health status affects available plans and premiums. Be honest - insurers will verify during underwriting anyway.
+                </div>
+                {% elif question.field_name == 'smoking_status' %}
+                <div class="form-text">
+                    <i class="bi bi-lungs me-1"></i>
+                    Smoking significantly affects health insurance premiums. Non-smokers typically receive 20-30% discounts on life and health cover.
+                </div>
+                {% elif question.field_name == 'coverage_priority' %}
+                <div class="form-text">
+                    <i class="bi bi-list-check me-1"></i>
+                    Hospital cover: Emergency and major procedures. Day-to-day: GP visits, medication. Comprehensive: Both hospital and day-to-day benefits.
+                </div>
+                {% elif question.field_name == 'in_hospital_benefit_level' %}
+                <div class="form-text">
+                    <i class="bi bi-hospital me-1"></i>
+                    Higher levels cover more procedures, private rooms, and specialist treatments. Basic covers emergencies, comprehensive covers everything.
+                </div>
+                {% elif question.field_name == 'out_hospital_benefit_level' %}
+                <div class="form-text">
+                    <i class="bi bi-heart-pulse me-1"></i>
+                    Day-to-day benefits cover GP visits, medication, dental, and optical care. Higher levels include specialists and diagnostics.
+                </div>
+                {% elif question.field_name == 'wants_ambulance_coverage' %}
+                <div class="form-text">
+                    <i class="bi bi-truck me-1"></i>
+                    Ambulance services can cost E2,000-5,000 per trip. Coverage includes emergency transport to hospital and between facilities.
+                </div>
+                {% elif question.field_name == 'needs_chronic_medication' %}
+                <div class="form-text">
+                    <i class="bi bi-capsule me-1"></i>
+                    Chronic medication can be expensive. Coverage includes diabetes, hypertension, heart, and other ongoing medication needs.
+                </div>
+                {% elif question.field_name == 'coverage_amount_needed' %}
+                <div class="form-text">
+                    <i class="bi bi-cash-stack me-1"></i>
+                    Consider total funeral costs including coffin, transport, catering, and venue. Basic: R25,000. Standard: R50,000-100,000. Premium: R200,000+.
+                </div>
+                {% elif question.field_name == 'marital_status' %}
+                <div class="form-text">
+                    <i class="bi bi-heart me-1"></i>
+                    Marital status affects family coverage options and may influence premium rates. Married couples often get discounted family rates.
+                </div>
+                {% elif question.field_name == 'gender' %}
+                <div class="form-text">
+                    <i class="bi bi-person me-1"></i>
+                    Gender may affect premium rates due to statistical life expectancy differences. This information is used for actuarial calculations only.
+                </div>
+                {% elif question.field_name == 'service_preference' %}
+                <div class="form-text">
+                    <i class="bi bi-flower1 me-1"></i>
+                    Basic: Essential services only. Standard: Includes catering and flowers. Premium: Full-service with memorial and extended benefits.
+                </div>
+                {% elif question.field_name == 'waiting_period_tolerance' %}
+                <div class="form-text">
+                    <i class="bi bi-hourglass-split me-1"></i>
+                    No waiting period: Higher premiums, immediate coverage. Longer waiting periods: Lower premiums, but coverage delayed. Consider your current health.
+                </div>
+                {% endif %}
 
                 {% elif question.input_type == 'checkbox' %}
                 <div class="checkbox-group">
@@ -334,6 +666,34 @@
                     </div>
                     {% endfor %}
                 </div>
+                
+                <!-- Inline Help Text for Checkbox Fields -->
+                {% if question.field_name == 'preferred_hospitals' %}
+                <div class="form-text">
+                    <i class="bi bi-hospital me-1"></i>
+                    Select hospitals you prefer or currently use. We'll prioritize plans with these facilities in their networks for seamless care.
+                </div>
+                {% elif question.field_name == 'additional_benefits' %}
+                <div class="form-text">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Additional benefits increase premiums but provide extra value. Consider your family's needs and budget when selecting options.
+                </div>
+                {% elif question.field_name == 'family_members_to_cover' %}
+                <div class="form-text">
+                    <i class="bi bi-people-fill me-1"></i>
+                    Select all family members you want covered. Each member can have different coverage amounts based on age and relationship.
+                </div>
+                {% elif question.field_name == 'chronic_conditions' %}
+                <div class="form-text">
+                    <i class="bi bi-capsule me-1"></i>
+                    Select any chronic conditions you or your family have. This ensures we find plans with appropriate chronic disease lists and medication coverage.
+                </div>
+                {% elif question.field_name == 'lifestyle_factors' %}
+                <div class="form-text">
+                    <i class="bi bi-activity me-1"></i>
+                    Lifestyle factors affect premiums and available benefits. Some insurers offer wellness programs and discounts for healthy lifestyles.
+                </div>
+                {% endif %}
                 {% endif %}
 
                 {% if question.validation_rules %}
@@ -379,6 +739,15 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                trigger: 'hover focus',
+                delay: { show: 300, hide: 100 }
+            });
+        });
+
         const form = document.getElementById('surveyForm');
         const progressBar = document.querySelector('.progress-bar');
         const progressText = document.querySelector('.progress-text span:last-child');
