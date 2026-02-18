@@ -984,6 +984,30 @@ def policy_benefits_ajax(request, policy_id):
         
         response_data['additional_features'] = additional_features
         
+        # Add rewards from the policy
+        rewards = []
+        if hasattr(policy, 'rewards'):
+            for reward in policy.rewards.filter(is_active=True).order_by('display_order', 'title'):
+                reward_data = {
+                    'title': reward.title,
+                    'description': reward.description,
+                    'reward_type': reward.get_reward_type_display(),
+                    'eligibility_criteria': reward.eligibility_criteria,
+                    'terms_and_conditions': reward.terms_and_conditions,
+                    'display_value': reward.get_display_value(),
+                    'is_monetary': reward.is_monetary_reward()
+                }
+                
+                # Add specific value information
+                if reward.value:
+                    reward_data['value'] = float(reward.value)
+                if reward.percentage:
+                    reward_data['percentage'] = float(reward.percentage)
+                
+                rewards.append(reward_data)
+        
+        response_data['rewards'] = rewards
+        
         return JsonResponse(response_data)
         
     except Exception as e:
